@@ -1012,7 +1012,7 @@ async fn connection_pipeline() -> StrResult {
             }
         }
     };
-
+    
     let control_loop = async move {
         loop {
             match control_receiver.recv().await {

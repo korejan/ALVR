@@ -95,6 +95,10 @@ define([
             controller.append(
                 `<option value="9">HTC Vive Tracker (no handtracking pinch)</option>`
             );
+            controller.append(`<option value="8">HTC Vive Tracker</option>`);
+            controller.append(
+                `<option value="9">HTC Vive Tracker (no handtracking pinch)</option>`,
+            );
 
             const select = new Selectal("#_root_headset_controllers_content_controllerMode");
             controller = $("#_root_headset_controllers_content_controllerMode");
