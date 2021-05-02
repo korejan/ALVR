@@ -113,6 +113,8 @@ define({
     "_root_headset_positionOffset_2.description": "Z偏移", // adv
     "_root_headset_force3dof.name": "强制3自由度",
     "_root_headset_force3dof.description": "强制3个自由度模式（例如Oculus Go）",
+    "_root_headset_trackingRefOnly.name": "Tracking Reference Only",
+    "_root_headset_trackingRefOnly.description": "Disables all video encoding/streaming and treats the HMD as an openvr tracking reference instead of the main HMD. This can be used to make ALVR's HMD/controllers as FBT trackers, as alternative controllers for other HMDs, for debugging purposes, etc.",
     "_root_headset_controllers.name": "控制器",
     // "_root_headset_controllers.description": use "_root_headset_controllers_enabled.description"
     "_root_headset_controllers_enabled.description": "启用控制器的使用",
