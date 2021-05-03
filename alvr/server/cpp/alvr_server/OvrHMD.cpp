@@ -86,6 +86,14 @@ OvrHmd::OvrHmd()
 			}
 		}
 
+		if (Settings::Instance().m_enableViveTrackerProxy) {
+		 	m_viveTrackerProxy = std::make_shared<OvrViveTrackerProxy>(*this);
+			ret = vr::VRServerDriverHost()->TrackedDeviceAdded(
+				m_viveTrackerProxy->GetSerialNumber(),
+				vr::TrackedDeviceClass_GenericTracker,
+				m_viveTrackerProxy.get());
+		}
+
 		Debug("CRemoteHmd successfully initialized.\n");
 	}
 
