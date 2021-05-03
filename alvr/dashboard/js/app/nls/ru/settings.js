@@ -127,6 +127,8 @@ define({
     // "_root_headset_controllers_content_registeredDeviceType.description": "", // adv
     // "_root_headset_controllers_content_inputProfilePath.name": "", // adv
     // "_root_headset_controllers_content_inputProfilePath.description": "", // adv
+    "_root_headset_controllers_content_useHeadsetTrackingSystem.name": "Use Headset Tracking System",
+    "_root_headset_controllers_content_useHeadsetTrackingSystem.description": "Overrides the current controller profile's tracking system name with the current ALVR HMD's tracking system. Enable this in cases such as space calibration with OpenVR space calibrator.",
     // "_root_headset_controllers_content_trackingSpeed.name": "",
     // "_root_headset_controllers_content_trackingSpeed.description": "",
     "_root_headset_controllers_content_poseTimeOffset.name": "Задержка отслеживания положения", // adv

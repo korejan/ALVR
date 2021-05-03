@@ -145,6 +145,8 @@ void Settings::Load()
 
 		m_useHeadsetTrackingSystem = config.get("use_headset_tracking_system").get<bool>();
 
+		m_useHeadsetTrackingSystem = config.get("use_headset_tracking_system").get<bool>();
+
 		m_enableFoveatedRendering = config.get("enable_foveated_rendering").get<bool>();
 		m_foveationCenterSizeX = (float)config.get("foveation_center_size_x").get<double>();
 		m_foveationCenterSizeY = (float)config.get("foveation_center_size_y").get<double>();
