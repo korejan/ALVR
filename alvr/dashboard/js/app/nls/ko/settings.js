@@ -128,10 +128,6 @@ define({
     "_root_headset_positionOffset_2.name": "Z", // adv
     "_root_headset_force3dof.name": "강제 3Dof(3축)",
     "_root_headset_force3dof.description": "강제 3축모드를 사용합니다.(Oculus Go와 유사)",
-    "_root_headset_trackingRefOnly.name": "Tracking Reference Only",
-    "_root_headset_trackingRefOnly.description": "Disables all video encoding/streaming and treats the HMD as an openvr tracking reference instead of the main HMD. This can be used to make ALVR's HMD/controllers as FBT trackers, as alternative controllers for other HMDs, for debugging purposes, etc.",
-    "_root_headset_enableViveTrackerProxy.name": "Vive Tracker Proxy",
-    "_root_headset_enableViveTrackerProxy.description": "Spawns a vive tracker proxy which mirrors ALVR's HMD position & orientation. This can be used for example to make ALVR's HMD a hip tracker in FBT or just a general tracked object in supporting games/apps.",
     "_root_headset_controllers.name": "컨트롤러",
     // "_root_headset_controllers.description": use "_root_headset_controllers_enabled.description"
     "_root_headset_controllers_enabled.description": "컨트롤러를 사용합니다.",
