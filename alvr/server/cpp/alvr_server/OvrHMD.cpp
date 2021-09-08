@@ -290,6 +290,7 @@ vr::EVRInitError OvrHmd::Activate(vr::TrackedDeviceIndex_t unObjectId)
 			pose.vecPosition[2] = info.HeadPose_Pose_Position.z;
 
 			// set battery percentage
+			vr::VRProperties()->SetBoolProperty(m_ulPropertyContainer, vr::Prop_DeviceIsCharging_Bool, info.plugged);
 			vr::VRProperties()->SetFloatProperty(m_ulPropertyContainer, vr::Prop_DeviceBatteryPercentage_Float, info.battery / 100.0f);
 
 			Debug("GetPose: Rotation=(%f, %f, %f, %f) Position=(%f, %f, %f)\n",
@@ -339,9 +340,9 @@ vr::EVRInitError OvrHmd::Activate(vr::TrackedDeviceIndex_t unObjectId)
 				updateController(info);
 			}
 
-			if (IsHMD() && (std::fabs(info.ipd - Settings::Instance().m_flIPD) > 0.0001f
-				|| std::fabs(info.eyeFov[0].left - Settings::Instance().m_eyeFov[0].left) > 0.1f
-				|| std::fabs(info.eyeFov[0].right - Settings::Instance().m_eyeFov[0].right) > 0.1f)) {
+			if (IsHMD() && (std::abs(info.ipd - Settings::Instance().m_flIPD) > 0.0001f
+				|| std::abs(info.eyeFov[0].left - Settings::Instance().m_eyeFov[0].left) > 0.1f
+				|| std::abs(info.eyeFov[0].right - Settings::Instance().m_eyeFov[0].right) > 0.1f)) {
 				updateIPDandFoV(info);
 			}
 
@@ -491,12 +492,17 @@ vr::EVRInitError OvrHmd::Activate(vr::TrackedDeviceIndex_t unObjectId)
 
 		for (int i = 0; i < 2; i++) {	
 
-			bool leftHand = (info.controller[i].flags & TrackingInfo::Controller::FLAG_CONTROLLER_LEFTHAND) != 0;
+			bool enabled = info.controller[i].flags & TrackingInfo::Controller::FLAG_CONTROLLER_ENABLE;
+
+			if (enabled) {
+
+				bool leftHand = (info.controller[i].flags & TrackingInfo::Controller::FLAG_CONTROLLER_LEFTHAND) != 0;
 		
-			if (leftHand) {
-				m_leftController->onPoseUpdate(i, info);
-			} else {
-				m_rightController->onPoseUpdate(i, info);
+				if (leftHand) {
+					m_leftController->onPoseUpdate(i, info);
+				} else {
+					m_rightController->onPoseUpdate(i, info);
+				}
 			}
 		}
 	}

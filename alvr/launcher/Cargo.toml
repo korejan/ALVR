@@ -1,6 +1,6 @@
 [package]
 name = "alvr_launcher"
-version = "15.2.1"
+version = "16.0.0-rc2"
 authors = ["alvr-org", "Riccardo Zaglia <riccardo.zaglia5@gmail.com>"]
 license = "MIT"
 edition = "2018"
@@ -9,17 +9,19 @@ edition = "2018"
 default = []
 
 [dependencies]
-alvr_filesystem-layout = { path = "../filesystem-layout" }
+alvr_commands = { path = "../commands" }
 alvr_common = { path = "../common" }
+alvr_filesystem = { path = "../filesystem" }
+
 druid = "0.7"
-semver = "0.11"
+semver = "1"
 serde_json = "1"
 single-instance = "0.3"
-sysinfo = "0.17"
+sysinfo = "0.20"
 ureq = "2"
 
 [target.'cfg(windows)'.dependencies]
-winreg = "0.8"
+winreg = "0.9"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 gtk = "0.9"

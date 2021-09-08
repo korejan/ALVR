@@ -1,23 +1,30 @@
 [package]
 name = "alvr_server"
-version = "15.2.1"
+version = "16.0.0-rc2"
 authors = ["alvr-org", "polygraphene", "Valve Corporation"]
-license = "MIT AND BSD-3-Clause"
+license = "MIT"
 edition = "2018"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [features]
 default = []
 bundled_ffmpeg = []
 
 [dependencies]
-alvr_filesystem-layout = { path = "../filesystem-layout" }
+alvr_audio = { path = "../audio" }
+alvr_commands = { path = "../commands" }
+alvr_common = { path = "../common" }
+alvr_filesystem = { path = "../filesystem" }
+alvr_session = { path = "../session" }
+alvr_sockets = { path = "../sockets" }
+
 # Basic utilities
 chrono = "0.4"
 lazy_static = "1"
 parking_lot = "0.11"
+semver = "1"
 # Logging
 fern = "0.6"
 log = "0.4"
@@ -25,7 +32,9 @@ log = "0.4"
 bincode = "1"
 serde = "1"
 serde_json = "1"
-settings-schema = { path = "../settings-schema", features = ["rename_camel_case"] }
+settings-schema = { path = "../settings-schema", features = [
+    "rename_camel_case",
+] }
 # Async
 futures = "0.3"
 tokio = { version = "1", features = [
@@ -39,21 +48,30 @@ tokio = { version = "1", features = [
 # Networking
 bytes = "1"
 headers = "0.3"
-hyper = { version = "0.14", features = ["http2", "server", "stream", "runtime", "tcp"] }
+hyper = { version = "0.14", features = [
+    "http2",
+    "server",
+    "stream",
+    "runtime",
+    "tcp",
+] }
 reqwest = "0.11"
-tokio-tungstenite = "0.14"
+tokio-tungstenite = "0.15"
 tokio-util = { version = "0.6", features = ["codec"] }
+# Graphics
+wgpu = { git = "https://github.com/gfx-rs/wgpu" }
+winit = "0.25" # needed to get the screen size
 # Browser interop
 alcro = "0.5"
 webbrowser = "0.5" # this is just for opening links in the default browser
 # Miscellaneous
-alvr_common = { path = "../common" }
-nalgebra = "0.26"
+nalgebra = "0.29"
 openvr-driver-sys = { path = "../openvr-driver-sys" }
 
 [build-dependencies]
-bindgen = "0.58"
+bindgen = "0.59"
 cc = { version = "1", features = ["parallel"] }
 walkdir = "2"
+
 [target.'cfg(unix)'.build-dependencies]
 pkg-config = "0.3.9"

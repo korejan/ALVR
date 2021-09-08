@@ -1,53 +1,38 @@
-pub mod data;
-pub mod logging;
+mod data;
+mod logging;
 
-#[cfg(not(target_arch = "wasm32"))]
-pub mod audio;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod sockets;
+pub use data::*;
+pub use logging::*;
 
-#[cfg(any(windows, target_os = "linux"))]
-pub mod commands;
-// #[cfg(any(windows, target_os = "linux"))]
-// pub mod ffmpeg;
-#[cfg(any(windows, target_os = "linux"))]
-pub mod graphics;
+use lazy_static::lazy_static;
+use semver::{BuildMetadata, Prerelease, Version};
+
+pub type StrResult<T = ()> = Result<T, String>;
+
+pub const ALVR_NAME: &str = "ALVR";
 
 pub mod prelude {
     pub use crate::{
-        fmt_e,
-        logging::{log_event, Event, StrResult},
-        trace_err, trace_err_dbg, trace_none, trace_str,
+        fmt_e, logging::*, trace_err, trace_err_dbg, trace_none, trace_str, StrResult,
     };
     pub use log::{debug, error, info, warn};
 }
 
-////////////////////////////////////////////////////////
+lazy_static! {
+    pub static ref ALVR_VERSION: Version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
+}
 
-#[cfg(not(target_arch = "wasm32"))]
-mod util {
-    use crate::prelude::*;
-    use std::future::Future;
-    use tokio::{sync::oneshot, task};
-
-    // Tokio tasks are not cancelable. This function awaits a cancelable task.
-    pub async fn spawn_cancelable(
-        future: impl Future<Output = StrResult> + Send + 'static,
-    ) -> StrResult {
-        // this channel is actually never used. cancel_receiver will be notified when _cancel_sender
-        // is dropped
-        let (_cancel_sender, cancel_receiver) = oneshot::channel::<()>();
-
-        trace_err!(
-            task::spawn(async {
-                tokio::select! {
-                    res = future => res,
-                    _ = cancel_receiver => Ok(()),
-                }
-            })
-            .await
-        )?
+// accept semver-compatible versions
+// Note: by not having to set the requirement manually, the major version is constrained to be
+// bumped when the packet layouts or some critical behaviour has changed.
+pub fn is_version_compatible(other_version: &Version) -> bool {
+    if other_version.pre != Prerelease::EMPTY
+        || other_version.build != BuildMetadata::EMPTY
+        || ALVR_VERSION.pre != Prerelease::EMPTY
+        || ALVR_VERSION.build != BuildMetadata::EMPTY
+    {
+        *other_version == *ALVR_VERSION
+    } else {
+        other_version.major == ALVR_VERSION.major
     }
 }
-#[cfg(not(target_arch = "wasm32"))]
-pub use util::*;

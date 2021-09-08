@@ -1,9 +1,6 @@
-use alvr_common::{
-    audio,
-    data::AudioConfig,
-    prelude::*,
-    sockets::{StreamReceiver, StreamSender, AUDIO},
-};
+use alvr_common::prelude::*;
+use alvr_session::AudioConfig;
+use alvr_sockets::{StreamReceiver, StreamSender, AUDIO};
 use oboe::{
     AudioInputCallback, AudioInputStreamSafe, AudioOutputCallback, AudioOutputStreamSafe,
     AudioStream, AudioStreamBuilder, DataCallbackResult, InputPreset, Mono, PerformanceMode,
@@ -94,7 +91,7 @@ impl AudioOutputCallback for PlayerCallback {
         _: &mut dyn AudioOutputStreamSafe,
         out_frames: &mut [(f32, f32)],
     ) -> DataCallbackResult {
-        let samples = audio::get_next_frame_batch(
+        let samples = alvr_audio::get_next_frame_batch(
             &mut *self.sample_buffer.lock(),
             2,
             self.batch_frames_count,
@@ -150,7 +147,7 @@ pub async fn play_audio_loop(
         }
     });
 
-    audio::receive_samples_loop(
+    alvr_audio::receive_samples_loop(
         receiver,
         sample_buffer,
         2,

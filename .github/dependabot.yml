@@ -8,4 +8,7 @@ updates:
   - package-ecosystem: "cargo" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
-      interval: "daily"
+      interval: "monthly"
+    ignore:
+      - dependency-name: "*"
+        update-types: [ "version-update:semver-minor","version-update:semver-patch" ]

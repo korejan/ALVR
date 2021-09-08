@@ -18,11 +18,18 @@ LatencyCollector::FrameTimestamp &LatencyCollector::getFrame(uint64_t frameIndex
     return frame;
 }
 
+void LatencyCollector::setTotalLatency(uint32_t latency) {
+    if (latency < 5e5)
+        m_ServerTotalLatency = latency * 0.05 + m_ServerTotalLatency * 0.95;
+}
 void LatencyCollector::tracking(uint64_t frameIndex) {
     getFrame(frameIndex).tracking = getTimestampUs();
 }
 void LatencyCollector::estimatedSent(uint64_t frameIndex, uint64_t offset) {
     getFrame(frameIndex).estimatedSent = getTimestampUs() + offset;
+}
+void LatencyCollector::received(uint64_t frameIndex, uint64_t timestamp) {
+    getFrame(frameIndex).received = timestamp;
 }
 void LatencyCollector::receivedFirst(uint64_t frameIndex) {
     getFrame(frameIndex).receivedFirst = getTimestampUs();
@@ -47,34 +54,24 @@ void LatencyCollector::submit(uint64_t frameIndex) {
     FrameTimestamp timestamp = getFrame(frameIndex);
     timestamp.submit = getTimestampUs();
 
-    uint64_t latency[3];
-    latency[0] = timestamp.submit - timestamp.tracking;
-    latency[1] = timestamp.receivedLast - timestamp.estimatedSent;
-    latency[2] = timestamp.decoderOutput - timestamp.decoderInput;
-
-    updateLatency(latency);
+    m_Latency[0] = timestamp.submit - timestamp.tracking;
+    m_Latency[1] = timestamp.receivedLast - timestamp.estimatedSent;
+    m_Latency[2] = timestamp.decoderOutput - timestamp.decoderInput;
+    if (timestamp.received) {
+        m_Latency[3] = timestamp.received - timestamp.tracking;
+    } else {
+        m_Latency[3] = m_Latency[1];
+    }
 
     submitNewFrame();
 
+    m_FramesInSecond = 1000000.0 / (timestamp.submit - m_LastSubmit);
+    m_LastSubmit = timestamp.submit;
+
     FrameLog(frameIndex, "totalLatency=%.1f transportLatency=%.1f decodeLatency=%.1f renderLatency1=%.1f renderLatency2=%.1f"
-            , latency[0] / 1000.0, latency[1] / 1000.0, latency[2] / 1000.0
+            , m_Latency[0] / 1000.0, m_Latency[1] / 1000.0, m_Latency[2] / 1000.0
             , (timestamp.rendered2 - timestamp.decoderOutput) / 1000.0
             , (timestamp.submit - timestamp.rendered2) / 1000.0);
-}
-
-void LatencyCollector::updateLatency(uint64_t *latency) {
-    checkAndResetSecond();
-
-    for(int i = 0; i < 3; i++) {
-        // Total
-        m_Latency[i][0] += latency[i];
-        // Max
-        m_Latency[i][1] = std::max(m_Latency[i][1], latency[i]);
-        // Min
-        m_Latency[i][2] = std::min(m_Latency[i][2], latency[i]);
-        // Count
-        m_Latency[i][3]++;
-    }
 }
 
 void LatencyCollector::resetAll() {
@@ -86,31 +83,21 @@ void LatencyCollector::resetAll() {
     m_FecFailureInSecond = 0;
     m_FecFailurePrevious = 0;
 
-    m_framesInSecond = 0;
-    m_framesPrevious = 0;
+    m_FramesInSecond = 0;
 
     m_StatisticsTime = getTimestampUs() / USECS_IN_SEC;
 
-    for(int i = 0; i < 3; i++) {
-        for(int j = 0; j < 4; j++) {
-            m_Latency[i][j] = 0;
-            m_PreviousLatency[i][j] = 0;
-        }
+    for(int i = 0; i < 4; i++) {
+        m_Latency[i] = 0;
     }
 }
 
 void LatencyCollector::resetSecond(){
-    memcpy(m_PreviousLatency, m_Latency, sizeof(m_Latency));
-    memset(m_Latency, 0, sizeof(m_Latency));
-
     m_PacketsLostPrevious = m_PacketsLostInSecond;
     m_PacketsLostInSecond = 0;
 
     m_FecFailurePrevious = m_FecFailureInSecond;
     m_FecFailureInSecond = 0;
-
-    m_framesPrevious = m_framesInSecond;
-    m_framesInSecond = 0;
 }
 
 void LatencyCollector::checkAndResetSecond() {
@@ -137,19 +124,17 @@ void LatencyCollector::fecFailure() {
 
 void LatencyCollector::submitNewFrame() {
     checkAndResetSecond();
-
-    m_framesInSecond++;
 }
 
-uint64_t LatencyCollector::getLatency(uint32_t i, uint32_t j) {
-    if(j == 1 || j == 2) {
-        // Min/Max
-        return m_PreviousLatency[i][j];
-    }
-    if(m_PreviousLatency[i][3] == 0) {
-        return 0;
-    }
-    return m_PreviousLatency[i][0] / m_PreviousLatency[i][3];
+uint64_t LatencyCollector::getTrackingPredictionLatency() {
+    if (m_ServerTotalLatency > 5e5)
+        return 5e5;
+    else
+        return m_ServerTotalLatency;
+}
+
+uint64_t LatencyCollector::getLatency(uint32_t i) {
+    return m_Latency[i];
 }
 uint64_t LatencyCollector::getPacketsLostTotal() {
     return m_PacketsLostTotal;
@@ -163,8 +148,8 @@ uint64_t LatencyCollector::getFecFailureTotal() {
 uint64_t LatencyCollector::getFecFailureInSecond() {
     return m_FecFailurePrevious;
 }
-uint32_t LatencyCollector::getFramesInSecond() {
-    return m_framesPrevious;
+float LatencyCollector::getFramesInSecond() {
+    return m_FramesInSecond;
 }
 
 LatencyCollector &LatencyCollector::Instance() {
