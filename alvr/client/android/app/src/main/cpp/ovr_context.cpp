@@ -77,6 +77,7 @@ public:
 
     // headset battery level
     int batteryLevel;
+    int batteryPlugged;
 
     struct HapticsState {
         uint64_t startUs;
@@ -527,7 +528,8 @@ void sendTrackingInfo(bool clientsidePrediction) {
     frame->frameIndex = g_ctx.FrameIndex;
     frame->fetchTime = getTimestampUs();
 
-    frame->displayTime = vrapi_GetPredictedDisplayTime(g_ctx.Ovr, g_ctx.FrameIndex);
+    // vrapi_GetTimeInSeconds doesn't match getTimestampUs
+    frame->displayTime = vrapi_GetTimeInSeconds() + LatencyCollector::Instance().getTrackingPredictionLatency() * 1e-6;
     frame->tracking = vrapi_GetPredictedTracking2(g_ctx.Ovr, frame->displayTime);
 
     {
@@ -551,6 +553,7 @@ void sendTrackingInfo(bool clientsidePrediction) {
     info.eyeFov[0] = fovPair.first;
     info.eyeFov[1] = fovPair.second;
     info.battery = g_ctx.batteryLevel;
+    info.plugged = g_ctx.batteryPlugged;
 
     memcpy(&info.HeadPose_Pose_Orientation, &frame->tracking.HeadPose.Pose.Orientation,
            sizeof(ovrQuatf));
@@ -859,6 +862,8 @@ void renderNative(long long renderedFrameIndex) {
     vrapi_SubmitFrame2(g_ctx.Ovr, &frameDesc);
 
     LatencyCollector::Instance().submit(renderedFrameIndex);
+    // TimeSync here might be an issue but it seems to work fine
+    sendTimeSync();
 
     FrameLog(renderedFrameIndex, "vrapi_SubmitFrame2 Orientation=(%f, %f, %f, %f)",
              frame->tracking.HeadPose.Pose.Orientation.x,
@@ -917,8 +922,9 @@ void onHapticsFeedbackNative(long long startTime, float amplitude, float duratio
     s.buffered = false;
 }
 
-void onBatteryChangedNative(int battery) {
+void onBatteryChangedNative(int battery, int plugged) {
     g_ctx.batteryLevel = battery;
+	g_ctx.batteryPlugged = plugged;
 }
 
 GuardianData getGuardianData() {

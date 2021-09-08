@@ -1,0 +1,20 @@
+[package]
+name = "server_compositor"
+version = "0.1.0"
+authors = ["alvr-org"]
+license = "MIT"
+edition = "2018"
+
+[dependencies]
+alvr_common = { path = "../../common" }
+alvr_session = { path = "../../session" }
+graphics = { path = "../graphics" }
+
+ash = "0.33"
+bytemuck = "1"
+env_logger = "0.9"
+openxr-sys = "0.9"
+pollster = "0.2"
+winit = "0.25"
+wgpu = { git = "https://github.com/gfx-rs/wgpu" }
+wgpu-hal = { git = "https://github.com/gfx-rs/wgpu", features = ["vulkan"] }

@@ -2,24 +2,17 @@ use crate::{
     connection_utils, openvr, ClientListAction, CLIENTS_UPDATED_NOTIFIER, MAYBE_LEGACY_SENDER,
     RESTART_NOTIFIER, SESSION_MANAGER,
 };
-use alvr_common::{
-    audio::AudioDevice,
-    audio::{self, AudioDeviceType},
-    data::{
-        AudioDeviceId, ClientConfigPacket, ClientControlPacket, CodecType, FrameSize,
-        HeadsetInfoPacket, OpenvrConfig, PlayspaceSyncPacket, ServerControlPacket, Version,
-        ALVR_VERSION,
-    },
-    logging,
-    prelude::*,
-    sockets::{
-        ControlSocketReceiver, ControlSocketSender, PeerType, ProtoControlSocket,
-        StreamSocketBuilder, LEGACY,
-    },
-    spawn_cancelable,
+use alvr_audio::{AudioDevice, AudioDeviceType};
+use alvr_common::prelude::*;
+use alvr_session::{AudioDeviceId, CodecType, FrameSize, OpenvrConfig};
+use alvr_sockets::{
+    spawn_cancelable, ClientConfigPacket, ClientControlPacket, ControlSocketReceiver,
+    ControlSocketSender, HeadsetInfoPacket, PeerType, PlayspaceSyncPacket, ProtoControlSocket,
+    ServerControlPacket, StreamSocketBuilder, LEGACY,
 };
 use futures::future::{BoxFuture, Either};
 use nalgebra::Translation3;
+use semver::Version;
 use settings_schema::Switch;
 use std::{
     future,
@@ -177,12 +170,12 @@ async fn client_handshake(
                 microphone_desc.input_device_id,
                 AudioDeviceType::VirtualMicrophoneInput,
             )?;
-            if audio::is_same_device(&game_audio_device, &microphone_device) {
+            if alvr_audio::is_same_device(&game_audio_device, &microphone_device) {
                 return fmt_e!("Game audio and microphone cannot point to the same device!");
             }
         }
 
-        trace_err!(audio::get_sample_rate(&game_audio_device))?
+        trace_err!(alvr_audio::get_sample_rate(&game_audio_device))?
     } else {
         0
     };
@@ -196,7 +189,8 @@ async fn client_handshake(
         eye_resolution_height: video_eye_height,
         fps,
         game_audio_sample_rate,
-        reserved: format!("{}", *ALVR_VERSION),
+        reserved: "".into(),
+        server_version: version.clone(),
     };
     proto_socket.send(&client_config).await?;
 
@@ -238,6 +232,35 @@ async fn client_handshake(
         refresh_rate: fps as _,
         use_10bit_encoder: settings.video.use_10bit_encoder,
         encode_bitrate_mbs: settings.video.encode_bitrate_mbs,
+        enable_adaptive_bitrate: session_settings.video.adaptive_bitrate.enabled,
+        bitrate_maximum: session_settings
+            .video
+            .adaptive_bitrate
+            .content
+            .bitrate_maximum,
+        latency_target: session_settings
+            .video
+            .adaptive_bitrate
+            .content
+            .latency_target,
+        latency_use_frametime: session_settings
+            .video
+            .adaptive_bitrate
+            .content
+            .latency_use_frametime
+            .enabled,
+        latency_target_maximum: session_settings
+            .video
+            .adaptive_bitrate
+            .content
+            .latency_use_frametime
+            .content
+            .latency_target_maximum,
+        latency_threshold: session_settings
+            .video
+            .adaptive_bitrate
+            .content
+            .latency_threshold,
         controllers_tracking_system_name: session_settings
             .headset
             .controllers
@@ -458,18 +481,13 @@ async fn connection_pipeline() -> StrResult {
         .send(&ServerControlPacket::StartStream)
         .await?;
 
-    if version
-        .map(|v| v >= Version::from((15, 1, 0)))
-        .unwrap_or(false)
-    {
-        match control_receiver.recv().await {
-            Ok(ClientControlPacket::Reserved(data)) if data == "StreamReady" => {}
-            Ok(_) => {
-                return fmt_e!("Got unexpected packet waiting for stream ack");
-            }
-            Err(e) => {
-                return fmt_e!("Error while waiting for stream ack: {}", e);
-            }
+    match control_receiver.recv().await {
+        Ok(ClientControlPacket::StreamReady) => {}
+        Ok(_) => {
+            return fmt_e!("Got unexpected packet waiting for stream ack");
+        }
+        Err(e) => {
+            return fmt_e!("Error while waiting for stream ack: {}", e);
         }
     }
 
@@ -508,21 +526,22 @@ async fn connection_pipeline() -> StrResult {
 
     let game_audio_loop: BoxFuture<_> = if let Switch::Enabled(desc) = settings.audio.game_audio {
         let device = AudioDevice::new(desc.device_id, AudioDeviceType::Output)?;
-        let sample_rate = audio::get_sample_rate(&device)?;
+        let sample_rate = alvr_audio::get_sample_rate(&device)?;
         let sender = stream_socket.request_stream().await?;
         let mute_when_streaming = desc.mute_when_streaming;
 
         Box::pin(async move {
             #[cfg(windows)]
-            openvr::set_game_output_audio_device_id(audio::get_windows_device_id(&device)?);
+            openvr::set_game_output_audio_device_id(alvr_audio::get_windows_device_id(&device)?);
 
-            audio::record_audio_loop(device, 2, sample_rate, mute_when_streaming, sender).await?;
+            alvr_audio::record_audio_loop(device, 2, sample_rate, mute_when_streaming, sender)
+                .await?;
 
             #[cfg(windows)]
             {
                 let default_device =
                     AudioDevice::new(AudioDeviceId::Default, AudioDeviceType::Output)?;
-                let default_device_id = audio::get_windows_device_id(&default_device)?;
+                let default_device_id = alvr_audio::get_windows_device_id(&default_device)?;
                 openvr::set_game_output_audio_device_id(default_device_id);
             }
 
@@ -547,11 +566,11 @@ async fn connection_pipeline() -> StrResult {
                     matching_input_device_name: input_device.name()?,
                 },
             )?;
-            let microphone_device_id = audio::get_windows_device_id(&microphone_device)?;
+            let microphone_device_id = alvr_audio::get_windows_device_id(&microphone_device)?;
             openvr::set_headset_microphone_audio_device_id(microphone_device_id);
         }
 
-        Box::pin(audio::play_audio_loop(
+        Box::pin(alvr_audio::play_audio_loop(
             input_device,
             1,
             desc.sample_rate,
@@ -695,7 +714,7 @@ pub async fn connection_lifecycle_loop() {
     loop {
         tokio::join!(
             async {
-                logging::show_err(connection_pipeline().await);
+                alvr_common::show_err(connection_pipeline().await);
 
                 // let any running task or socket shutdown
                 time::sleep(CLEANUP_PAUSE).await;

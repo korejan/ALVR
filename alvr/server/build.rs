@@ -7,7 +7,7 @@ use std::{env, path::PathBuf};
 // but AFTER the build in other cases because linker flags must appear after.
 #[cfg(target_os = "linux")]
 fn do_ffmpeg_pkg_config(build: &mut cc::Build) {
-    let ffmpeg_path = env::var("CARGO_MANIFEST_DIR").unwrap() + "/../../deps/ubuntu/FFmpeg-n4.4/";
+    let ffmpeg_path = env::var("CARGO_MANIFEST_DIR").unwrap() + "/../../deps/linux/FFmpeg-n4.4/";
 
     #[cfg(feature = "bundled_ffmpeg")]
     {
@@ -59,6 +59,8 @@ fn main() {
     let platform = "cpp/platform/win32";
     #[cfg(target_os = "linux")]
     let platform = "cpp/platform/linux";
+    #[cfg(target_os = "macos")]
+    let platform = "cpp/platform/macos";
 
     let common_iter = walkdir::WalkDir::new("cpp")
         .into_iter()

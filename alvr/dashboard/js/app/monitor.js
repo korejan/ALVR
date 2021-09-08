@@ -8,8 +8,9 @@ define([
     "i18n!app/nls/notifications",
     "css!app/templates/monitor.css",
     // eslint-disable-next-line requirejs/no-js-extension
-    "js/lib/epoch.js",
-    "css!js/lib/epoch.css",
+    "js/lib/uPlot.iife.min.js",
+    "css!js/lib/uPlot.min.css",
+    "js/app/util.js",
 ], function (
     addClientModalTemplate,
     configureClientModalTemplate,
@@ -17,7 +18,7 @@ define([
     session,
     _,
     i18n,
-    i18nNotifications,
+    i18nNotifications
 ) {
     return function (alvrSettings) {
         let notificationLevels = [];
@@ -104,12 +105,7 @@ define([
                     notificationLevels = ["[ERROR]", "[WARN]", "[INFO]"];
                     break;
                 case "debug":
-                    notificationLevels = [
-                        "[ERROR]",
-                        "[WARN]",
-                        "[INFO]",
-                        "[DEBUG]",
-                    ];
+                    notificationLevels = ["[ERROR]", "[WARN]", "[INFO]", "[DEBUG]"];
                     break;
                 default:
                     notificationLevels = [];
@@ -159,11 +155,7 @@ define([
                             type: "POST",
                             url: "api/client/add",
                             contentType: "application/json;charset=UTF-8",
-                            data: JSON.stringify([
-                                deviceName,
-                                clientHostname,
-                                ip,
-                            ]),
+                            data: JSON.stringify([deviceName, clientHostname, ip]),
                         });
 
                         $("#addClientModal").modal("hide");
@@ -196,11 +188,7 @@ define([
                     $("#addNewIpAddressButton").click(() => {
                         const ip = $("#newIpAddress").val();
 
-                        if (
-                            session.clientConnections[
-                                _hostmane
-                            ].manualIps.includes(ip)
-                        ) {
+                        if (session.clientConnections[_hostmane].manualIps.includes(ip)) {
                             Lobibox.notify("error", {
                                 size: "mini",
                                 rounded: true,
@@ -329,7 +317,7 @@ define([
         function validateIPv4address(ipaddress) {
             if (
                 /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
-                    ipaddress,
+                    ipaddress
                 )
             ) {
                 return true;
@@ -352,9 +340,7 @@ define([
             const split = line.split(" ");
             line = line.replace(split[0] + " " + split[1], "");
 
-            const skipWithoutId = $(
-                "#_root_extra_excludeNotificationsWithoutId",
-            ).prop("checked");
+            const skipWithoutId = $("#_root_extra_excludeNotificationsWithoutId").prop("checked");
 
             if (idObject !== undefined) {
                 idObject = JSON.parse(idObject);
@@ -362,26 +348,20 @@ define([
             }
 
             if (notificationLevels.includes(split[1].trim())) {
-                if (
-                    !(skipWithoutId && idObject === undefined) &&
-                    Lobibox.notify.list.length < 2
-                ) {
+                if (!(skipWithoutId && idObject === undefined) && Lobibox.notify.list.length < 2) {
                     Lobibox.notify(getNotificationType(split[1]), {
                         size: "mini",
                         rounded: true,
                         delayIndicator: false,
                         sound: false,
                         position: "bottom left",
-                        title: getI18nNotification(idObject, line, split[1])
-                            .title,
+                        title: getI18nNotification(idObject, line, split[1]).title,
                         msg: getI18nNotification(idObject, line, split[1]).msg,
                     });
                 }
             }
 
-            const row = `<tr><td>${split[0]}</td><td>${
-                split[1]
-            }</td><td>${line.trim()}</td></tr>`;
+            const row = `<tr><td>${split[0]}</td><td>${split[1]}</td><td>${line.trim()}</td></tr>`;
             $("#loggingTable").append(row);
             if ($("#loggingTable").children().length > 500) {
                 $("#loggingTable tr").first().remove();
@@ -400,10 +380,7 @@ define([
                         msg: i18nNotifications[idObject.id + ".msg"],
                     };
                 } else {
-                    console.log(
-                        "Notification with additional info: ",
-                        idObject.id,
-                    );
+                    console.log("Notification with additional info: ", idObject.id);
                     return { title: level, msg: idObject.id + ": " + line };
                 }
             }
@@ -437,70 +414,322 @@ define([
             }
         }
 
-        function initPerformanceGraphs() {
-            const now = parseInt(new Date().getTime() / 1000);
-            latencyGraph = $("#latencyGraphArea").epoch({
-                type: "time.area",
-                axes: ["left", "bottom"],
-                data: [
-                    {
-                        label: "Encode",
-                        values: [{ time: now, y: 0 }],
-                    },
-                    {
-                        label: "Decode",
-                        values: [{ time: now, y: 0 }],
-                    },
-                    {
-                        label: "Transport",
-                        values: [{ time: now, y: 0 }],
-                    },
-                    {
-                        label: "Other",
-                        values: [{ time: now, y: 0 }],
-                    },
-                ],
-            });
+        function legendAsTooltipPlugin({
+            className,
+            style = {
+                backgroundColor: "rgba(255, 249, 196, 0.92)",
+                color: "black",
+                fontFamily:
+                    'Lato,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"',
+                fontSize: "80%",
+                lineHeight: "1",
+            },
+        } = {}) {
+            let legendEl;
 
-            framerateGraph = $("#framerateGraphArea").epoch({
-                type: "time.line",
-                axes: ["left", "bottom"],
-                data: [
-                    {
-                        label: "Server FPS",
-                        values: [{ time: now, y: 0 }],
-                    },
-                    {
-                        label: "Client FPS",
-                        values: [{ time: now, y: 0 }],
+            function init(u, opts) {
+                legendEl = u.root.querySelector(".u-legend");
+
+                legendEl.classList.remove("u-inline");
+                className && legendEl.classList.add(className);
+
+                uPlot.assign(legendEl.style, {
+                    textAlign: "left",
+                    pointerEvents: "none",
+                    display: "none",
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    zIndex: 100,
+                    boxShadow: "2px 2px 10px rgba(0,0,0,0.5)",
+                    ...style,
+                });
+
+                const labels = legendEl.querySelectorAll(".u-label");
+
+                for (let i = 0; i < labels.length; i++) labels[i].style.fontWeight = "700";
+
+                const values = legendEl.querySelectorAll(".u-value");
+
+                for (let i = 0; i < values.length; i++) values[i].style.fontWeight = "700";
+
+                // hide series color markers
+                //const idents = legendEl.querySelectorAll(".u-marker");
+
+                //for (let i = 0; i < idents.length; i++)
+                //idents[i].style.display = "none";
+
+                const overEl = u.over;
+                overEl.style.overflow = "visible";
+
+                // move legend into plot bounds
+                overEl.appendChild(legendEl);
+
+                // show/hide tooltip on enter/exit
+                overEl.addEventListener("mouseenter", () => {
+                    legendEl.style.display = null;
+                });
+                overEl.addEventListener("mouseleave", () => {
+                    legendEl.style.display = "none";
+                });
+
+                // let tooltip exit plot
+                //    overEl.style.overflow = "visible";
+            }
+
+            function update(u) {
+                const { left, top } = u.cursor;
+                legendEl.style.transform = "translate(" + left + "px, " + top + "px)";
+            }
+
+            return {
+                hooks: {
+                    init: init,
+                    setCursor: update,
+                },
+            };
+        }
+
+        function stack(data, omit) {
+            let data2 = [];
+            let bands = [];
+            let d0Len = data[0].length;
+            let accum = Array(d0Len);
+
+            for (let i = 0; i < d0Len; i++) accum[i] = 0;
+
+            for (let i = 1; i < data.length; i++)
+                data2.push(omit(i) ? data[i] : data[i].map((v, i) => (accum[i] += +v)));
+
+            for (let i = 1; i < data.length; i++)
+                !omit(i) &&
+                    bands.push({
+                        series: [data.findIndex((s, j) => j > i && !omit(j)), i],
+                    });
+
+            bands = bands.filter((b) => b.series[1] > -1);
+
+            return {
+                data: [data[0]].concat(data2),
+                bands,
+            };
+        }
+
+        function getStackedOpts(opts, data) {
+            let stacked = stack(data, (i) => false);
+
+            opts.bands = stacked.bands;
+
+            // restack on toggle
+            opts.hooks = {
+                setSeries: [
+                    (u, i) => {
+                        let stacked = stack(data, (i) => !u.series[i].show);
+                        u.delBand(null);
+                        stacked.bands.forEach((b) => u.addBand(b));
+                        u.setData(stacked.data);
                     },
                 ],
-            });
+            };
+
+            return opts;
+        }
+
+        function getSharedOpts(opts) {
+            opts.cursor = {
+                drag: {
+                    dist: 10,
+                    uni: 20,
+                },
+                sync: {
+                    key: "graph",
+                    scales: ["x"],
+                },
+            };
+            (opts.pxAlign = 0),
+                (opts.ms = 1),
+                (opts.pxSnap = false),
+                (opts.plugins = [legendAsTooltipPlugin()]);
+            opts.axes = [
+                {
+                    size: 20,
+                    space: 40,
+                    values: [
+                        [1000, ":{ss}", null, null, null, null, null, null, 1],
+                        [1, ":{ss}.{fff}", null, null, null, null, null, null, 1],
+                    ],
+                    grid: {
+                        width: 1,
+                    },
+                    ticks: {
+                        size: 0,
+                    },
+                },
+                {
+                    size: 30,
+                    space: 20,
+                    grid: {
+                        width: 1,
+                    },
+                    ticks: {
+                        size: 0,
+                    },
+                },
+            ];
+            return opts;
+        }
+
+        function getSeries(label, stroke, fill, data, postfix) {
+            return {
+                label: label,
+                stroke: stroke,
+                fill: fill,
+                value: (u, v, si, i) => (data[si][i] || 0).toFixed(3) + postfix,
+                spanGaps: false,
+            };
+        }
+
+        function getThemedOpts(opts) {
+            opts.axes[0].stroke = "#ffffff";
+            opts.axes[0].grid.stroke = "#444444";
+            opts.axes[0].ticks.stroke = "#444444";
+            opts.axes[1].stroke = "#ffffff";
+            opts.axes[1].grid.stroke = "#444444";
+            opts.axes[1].ticks.stroke = "#444444";
+            return opts;
+        }
+
+        let themeColor = $("input[name='theme']:checked").val();
+
+        if (themeColor == "systemDefault") {
+            if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+                themeColor = "darkly";
+            } else {
+                themeColor = "classic";
+            }
+        }
+
+        const now = parseInt(new Date().getTime());
+
+        const length = 1200;
+        const duration = 10000;
+
+        let latencyGraphData = [
+            Array(length).fill(now),
+            ...Array(7)
+                .fill(null)
+                .map((x) => Array(length).fill(null)),
+        ];
+
+        latencyGraphData[0].shift();
+        latencyGraphData[0].unshift(now - duration);
+
+        const graphColors = ["#7f7f7f", "#d62728", "#ff7f0e", "#1f77b4"];
+
+        let latencyGraphOptions = {
+            width: 560,
+            height: 160,
+            series: [
+                {
+                    label: "Total Latency",
+                    value: (u, v, si, i) =>
+                        (latencyGraphData[latencyGraphData.length - 1][i] || 0).toFixed(3) + " ms",
+                },
+                getSeries("Receive", graphColors[0], graphColors[0], latencyGraphData, " ms"),
+                getSeries("Render", graphColors[1], graphColors[1], latencyGraphData, " ms"),
+                getSeries("Idle", graphColors[2], graphColors[2], latencyGraphData, " ms"),
+                getSeries("Encode", graphColors[3], graphColors[3], latencyGraphData, " ms"),
+                getSeries("Send", graphColors[0], graphColors[0], latencyGraphData, " ms"),
+                getSeries("Decode", graphColors[3], graphColors[3], latencyGraphData, " ms"),
+            ],
+        };
+
+        latencyGraphOptions = getSharedOpts(latencyGraphOptions);
+        if (themeColor == "darkly") {
+            latencyGraphOptions = getThemedOpts(latencyGraphOptions);
+        }
+        latencyGraphOptions = getStackedOpts(latencyGraphOptions, latencyGraphData);
+
+        let framerateGraphData = [
+            Array(length).fill(now),
+            Array(length).fill(null),
+            Array(length).fill(null),
+        ];
+
+        framerateGraphData[0].shift();
+        framerateGraphData[0].unshift(now - duration);
+
+        let framerateGraphOptions = {
+            width: 560,
+            height: 100,
+            series: [
+                {
+                    label: "---",
+                    value: "",
+                    show: false,
+                },
+                getSeries("Server", graphColors[3], null, framerateGraphData, " FPS"),
+                getSeries("Client", graphColors[2], null, framerateGraphData, " FPS"),
+            ],
+        };
+
+        framerateGraphOptions = getSharedOpts(framerateGraphOptions);
+        if (themeColor == "darkly") {
+            framerateGraphOptions = getThemedOpts(framerateGraphOptions);
+        }
+
+        function initPerformanceGraphs() {
+            latencyGraph = new uPlot(
+                latencyGraphOptions,
+                latencyGraphData,
+                document.getElementById("latencyGraphArea")
+            );
+            framerateGraph = new uPlot(
+                framerateGraphOptions,
+                framerateGraphData,
+                document.getElementById("framerateGraphArea")
+            );
         }
 
         function updatePerformanceGraphs(statistics) {
-            $("#divPerformanceGraphsContent").show();
-            $("#divPerformanceGraphsEmptyMsg").hide();
+            const now = parseInt(new Date().getTime());
 
-            const now = parseInt(new Date().getTime() / 1000);
-            const otherLatency =
-                statistics["totalLatency"] -
-                statistics["encodeLatency"] -
-                statistics["decodeLatency"] -
-                statistics["transportLatency"];
+            for (let i = 0; i < latencyGraphData.length; i++) {
+                latencyGraphData[i].shift();
+            }
 
-            latencyGraph.push([
-                { time: now, y: statistics["encodeLatency"] },
-                { time: now, y: statistics["decodeLatency"] },
-                { time: now, y: statistics["transportLatency"] },
-                { time: now, y: otherLatency },
-            ]);
+            latencyGraphData[0].push(statistics["time"]);
+            if (statistics["totalLatency"] < Infinity) {
+                latencyGraphData[1].push(statistics["receiveLatency"]);
+                latencyGraphData[2].push(statistics["renderTime"]);
+                latencyGraphData[3].push(statistics["idleTime"] + statistics["waitTime"]);
+                latencyGraphData[4].push(statistics["encodeLatency"]);
+                latencyGraphData[5].push(statistics["sendLatency"]);
+                latencyGraphData[6].push(statistics["decodeLatency"]);
+                latencyGraphData[7].push(statistics["totalLatency"]);
+            } else {
+                for (let i = 1; i < latencyGraphData.length; i++) {
+                    latencyGraphData[i].push(null);
+                }
+            }
 
-            framerateGraph.push([
-                { time: now, y: statistics["serverFPS"] },
-                { time: now, y: statistics["clientFPS"] },
-            ]);
+            latencyGraphData[0].shift();
+            latencyGraphData[0].unshift(statistics["time"] - duration);
+
+            for (let i = 0; i < framerateGraphData.length; i++) {
+                framerateGraphData[i].shift();
+            }
+
+            framerateGraphData[0].push(statistics["time"]);
+            framerateGraphData[1].push(statistics["serverFPS"]);
+            framerateGraphData[2].push(statistics["clientFPS"]);
+
+            framerateGraphData[0].shift();
+            framerateGraphData[0].unshift(statistics["time"] - duration);
         }
+
+        let lastStatisticsUpdate = now;
+        let lastGraphUpdate = now;
 
         function updateStatistics(statistics) {
             clearTimeout(timeoutHandler);
@@ -511,64 +740,66 @@ define([
                 // hide connection
                 if ($("#connectionTab").hasClass("active"))
                     $("#connectionTab").removeClass("active");
-                if ($("#connection").hasClass("active"))
-                    $("#connection").removeClass("active");
+                if ($("#connection").hasClass("active")) $("#connection").removeClass("active");
                 // show statistics
-                if (!$("#statisticsTab").hasClass("active"))
-                    $("#statisticsTab").addClass("active");
-                if (!$("#statistics").hasClass("active"))
-                    $("#statistics").addClass("active");
-                if (!$("#statistics").hasClass("show"))
-                    $("#statistics").addClass("show");
-                // hide performanceGraphs
-                if ($("#performanceGraphsTab").hasClass("active"))
-                    $("#performanceGraphsTab").removeClass("active");
-                if ($("#performanceGraphs").hasClass("active"))
-                    $("#performanceGraphs").removeClass("active");
-                if ($("#performanceGraphs").hasClass("show"))
-                    $("#performanceGraphs").removeClass("show");
+                if (!$("#statisticsTab").hasClass("active")) $("#statisticsTab").addClass("active");
+                if (!$("#statistics").hasClass("active")) $("#statistics").addClass("active");
+                if (!$("#statistics").hasClass("show")) $("#statistics").addClass("show");
                 // hide logging
-                if ($("#loggingTab").hasClass("active"))
-                    $("#loggingTab").removeClass("active");
-                if ($("#logging").hasClass("active"))
-                    $("#logging").removeClass("active");
-                if ($("#logging").hasClass("show"))
-                    $("#logging").removeClass("show");
+                if ($("#loggingTab").hasClass("active")) $("#loggingTab").removeClass("active");
+                if ($("#logging").hasClass("active")) $("#logging").removeClass("active");
+                if ($("#logging").hasClass("show")) $("#logging").removeClass("show");
             }
 
-            for (const stat in statistics) {
-                $("#statistic_" + stat).text(statistics[stat]);
+            const now = parseInt(new Date().getTime());
+
+            if (now > lastStatisticsUpdate + 100) {
+                for (const stat in statistics) {
+                    $("#statistic_" + stat).text(statistics[stat]);
+                }
+                lastStatisticsUpdate = now;
+            }
+            if (now > lastGraphUpdate + 16) {
+                const ldata = []
+                    .concat(latencyGraphData[latencyGraphData.length - 1])
+                    .filter(Boolean);
+                const lq1 = quantile(ldata, 0.25);
+                const lq3 = quantile(ldata, 0.75);
+                //const lq1 = 0;
+                //const lq3 = quantile(ldata,0.5);
+                latencyGraph.batch(() => {
+                    latencyGraph.setScale("y", { min: 0, max: lq3 + (lq3 - lq1) * 3 });
+                    //latencyGraph.setScale("y", {min: 0, max: lq3+(lq3-lq1)*1.5});
+                    latencyGraph.setData(stack(latencyGraphData, (i) => false).data);
+                });
+                const fdata = framerateGraphData[1].concat(framerateGraphData[2]).filter(Boolean);
+                const fq1 = quantile(fdata, 0.25);
+                const fq3 = quantile(fdata, 0.75);
+                latencyGraph.batch(() => {
+                    framerateGraph.setScale("y", {
+                        min: fq1 - (fq3 - fq1) * 1.5,
+                        max: fq3 + (fq3 - fq1) * 1.5,
+                    });
+                    framerateGraph.setData(framerateGraphData);
+                });
+                lastGraphUpdate = now;
             }
             timeoutHandler = setTimeout(() => {
                 // $("#connectionCard").show();
                 // $("#statisticsCard").hide();
                 clientConnected = false;
                 // show connection
-                if (!$("#connectionTab").hasClass("active"))
-                    $("#connectionTab").addClass("active");
-                if (!$("#connection").hasClass("active"))
-                    $("#connection").addClass("active");
+                if (!$("#connectionTab").hasClass("active")) $("#connectionTab").addClass("active");
+                if (!$("#connection").hasClass("active")) $("#connection").addClass("active");
                 // hide statistics
                 if ($("#statisticsTab").hasClass("active"))
                     $("#statisticsTab").removeClass("active");
-                if ($("#statistics").hasClass("active"))
-                    $("#statistics").removeClass("active");
-                if ($("#statistics").hasClass("show"))
-                    $("#statistics").removeClass("show");
-                // hide performanceGraphs
-                if ($("#performanceGraphsTab").hasClass("active"))
-                    $("#performanceGraphsTab").removeClass("active");
-                if ($("#performanceGraphs").hasClass("active"))
-                    $("#performanceGraphs").removeClass("active");
-                if ($("#performanceGraphs").hasClass("show"))
-                    $("#performanceGraphs").removeClass("show");
+                if ($("#statistics").hasClass("active")) $("#statistics").removeClass("active");
+                if ($("#statistics").hasClass("show")) $("#statistics").removeClass("show");
                 // hide logging
-                if ($("#loggingTab").hasClass("active"))
-                    $("#loggingTab").removeClass("active");
-                if ($("#logging").hasClass("active"))
-                    $("#logging").removeClass("active");
-                if ($("#logging").hasClass("show"))
-                    $("#logging").removeClass("show");
+                if ($("#loggingTab").hasClass("active")) $("#loggingTab").removeClass("active");
+                if ($("#logging").hasClass("active")) $("#logging").removeClass("active");
+                if ($("#logging").hasClass("show")) $("#logging").removeClass("show");
             }, 2000);
 
             updatePerformanceGraphs(statistics);
@@ -599,8 +830,7 @@ define([
                 let ch = data[index++];
                 if (ch & 0x80) {
                     let extra = extraByteMap[(ch >> 3) & 0x07];
-                    if (!(ch & 0x40) || !extra || index + extra > count)
-                        return null;
+                    if (!(ch & 0x40) || !extra || index + extra > count) return null;
 
                     ch = ch & (0x3f >> extra);
                     for (; extra > 0; extra -= 1) {

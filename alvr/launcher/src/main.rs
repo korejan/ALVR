@@ -2,7 +2,8 @@
 
 mod commands;
 
-use alvr_common::{logging, prelude::*};
+use alvr_common::prelude::*;
+use alvr_filesystem as afs;
 use druid::{
     commands::CLOSE_WINDOW,
     theme,
@@ -75,7 +76,7 @@ fn launcher_lifecycle(handle: ExtEventSink, window_id: WindowId) {
 
         // try to launch SteamVR only one time automatically
         if !tried_steamvr_launch {
-            if logging::show_err(commands::maybe_register_alvr_driver()).is_some() {
+            if alvr_common::show_err(commands::maybe_register_alvr_driver()).is_some() {
                 if commands::is_steamvr_running() {
                     commands::kill_steamvr();
                     thread::sleep(Duration::from_secs(2))
@@ -194,12 +195,13 @@ fn get_window_location() -> (f64, f64) {
 fn make_window() -> StrResult {
     let instance_mutex = trace_err!(single_instance::SingleInstance::new("alvr_launcher_mutex"))?;
     if instance_mutex.is_single() {
-        let current_alvr_dir = commands::current_alvr_dir()?;
+        let driver_dir = afs::filesystem_layout_from_launcher_exe(&env::current_exe().unwrap())
+            .openvr_driver_root_dir;
 
-        if current_alvr_dir.to_str().filter(|s| s.is_ascii()).is_none() {
-            logging::show_e_blocking(format!(
+        if driver_dir.to_str().filter(|s| s.is_ascii()).is_none() {
+            alvr_common::show_e_blocking(format!(
                 "The path of this folder ({}) contains non ASCII characters. Please move it somewhere else (for example in C:\\Users\\Public\\Documents).",
-                current_alvr_dir.to_string_lossy(),
+                driver_dir.to_string_lossy(),
             ));
             return Ok(());
         }
@@ -250,7 +252,7 @@ fn main() {
         Some(flag) if flag == "--restart-steamvr" => commands::restart_steamvr(),
         Some(flag) if flag == "--update" => commands::invoke_installer(),
         Some(_) | None => {
-            logging::show_err_blocking(make_window());
+            alvr_common::show_err_blocking(make_window());
         }
     }
 }
