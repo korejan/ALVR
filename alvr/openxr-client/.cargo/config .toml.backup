@@ -1,0 +1,11 @@
+[target.aarch64-linux-android]
+linker = "C:/Users/Korcan/AppData/Local/Android/Sdk/ndk/22.1.7171670/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android30-clang++.cmd"
+rustflags = ["-C", "link-args=-landroid -llog -shared"]
+
+[target.i686-linux-android]
+linker = "C:/Users/Korcan/AppData/Local/Android/Sdk/ndk/22.1.7171670/toolchains/llvm/prebuilt/windows-x86_64/bin/i686-linux-android30-clang++.cmd"
+rustflags = ["-C", "link-args=-landroid -llog -shared"]
+
+[target.x86_64-linux-android]
+linker = "C:/Users/Korcan/AppData/Local/Android/Sdk/ndk/22.1.7171670/toolchains/llvm/prebuilt/windows-x86_64/bin/x86_64-linux-android30-clang++.cmd"
+rustflags = ["-C", "link-args=-landroid -llog -shared"]
