@@ -1,0 +1,315 @@
+[package]
+name = "openxr-client"
+version = "0.1.0"
+authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+#[lib]
+#crate-type = ["cdylib"]
+[[example]]
+name = "openxr_client"
+#[target.'cfg(any(windows, target_os = "windows"))']
+#crate-type = ["bin"]
+#[target.'cfg(target_os = "android")']
+crate-type = ["cdylib"]
+
+#[target.'cfg(any(windows, target_os = "windows"))']
+#crate-type = ["bin"]
+
+[features]
+# default = ["settings-schema_legacy"]
+# default = ["new_dashboard"]
+# new_dashboard = ["settings-schema"]
+
+[dependencies]
+# Basic utilities
+lazy_static = "1"
+parking_lot = "0.11"
+rand = "0.8"
+# Serialization
+serde = "1"
+serde_json = "1"
+bincode = "1"
+settings-schema = { path = "../settings-schema", features = ["rename_camel_case"] }
+# Async and networking
+bytes = "1"
+futures = "0.3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
+# Miscellaneous
+alvr_common = { path = "../common" }
+cpal = "0.13"
+log = "0.4"
+nalgebra = "0.26"
+local_ipaddress = "0.1.3"
+socket2 =  { version = "0.4", features = ["all"] }
+
+#[target.'cfg(not(target_os = "android"))'.dependencies]
+structopt = "0.3.22"
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.18.0"
+log = "0.4.14"
+ndk = "0.4" #{ path = "../ndk", features = ["trace"] }
+ndk-sys = "0.2"
+ndk-glue = "0.4" #{ path = "../ndk-glue", features = ["logger"] }
+libloading = "0.7"
+
+#[target.'cfg(target_os = "android")'.dependencies]
+#link-cplusplus = "1.0"
+#android_logger = "0.10"
+# todo: use CPAL when moving the entry point to Rust
+#oboe = "0.4" # Note: cannot use feature "java-interface" to query audio info
+
+[build-dependencies]
+cmake = "0.1"
+bindgen = "0.59"
+cc = { version = "1", features = ["parallel"] }
+walkdir = "2"
+target-lexicon = "0.12"
+
+[package.metadata.android]
+# Specifies the array of targets to build for.
+#build_targets = [ "armv7-linux-androideabi", "aarch64-linux-android", "i686-linux-android", "x86_64-linux-android" ]
+build_targets = ["aarch64-linux-android"]
+
+# Path to your application's resources folder.
+# If not specified, resources will not be included in the APK.
+#resources = "path/to/resources_folder"
+
+# Path to the folder containing your application's assets.
+# If not specified, assets will not be included in the APK.
+#assets = "path/to/assets_folder"
+
+# Name for final APK file.
+# Defaults to package name.
+#apk_name = "myapp"
+
+# Folder containing extra shared libraries intended to be dynamically loaded at runtime.
+# Files matching `libs_folder/${android_abi}/*.so` are added to the apk
+# according to the specified build_targets.
+#runtime_libs = "C:/Users/Korcan/Documents/GitHub/monado/src/xrt/targets/openxr_android/build/intermediates/cmake/inProcessDebug/obj"
+
+#
+# The following value can be customized on a per bin/example basis. See multiple_targets example
+# If a value is not specified for a secondary target, it will inherit the value defined in the `package.metadata.android`
+# section unless otherwise noted.
+#
+
+# The Java package name for your application.
+# Hyphens are converted to underscores.
+package_name = "com.alvr.openxr_client"
+
+# The user-friendly name for your app, as displayed in the applications menu.
+label = "openxr_client"
+
+# Internal version number used to determine whether one version is more recent than another. Must be an integer.
+# Defaults to 1
+# See https://developer.android.com/guide/topics/manifest/manifest-element
+#version_code = 2
+
+# The version number shown to users.
+# Defaults to the cargo package version number
+# See https://developer.android.com/guide/topics/manifest/manifest-element
+#version_name = "2.0"
+
+# Path to your application's res/ folder.
+#res = "res"
+
+# Virtual path your application's icon for any mipmap level.
+#icon = "@mipmap/ic_launcher"
+
+# Path to the folder containing your application's assets.
+#assets = "assets"
+
+# If set to true, makes the app run in full-screen, by adding the following line
+# as an XML attribute to the manifest's <application> tag :
+#     android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen
+# Defaults to false.
+#fullscreen = false
+
+# The maximum supported OpenGL ES version , as claimed by the manifest. Defaults to 2.0.
+# See https://developer.android.com/guide/topics/graphics/opengl.html#manifest
+#opengles_version_major = 3
+#opengles_version_minor = 2
+# Set the minimum required OpenGL ES version.
+# Defaults to [3, 1]
+#opengles_version = [3, 2]
+
+# See https://developer.android.com/guide/topics/manifest/uses-sdk-element
+#
+# Defaults to a `min_sdk_version` of 23 and `target_sdk_version` is based on the ndk's default platform.
+[package.metadata.android.sdk]
+min_sdk_version = 24
+
+#target_sdk_version = 30
+#max_sdk_version = 30
+
+#[dependencies.android_glue]
+#path = "../../glue"
+
+#[[package.metadata.android.bin]]
+#name = "secondary-bin"
+#label = "Secondary Binary"
+
+#[[package.metadata.android.example]]
+#name = "example1"
+#label = "Example 1"
+
+# Adds extra arbitrary XML attributes to the <application> tag in the manifest.
+# See https://developer.android.com/guide/topics/manifest/application-element.html
+#[package.metadata.android.application_attributes]
+#"android:debuggable" = "true"
+#"android:hardwareAccelerated" = "true"
+
+# Adds extra arbitrary XML attributes to the <activity> tag in the manifest.
+# See https://developer.android.com/guide/topics/manifest/activity-element.html
+[package.metadata.android.activity_attributes]
+"android:theme" ="@android:style/Theme.Black.NoTitleBar.Fullscreen"
+"android:launchMode" = "singleTask"
+"android:screenOrientation" = "landscape"
+"android:excludeFromRecents" = "false"
+"android:configChanges" = "screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode"
+#"android:uiOptions" = "none"
+
+# See https://developer.android.com/guide/topics/manifest/uses-feature-element
+#
+# Note: there can be multiple .uses_feature entries.
+[[package.metadata.android.uses_feature]]
+name = "android.hardware.vr.headtracking"
+required = true
+
+[[package.metadata.android.uses_feature]]
+opengles_version = [3, 2]
+required = true
+
+[[package.metadata.android.uses_feature]]
+name = "oculus.software.handtracking"
+required = false
+
+[[package.metadata.android.uses_feature]]
+name = "android.hardware.microphone"
+required = true
+
+#[package.metadata.android.uses_feature]
+#glEsVersion = "0x00030002"
+#required = true
+
+# See https://developer.android.com/guide/topics/manifest/uses-permission-element
+#
+# Note: there can be multiple .uses_permission entries.
+#[[package.metadata.android.uses_permission]]
+#name = "android.permission.WRITE_EXTERNAL_STORAGE"
+#max_sdk_version = 18
+
+#[[package.metadata.android.permission]]
+#name = "android.permission.CAMERA"
+
+#<uses-permission android:name="android.permission.INTERNET" />
+#<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+[[package.metadata.android.uses_permission]]
+name = "android.permission.RECORD_AUDIO"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.INTERNET"
+[[package.metadata.android.uses_permission]]
+name = "android.permission.ACCESS_NETWORK_STATE"
+
+[[package.metadata.android.uses_permission]]
+name = "oculus.permission.handtracking"
+
+[[package.metadata.android.uses_permission]]
+name = "com.oculus.permission.HAND_TRACKING"
+
+# See https://developer.android.com/guide/topics/manifest/application-element
+[package.metadata.android.application]
+
+# See https://developer.android.com/guide/topics/manifest/application-element#debug
+#
+# Defaults to false.
+#debuggable = false
+
+# See https://developer.android.com/guide/topics/manifest/application-element#theme
+#
+# Example shows setting the theme of an application to fullscreen.
+#theme = "@android:style/Theme.Black.NoTitleBar.Fullscreen"
+
+# Virtual path your application's icon for any mipmap level.
+# If not specified, an icon will not be included in the APK.
+#icon = "@mipmap/ic_launcher"
+
+# See https://developer.android.com/guide/topics/manifest/application-element#label
+#
+# Defaults to the compiled artifact's name.
+label = "openxr_client"
+
+# See https://developer.android.com/guide/topics/manifest/meta-data-element
+#
+# Note: there can be several .meta_data entries.
+# Note: the `resource` attribute is currently not supported.
+#[[package.metadata.android.application.meta_data]]
+#name = "com.samsung.android.vr.application.mode"
+#value = "vr_only"
+
+# See https://developer.android.com/guide/topics/manifest/activity-element
+[package.metadata.android.application.activity]
+
+# See https://developer.android.com/guide/topics/manifest/activity-element#config
+#
+# Defaults to "orientation|keyboardHidden|screenSize".
+config_changes = "screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode"
+
+# See https://developer.android.com/guide/topics/manifest/activity-element#label
+#
+# Defaults to the application's label.
+label = "openxr_client"
+
+# See https://developer.android.com/guide/topics/manifest/activity-element#lmode
+#
+# Defaults to "standard".
+launch_mode = "singleTask"
+
+# See https://developer.android.com/guide/topics/manifest/activity-element#screen
+#
+# Defaults to "unspecified".
+orientation = "landscape"
+
+[[package.metadata.android.application.meta_data]]
+name = "com.samsung.android.vr.application.mode"
+value = "vr_only"
+
+[[package.metadata.android.application.meta_data]]
+name = "com.oculus.supportedDevices"
+value = "all"
+
+[[package.metadata.android.application.meta_data]]
+name = "com.oculus.vr.focusaware"
+value = "true"
+
+[[package.metadata.android.application.meta_data]]
+name = "com.oculus.handtracking.frequency"
+value = "HIGH"
+
+# See https://developer.android.com/guide/topics/manifest/meta-data-element
+#
+# Note: there can be several .meta_data entries.
+# Note: the `resource` attribute is currently not supported.
+#[[package.metadata.android.application.activity.meta_data]]
+#name = "android.app.lib_name"
+#value = "openxr_client"
+
+[[package.metadata.android.application.activity.intent_filter]]
+actions = ["android.intent.action.MAIN"]
+categories = ["com.oculus.intent.category.VR", "android.intent.category.LAUNCHER"]
+
+# See https://developer.android.com/guide/topics/manifest/data-element
+#
+# Note: there can be several .data entries.
+# Note: not specifying an attribute excludes it from the final data specification.
+#[[package.metadata.android.application.activity.intent_filter.data]]
+#scheme = "https"
+#host = "github.com"
+#port = "8080"
+#path = "/rust-windowing/android-ndk-rs/tree/master/cargo-apk"
+#path_prefix = "/rust-windowing/"
+#mime_type = "image/jpeg"
