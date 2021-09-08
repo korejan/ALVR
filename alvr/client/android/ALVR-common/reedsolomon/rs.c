@@ -120,7 +120,9 @@ static void mul(gf *dst1, gf *src1, gf c, int sz) {
 static gf* multiply1(gf *a, int ar, int ac, gf *b, int br, int bc) {
     gf *new_m, tg;
     int r, c, i, ptr = 0;
-
+#ifdef NDEBUG
+    (void)br;
+#endif
     assert(ac == br);
     new_m = (gf*) calloc(1, ar*bc);
     if (NULL != new_m) {
