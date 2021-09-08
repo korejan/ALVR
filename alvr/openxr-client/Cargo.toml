@@ -10,9 +10,9 @@ edition = "2018"
 [[example]]
 name = "openxr_client"
 #[target.'cfg(any(windows, target_os = "windows"))']
-#crate-type = ["bin"]
+crate-type = ["bin"]
 #[target.'cfg(target_os = "android")']
-crate-type = ["cdylib"]
+#crate-type = ["cdylib"]
 
 #[target.'cfg(any(windows, target_os = "windows"))']
 #crate-type = ["bin"]
