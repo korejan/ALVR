@@ -1,19 +1,13 @@
-//#[cfg(not(feature = "new_dashboard"))]
-//use settings_schema_legacy as settings_schema;
-
 use crate::{
     connection_utils::{self, ConnectionError},
     MAYBE_LEGACY_SENDER,
 };
-use alvr_common::{
-    data::{
-        ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, CodecType,
-        HeadsetInfoPacket, PlayspaceSyncPacket, PrivateIdentity, ServerControlPacket,
-        ServerHandshakePacket, SessionDesc, TrackingSpace, Version, ALVR_NAME, ALVR_VERSION,
-    },
-    prelude::*,
-    sockets::{PeerType, ProtoControlSocket, StreamSocketBuilder, LEGACY},
-    spawn_cancelable,
+use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
+use alvr_session::{CodecType, SessionDesc, TrackingSpace};
+use alvr_sockets::{
+    spawn_cancelable, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket,
+    HeadsetInfoPacket, PeerType, PlayspaceSyncPacket, PrivateIdentity, ProtoControlSocket,
+    ServerControlPacket, ServerHandshakePacket, StreamSocketBuilder, LEGACY,
 };
 use futures::future::BoxFuture;
 // use jni::{
@@ -37,6 +31,7 @@ use tokio::{
     task,
     time::{self, Instant},
 };
+use semver::Version;
 
 //#[cfg(target_os = "android")]
 //use crate::audio;
@@ -173,7 +168,6 @@ async fn connection_pipeline(
     };
 
     trace_err!(proto_socket.send(&(headset_info, server_ip)).await)?;
-    
     let config_packet = trace_err!(proto_socket.recv::<ClientConfigPacket>().await)?;
 
     let (control_sender, mut control_receiver) = proto_socket.split();
@@ -228,29 +222,23 @@ async fn connection_pipeline(
     )
     .await?;
 
-    let version = Version::from_str(&config_packet.reserved).ok();
-    if version
-        .map(|v| v >= Version::from((15, 2, 0)))
-        .unwrap_or(false)
+    if let Err(e) = control_sender
+        .lock()
+        .await
+        .send(&ClientControlPacket::StreamReady)
+        .await
     {
-        if let Err(e) = control_sender
-            .lock()
-            .await
-            .send(&ClientControlPacket::Reserved("StreamReady".into()))
-            .await
-        {
-            info!("Server disconnected. Cause: {}", e);
-            println!("Server disconnected. Cause: {}", e);
-            // set_loading_message(
-            //     &*java_vm,
-            //     &*activity_ref,
-            //     hostname,
-            //     SERVER_DISCONNECTED_MESSAGE,
-            // )?;
-            return Ok(());
-        }
-        println!("StreamReady");
+        info!("Server disconnected. Cause: {}", e);
+        println!("Server disconnected. Cause: {}", e);
+        // set_loading_message(
+        //     &*java_vm,
+        //     &*activity_ref,
+        //     hostname,
+        //     SERVER_DISCONNECTED_MESSAGE,
+        // )?;
+        return Ok(());
     }
+    println!("StreamReady");
 
     let mut stream_socket = tokio::select! {
         res = stream_socket_builder.accept_from_server(
@@ -386,7 +374,6 @@ async fn connection_pipeline(
 
                 let mut idr_request_deadline = None;
 
-                let mut statistics_deadline = Instant::now();
                 while let Ok(mut data) = legacy_receive_data_receiver.recv() {
                     // Send again IDR packet every 2s in case it is missed
                     // (due to dropped burst of packets at the start of the stream or otherwise).
@@ -401,15 +388,8 @@ async fn connection_pipeline(
                         }
                     }
 
-                    println!("Receiving data...");
+                    //println!("Receiving data...");
                     crate::legacyReceive(data.as_mut_ptr(), data.len() as _);
-
-                    let now = Instant::now();
-                    if now > statistics_deadline {
-                        // sendTimeSync() must be called on the same thread of initializeSocket()
-                        //crate::sendTimeSync();
-                        statistics_deadline += Duration::from_secs(1);
-                    }
                 }
 
                 //crate::closeSocket(env_ptr);
@@ -419,7 +399,7 @@ async fn connection_pipeline(
         }
     });
 
-    let tracking_interval = Duration::from_secs_f32(1_f32 / (config_packet.fps * 3_f32));
+    let tracking_interval = Duration::from_secs_f32(1_f32 / 360_f32); //Duration::from_secs_f32(1_f32 / (config_packet.fps * 3_f32));
     let tracking_loop = async move {
         let mut deadline = Instant::now();
         loop {
