@@ -15,7 +15,7 @@ members = [
     "alvr/launcher",
     "alvr/vrcompositor-wrapper",
     "alvr/vulkan-layer",
+    "alvr/openxr-client",
     "alvr/xtask",
     "alvr/experiments/*",
-    "alvr/openxr-client",
 ]

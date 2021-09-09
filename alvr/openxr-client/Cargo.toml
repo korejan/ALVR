@@ -47,7 +47,7 @@ log = "0.4"
 nalgebra = "0.26"
 semver = "1"
 local_ipaddress = "0.1.3"
-socket2 =  { version = "0.4", features = ["all"] }
+#socket2 =  { version = "0.4", features = ["all"] }
 
 #[target.'cfg(not(target_os = "android"))'.dependencies]
 structopt = "0.3.22"
