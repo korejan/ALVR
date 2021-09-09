@@ -1,3 +1,4 @@
+use crate::APP_CONFIG;
 use alvr_common::prelude::*;
 use alvr_sockets::{
     ClientHandshakePacket, HandshakePacket, ServerHandshakePacket, CONTROL_PORT, LOCAL_IP,
@@ -5,7 +6,6 @@ use alvr_sockets::{
 };
 use std::{net::Ipv4Addr, time::Duration};
 use tokio::{net::UdpSocket, time};
-use crate::{APP_CONFIG};
 
 const CLIENT_HANDSHAKE_RESEND_INTERVAL: Duration = Duration::from_secs(1);
 
@@ -17,11 +17,14 @@ pub enum ConnectionError {
 pub async fn announce_client_loop(
     handshake_packet: ClientHandshakePacket,
 ) -> StrResult<ConnectionError> {
-        
     println!("announce_client_loop");
     println!("is localhost? {0}", APP_CONFIG.localhost);
 
-    let control_port = if APP_CONFIG.localhost { CONTROL_PORT+1 } else { CONTROL_PORT };
+    let control_port = if APP_CONFIG.localhost {
+        CONTROL_PORT + 1
+    } else {
+        CONTROL_PORT
+    };
     let mut handshake_socket = trace_err!(UdpSocket::bind((LOCAL_IP, control_port)).await)?;
     trace_err!(handshake_socket.set_broadcast(true))?;
 
