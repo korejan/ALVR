@@ -64,3 +64,8 @@ node_modules
 .idea/ALVR.iml
 .idea/modules.xml
 .idea/vcs.xml
+alvr/client/android/.project
+alvr/client/android/.settings/org.eclipse.buildship.core.prefs
+alvr/openxr-client/android/.idea/gradle.xml
+alvr/openxr-client/android/.project
+alvr/openxr-client/android/.settings/org.eclipse.buildship.core.prefs
