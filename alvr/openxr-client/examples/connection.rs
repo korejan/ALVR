@@ -15,6 +15,7 @@ use futures::future::BoxFuture;
 //     JavaVM,
 // };
 use nalgebra::{Point2, Point3, Quaternion, UnitQuaternion};
+use semver::Version;
 use serde_json as json;
 use settings_schema::Switch;
 use std::{
@@ -31,7 +32,6 @@ use tokio::{
     task,
     time::{self, Instant},
 };
-use semver::Version;
 
 //#[cfg(target_os = "android")]
 //use crate::audio;
@@ -265,7 +265,7 @@ async fn connection_pipeline(
     //     "(Z)V",
     //     &[settings.extra.client_dark_mode.into()],
     // ))?;
-    
+
     //println!("setting display refresh to {0}Hz", config_packet.fps);
     unsafe {
         crate::setStreamConfig(crate::StreamConfig {
@@ -294,11 +294,11 @@ async fn connection_pipeline(
             // } else {
             //     0_f32
             // },
-            trackingSpaceType: matches!(settings.headset.tracking_space, TrackingSpace::Stage) as crate::TrackingSpace,
+            trackingSpaceType: matches!(settings.headset.tracking_space, TrackingSpace::Stage)
+                as crate::TrackingSpace,
             // extraLatencyMode: settings.headset.extra_latency_mode,
         });
     }
-    
 
     // trace_err!(trace_err!(java_vm.attach_current_thread())?.call_method(
     //     &*activity_ref,
@@ -606,7 +606,7 @@ pub async fn connection_lifecycle_loop(
     // )
     // .ok();
     println!("{0}", INITIAL_MESSAGE);
-    
+
     loop {
         tokio::join!(
             async {

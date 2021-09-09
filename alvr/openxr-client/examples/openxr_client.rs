@@ -3,7 +3,7 @@
 mod connection;
 mod connection_utils;
 
-use std::{ffi::CString, ffi::CStr, str::FromStr};
+use std::{ffi::CStr, ffi::CString, str::FromStr};
 
 // mod logging_backend;
 
@@ -14,7 +14,8 @@ include!(concat!(env!("OUT_DIR"), "/oxr_bindings.rs"));
 
 use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
 use alvr_sockets::{
-    HeadsetInfoPacket, PrivateIdentity,
+    HeadsetInfoPacket,
+    PrivateIdentity,
     //sockets::{LOCAL_IP}
 };
 // // use jni::{
@@ -35,7 +36,7 @@ use tokio::{runtime::Runtime, sync::mpsc, sync::Notify};
 use local_ipaddress;
 
 //#[cfg(not(target_os = "android"))]
-use structopt::{StructOpt, clap::arg_enum};
+use structopt::{clap::arg_enum, StructOpt};
 
 lazy_static! {
     static ref MAYBE_RUNTIME: Mutex<Option<Runtime>> = Mutex::new(None);
@@ -48,17 +49,19 @@ lazy_static! {
 
 #[cfg(not(target_os = "android"))]
 lazy_static! {
-    static ref APP_CONFIG : Options = Options::from_args();
+    static ref APP_CONFIG: Options = Options::from_args();
 }
 #[cfg(target_os = "android")]
-const APP_CONFIG : Options = Options { localhost: false, graphics_api: Some(crate::GraphicsCtxApi::Auto), };
+const APP_CONFIG: Options = Options {
+    localhost: false,
+    graphics_api: Some(crate::GraphicsCtxApi::Auto),
+};
 
-pub extern "C" fn init_connections(sysProp : * const crate::SystemProperties) {
+pub extern "C" fn init_connections(sysProp: *const crate::SystemProperties) {
     //println!("Hello world\n");
     alvr_common::show_err(|| -> StrResult {
-
         println!("Hello world\n");
-        
+
         // // struct OnResumeResult {
         // //     DeviceType deviceType;
         // //     int recommendedEyeWidth;
@@ -83,15 +86,21 @@ pub extern "C" fn init_connections(sysProp : * const crate::SystemProperties) {
         //     "Unknown device"
         // };
 
-        let systemProperties = unsafe { *sysProp };        
+        let systemProperties = unsafe { *sysProp };
         let system_name = unsafe { CStr::from_ptr(systemProperties.systemName.as_ptr()) };
         let device_name: &str = system_name.to_str().unwrap_or("UnknownHMD");
         //let device_name = unsafe { CStr::from_ptr((*sysProp).systemName.as_ptr()).to_string_lossy().into_owned() };
-        
+
         //let current_refresh_rate = systemProperties.currentRefreshRate;
-        let available_refresh_rates = unsafe {  slice::from_raw_parts(systemProperties.refreshRates, systemProperties.refreshRatesCount as _).to_vec() }; //vec![90.0];
+        let available_refresh_rates = unsafe {
+            slice::from_raw_parts(
+                systemProperties.refreshRates,
+                systemProperties.refreshRatesCount as _,
+            )
+            .to_vec()
+        }; //vec![90.0];
         let preferred_refresh_rate = available_refresh_rates.last().cloned().unwrap_or(60_f32); //90.0;
-        
+
         let headset_info = HeadsetInfoPacket {
             recommended_eye_width: systemProperties.recommendedEyeWidth as _,
             recommended_eye_height: systemProperties.recommendedEyeHeight as _,
@@ -99,19 +108,22 @@ pub extern "C" fn init_connections(sysProp : * const crate::SystemProperties) {
             preferred_refresh_rate,
             reserved: format!("{}", *ALVR_VERSION),
         };
-        
-        println!("recommended eye width: {0}, height: {1}", headset_info.recommended_eye_width, headset_info.recommended_eye_height);
-        
+
+        println!(
+            "recommended eye width: {0}, height: {1}",
+            headset_info.recommended_eye_width, headset_info.recommended_eye_height
+        );
+
         let ipAddr = if APP_CONFIG.localhost {
             std::net::Ipv4Addr::LOCALHOST.to_string()
         } else {
             local_ipaddress::get().unwrap_or(alvr_sockets::LOCAL_IP.to_string())
         };
-        let private_identity = alvr_sockets::create_identity(Some(ipAddr)).unwrap();/*PrivateIdentity {
-            hostname: //trace_err!(env.get_string(jhostname))?.into(),
-            certificate_pem: //trace_err!(env.get_string(jcertificate_pem))?.into(),
-            key_pem: //trace_err!(env.get_string(jprivate_key))?.into(),
-        };*/
+        let private_identity = alvr_sockets::create_identity(Some(ipAddr)).unwrap(); /*PrivateIdentity {
+                                                                                         hostname: //trace_err!(env.get_string(jhostname))?.into(),
+                                                                                         certificate_pem: //trace_err!(env.get_string(jcertificate_pem))?.into(),
+                                                                                         key_pem: //trace_err!(env.get_string(jprivate_key))?.into(),
+                                                                                     };*/
 
         let runtime = trace_err!(Runtime::new())?;
 
@@ -137,8 +149,7 @@ pub extern "C" fn init_connections(sysProp : * const crate::SystemProperties) {
     }());
 }
 
-extern "C" fn legacy_send(buffer_ptr : *const ::std::os::raw::c_uchar, len : ::std::os::raw::c_uint) {
-    
+extern "C" fn legacy_send(buffer_ptr: *const ::std::os::raw::c_uchar, len: ::std::os::raw::c_uint) {
     if let Some(sender) = &*MAYBE_LEGACY_SENDER.lock() {
         let mut vec_buffer = vec![0; len as _];
 
@@ -168,17 +179,16 @@ extern "C" fn legacy_send(buffer_ptr : *const ::std::os::raw::c_uchar, len : ::s
 // }
 
 impl From<&str> for crate::GraphicsCtxApi {
-    fn from(input: &str) -> Self
-    {
+    fn from(input: &str) -> Self {
         let trimmed = input.trim();
         match trimmed {
-            "Vulkan2"  => crate::GraphicsCtxApi::Vulkan2,
-            "Vulkan"  =>  crate::GraphicsCtxApi::Vulkan,
-            "D3D12"  => crate::GraphicsCtxApi::D3D12,
+            "Vulkan2" => crate::GraphicsCtxApi::Vulkan2,
+            "Vulkan" => crate::GraphicsCtxApi::Vulkan,
+            "D3D12" => crate::GraphicsCtxApi::D3D12,
             "D3D11" => crate::GraphicsCtxApi::D3D11,
             "OpenGLES" => crate::GraphicsCtxApi::OpenGLES,
             "OpenGL" => crate::GraphicsCtxApi::OpenGL,
-            _      => crate::GraphicsCtxApi::Auto,
+            _ => crate::GraphicsCtxApi::Auto,
         }
     }
 }
@@ -193,7 +203,6 @@ struct Options {
 
     #[structopt(short = "g", long = "graphics", parse(from_str))]
     graphics_api: Option<crate::GraphicsCtxApi>,
-
     // /// Set speed
     // // we don't want to name it "speed", need to look smart
     // #[structopt(short = "v", long = "velocity", default_value = "42")]
@@ -219,9 +228,10 @@ struct Options {
 #[cfg(not(target_os = "android"))]
 fn main() {
     println!("{:?}", *APP_CONFIG);
-    let selectedApi = APP_CONFIG.graphics_api.unwrap_or(crate::GraphicsCtxApi::Auto);
-    unsafe
-    {
+    let selectedApi = APP_CONFIG
+        .graphics_api
+        .unwrap_or(crate::GraphicsCtxApi::Auto);
+    unsafe {
         let ctx = crate::RustCtx {
             initConnections: Some(init_connections),
             legacySend: Some(legacy_send),
@@ -232,24 +242,21 @@ fn main() {
 }
 
 #[cfg(target_os = "android")]
-use ndk_glue;
+use ndk::looper::*;
 #[cfg(target_os = "android")]
-use ndk:: {
-    looper::*,
-};
+use ndk_glue;
 #[cfg(target_os = "android")]
 use ndk_sys;
 
 #[cfg(target_os = "android")]
-struct AppData
-{
-    destroy_requested : bool,
-    resumed : bool
+struct AppData {
+    destroy_requested: bool,
+    resumed: bool,
 }
 
 #[cfg(target_os = "android")]
 impl AppData {
-    fn handle_lifecycle_event(&mut self, event : &ndk_glue::Event) {
+    fn handle_lifecycle_event(&mut self, event: &ndk_glue::Event) {
         // Start,
         // Resume,
         // SaveInstanceState,
@@ -268,20 +275,23 @@ impl AppData {
         // InputQueueDestroyed,
         // ContentRectChanged,
         match event {
-            ndk_glue::Event::Resume => { self.resumed = true }
+            ndk_glue::Event::Resume => self.resumed = true,
             ndk_glue::Event::Stop | ndk_glue::Event::Destroy | ndk_glue::Event::WindowDestroyed => {
                 self.destroy_requested = true
             }
-            _ => { self.destroy_requested = false }
-        }   
+            _ => self.destroy_requested = false,
+        }
     }
 }
 
 #[cfg(target_os = "android")]
 #[cfg_attr(target_os = "android", ndk_glue::main(backtrace = "on"))]
 pub fn main() {
-    let mut app = AppData { destroy_requested:false, resumed:false };
-    test(& mut app).unwrap();
+    let mut app = AppData {
+        destroy_requested: false,
+        resumed: false,
+    };
+    test(&mut app).unwrap();
 }
 
 #[cfg(target_os = "android")]
@@ -330,8 +340,10 @@ fn test(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
 
     unsafe {
         match libloading::Library::new("libopenxr_loader.so") {
-            Err(e) => { std::eprintln!("failed to load libopenxr_loader.so, reason: {0}", e) }
-            _ => std::println!("libopenxr_loader.so loaded.")
+            Err(e) => {
+                std::eprintln!("failed to load libopenxr_loader.so, reason: {0}", e)
+            }
+            _ => std::println!("libopenxr_loader.so loaded."),
         }
         // match libloading::Library::new("libc++_shared.so") {
         //     Err(e) => { std::eprintln!("failed to load libc++_shared.so, reason: {0}", e) }
@@ -345,7 +357,7 @@ fn test(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
 
     let env = vm.attach_current_thread()?;
 
-    unsafe {     
+    unsafe {
         let ctx = crate::RustCtx {
             graphicsApi: crate::GraphicsCtxApi::Auto,
             applicationVM: vm_ptr as *mut std::ffi::c_void,
@@ -356,16 +368,18 @@ fn test(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
         crate::openxrInit(&ctx);
     }
 
-    while !app_data.destroy_requested { // Main game loop
-        loop { // event pump loop
-            let block = !app_data.destroy_requested &&
-                             !app_data.resumed &&
-                             unsafe { !crate::isOpenXRSessionRunning() };// && app.ovr.is_none();
-            // If the timeout is zero, returns immediately without blocking.
-            // If the timeout is negative, waits indefinitely until an event appears.
-            // const int timeoutMilliseconds =
-            //     (!appState.Resumed && !program->IsSessionRunning() && app->destroyRequested == 0) ? -1 : 0;
-  
+    while !app_data.destroy_requested {
+        // Main game loop
+        loop {
+            // event pump loop
+            let block = !app_data.destroy_requested
+                && !app_data.resumed
+                && unsafe { !crate::isOpenXRSessionRunning() }; // && app.ovr.is_none();
+                                                                // If the timeout is zero, returns immediately without blocking.
+                                                                // If the timeout is negative, waits indefinitely until an event appears.
+                                                                // const int timeoutMilliseconds =
+                                                                //     (!appState.Resumed && !program->IsSessionRunning() && app->destroyRequested == 0) ? -1 : 0;
+
             if let Some(event) = poll_all_ms(block) {
                 //trace!("event: {:?}", event);
                 app_data.handle_lifecycle_event(&event);
