@@ -12,10 +12,9 @@ use std::{ffi::CString, ffi::CStr, str::FromStr};
 
 include!(concat!(env!("OUT_DIR"), "/oxr_bindings.rs"));
 
-use alvr_common::{
-    data::{self, HeadsetInfoPacket, PrivateIdentity, ALVR_VERSION},
-    logging,
-    prelude::*,
+use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
+use alvr_sockets::{
+    HeadsetInfoPacket, PrivateIdentity,
     //sockets::{LOCAL_IP}
 };
 // // use jni::{
@@ -56,7 +55,7 @@ const APP_CONFIG : Options = Options { localhost: false, graphics_api: Some(crat
 
 pub extern "C" fn init_connections(sysProp : * const crate::SystemProperties) {
     //println!("Hello world\n");
-    logging::show_err(|| -> StrResult {
+    alvr_common::show_err(|| -> StrResult {
 
         println!("Hello world\n");
         
@@ -106,9 +105,9 @@ pub extern "C" fn init_connections(sysProp : * const crate::SystemProperties) {
         let ipAddr = if APP_CONFIG.localhost {
             std::net::Ipv4Addr::LOCALHOST.to_string()
         } else {
-            local_ipaddress::get().unwrap_or(alvr_common::sockets::LOCAL_IP.to_string())
+            local_ipaddress::get().unwrap_or(alvr_sockets::LOCAL_IP.to_string())
         };
-        let private_identity = data::create_identity(Some(ipAddr)).unwrap();/*PrivateIdentity {
+        let private_identity = alvr_sockets::create_identity(Some(ipAddr)).unwrap();/*PrivateIdentity {
             hostname: //trace_err!(env.get_string(jhostname))?.into(),
             certificate_pem: //trace_err!(env.get_string(jcertificate_pem))?.into(),
             key_pem: //trace_err!(env.get_string(jprivate_key))?.into(),

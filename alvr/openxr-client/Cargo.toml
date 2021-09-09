@@ -38,9 +38,14 @@ futures = "0.3"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
 # Miscellaneous
 alvr_common = { path = "../common" }
+#alvr_audio = { path = "../audio" }
+alvr_session = { path = "../session" }
+alvr_sockets = { path = "../sockets" }
+
 cpal = "0.13"
 log = "0.4"
 nalgebra = "0.26"
+semver = "1"
 local_ipaddress = "0.1.3"
 socket2 =  { version = "0.4", features = ["all"] }
 
