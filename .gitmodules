@@ -1,3 +1,6 @@
 [submodule "alvr/openxr-client/cpp/ALVR-OpenXR-Engine"]
 	path = alvr/openxr-client/cpp/ALVR-OpenXR-Engine
 	url = https://github.com/korejan/ALVR-OpenXR-Engine.git
+[submodule "alvr/openxr-client/common/cpp/ALVR-OpenXR-Engine"]
+	path = alvr/openxr-client/common/cpp/ALVR-OpenXR-Engine
+	url = https://github.com/korejan/ALVR-OpenXR-Engine.git

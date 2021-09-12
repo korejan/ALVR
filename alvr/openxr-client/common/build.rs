@@ -44,13 +44,13 @@ fn main() {
     let profile = env::var("PROFILE").unwrap();
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    assert!(project_dir.ends_with("openxr-client"));
+    assert!(project_dir.ends_with("common"));//"openxr-client"));
 
     let xr_engine_dir = project_dir.join("cpp/ALVR-OpenXR-Engine");
     let xr_engine_src_dir = xr_engine_dir.join("src");
 
     let android_dir = project_dir.join("android");
-    let alvr_common_cpp_dir = project_dir.join("../client/android/ALVR-common");
+    let alvr_common_cpp_dir = project_dir.join("../../client/android/ALVR-common");
 
     let file_filters = vec!["CMakeLists.txt", "AndroidManifest.xml"];
     let file_ext_filters = vec![
