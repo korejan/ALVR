@@ -1,0 +1,44 @@
+[package]
+name = "oxr_common"
+version = "0.1.0"
+authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
+edition = "2018"
+
+[features]
+# default = ["settings-schema_legacy"]
+# default = ["new_dashboard"]
+# new_dashboard = ["settings-schema"]
+
+[dependencies]
+# Basic utilities
+lazy_static = "1"
+parking_lot = "0.11"
+rand = "0.8"
+# Serialization
+serde = "1"
+serde_json = "1"
+bincode = "1"
+settings-schema = { path = "../../settings-schema", features = ["rename_camel_case"] }
+# Async and networking
+bytes = "1"
+futures = "0.3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
+# Miscellaneous
+alvr_common = { path = "../../common" }
+#alvr_audio = { path = "../audio" }
+alvr_session = { path = "../../session" }
+alvr_sockets = { path = "../../sockets" }
+
+cpal = "0.13"
+log = "0.4"
+nalgebra = "0.26"
+semver = "1"
+local_ipaddress = "0.1.3"
+structopt = "0.3.22"
+
+[build-dependencies]
+cmake = "0.1"
+bindgen = "0.59"
+cc = { version = "1", features = ["parallel"] }
+walkdir = "2"
+target-lexicon = "0.12"
