@@ -54,6 +54,11 @@ pub fn main() {
         resumed: false,
     };
     test(&mut app).unwrap();
+    // the ndk_glue api does not automatically call this and without
+    // it main will hang on exit, currently there seems to be no plans to
+    // make it automatic, refer to:
+    // https://github.com/rust-windowing/android-ndk-rs/issues/154
+    ndk_glue::native_activity().finish();
 }
 
 pub const LOOPER_ID_MAIN: u32 = 0;
