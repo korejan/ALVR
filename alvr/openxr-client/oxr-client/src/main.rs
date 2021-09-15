@@ -4,6 +4,7 @@ use oxr_common:: {
     init_connections,
     legacy_send,
     openxrMain,
+    shutdown,
     APP_CONFIG
 };
 
@@ -26,4 +27,6 @@ fn main() {
         };
         openxrMain(&ctx);
     }
+    shutdown();
+    println!("successfully shutdown.");
 }
