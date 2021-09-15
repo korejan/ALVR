@@ -33,8 +33,8 @@ cpal = "0.13"
 log = "0.4"
 nalgebra = "0.26"
 semver = "1"
-local_ipaddress = "0.1.3"
-structopt = "0.3.22"
+local_ipaddress = "0.1"
+structopt = "0.3"
 
 [build-dependencies]
 cmake = "0.1"
