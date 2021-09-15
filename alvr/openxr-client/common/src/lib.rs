@@ -155,7 +155,10 @@ pub fn shutdown() {
     drop(MAYBE_RUNTIME.lock().take());
 }
 
-pub extern "C" fn legacy_send(buffer_ptr: *const ::std::os::raw::c_uchar, len: ::std::os::raw::c_uint) {
+pub extern "C" fn legacy_send(
+    buffer_ptr: *const ::std::os::raw::c_uchar,
+    len: ::std::os::raw::c_uint,
+) {
     if let Some(sender) = &*MAYBE_LEGACY_SENDER.lock() {
         let mut vec_buffer = vec![0; len as _];
 

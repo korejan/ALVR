@@ -44,7 +44,7 @@ fn main() {
     let profile = env::var("PROFILE").unwrap();
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    assert!(project_dir.ends_with("common"));//"openxr-client"));
+    assert!(project_dir.ends_with("common")); //"openxr-client"));
 
     let xr_engine_dir = project_dir.join("cpp/ALVR-OpenXR-Engine");
     let xr_engine_src_dir = xr_engine_dir.join("src");
