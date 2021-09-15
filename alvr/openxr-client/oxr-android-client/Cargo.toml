@@ -9,10 +9,9 @@ crate-type = ["cdylib"]
 
 [dependencies]
 oxr_common = { path = "../common" }
-jni = "0.18.0"
-log = "0.4.14"
+jni = "0.19"
 ndk = "0.4" #{ path = "../ndk", features = ["trace"] }
-ndk-sys = "0.2"
+#ndk-sys = "0.2"
 ndk-glue = "0.4" #{ path = "../ndk-glue", features = ["logger"] }
 libloading = "0.7"
 
