@@ -2,16 +2,16 @@ use oxr_common:: {
     RustCtx,
     GraphicsCtxApi,
     init_connections,
+    shutdown,
     legacy_send,
     openxrInit,
+    openxrShutdown,
     isOpenXRSessionRunning,
-    openxrProcesFrame,
-    APP_CONFIG
+    openxrProcesFrame
 };
 
 use ndk::looper::*;
 use ndk_glue;
-use ndk_sys;
 
 struct AppData {
     destroy_requested: bool,
@@ -40,6 +40,7 @@ impl AppData {
         match event {
             ndk_glue::Event::Resume => self.resumed = true,
             ndk_glue::Event::Stop | ndk_glue::Event::Destroy | ndk_glue::Event::WindowDestroyed => {
+                println!("handle_lifecycle_event: destroy_requested.");
                 self.destroy_requested = true
             }
             _ => self.destroy_requested = false,
@@ -53,7 +54,9 @@ pub fn main() {
         destroy_requested: false,
         resumed: false,
     };
-    test(&mut app).unwrap();
+    run(&mut app).unwrap();
+    shutdown();
+    println!("successfully shutdown.");
     // the ndk_glue api does not automatically call this and without
     // it main will hang on exit, currently there seems to be no plans to
     // make it automatic, refer to:
@@ -61,41 +64,35 @@ pub fn main() {
     ndk_glue::native_activity().finish();
 }
 
-pub const LOOPER_ID_MAIN: u32 = 0;
-pub const LOOPER_ID_INPUT: u32 = 1;
-
 pub fn poll_all_ms(block: bool) -> Option<ndk_glue::Event> {
     let looper = ThreadLooper::for_thread().unwrap();
     let result = if block {
-        let result = looper.poll_all();
-        result
+        looper.poll_all()
     } else {
         looper.poll_all_timeout(std::time::Duration::from_millis(0u64))
     };
-
     match result {
         Ok(Poll::Event { ident, .. }) => {
-            let ident = ident as u32;
-            if ident == LOOPER_ID_MAIN {
-                ndk_glue::poll_events()
-            } else if ident == LOOPER_ID_INPUT {
-                if let Some(input_queue) = ndk_glue::input_queue().as_ref() {
-                    while let Some(event) = input_queue.get_event() {
-                        if let Some(event) = input_queue.pre_dispatch(event) {
-                            input_queue.finish_event(event, false);
+            match ident {
+                ndk_glue::NDK_GLUE_LOOPER_EVENT_PIPE_IDENT => { ndk_glue::poll_events() }
+                ndk_glue::NDK_GLUE_LOOPER_INPUT_QUEUE_IDENT => {
+                    if let Some(input_queue) = ndk_glue::input_queue().as_ref() {
+                        while let Some(event) = input_queue.get_event() {
+                            if let Some(event) = input_queue.pre_dispatch(event) {
+                                input_queue.finish_event(event, false);
+                            }
                         }
                     }
+                    None
                 }
-                None
-            } else {
-                unreachable!("Unrecognized looper identifer");
+                _ => unreachable!("Unrecognized looper identifer")
             }
         }
         _ => None,
     }
 }
 
-fn test(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
+fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
     // Create a VM for executing Java calls
     let native_activity = ndk_glue::native_activity();
     let vm_ptr = native_activity.vm();
@@ -118,7 +115,7 @@ fn test(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
         // }
     }
 
-    let env = vm.attach_current_thread()?;
+    let _env = vm.attach_current_thread()?;
 
     unsafe {
         let ctx = RustCtx {
@@ -151,10 +148,22 @@ fn test(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
                 break;
             }
         }
+
         // update and render
+        let mut exit_render_loop = false;
+        let mut request_restart  = false;
         unsafe {
-            openxrProcesFrame();
+            openxrProcesFrame(& mut exit_render_loop, & mut request_restart);
+        }
+        if exit_render_loop {
+            break;
         }
     }
+    unsafe {
+        openxrShutdown();
+    }
+
+    vm.detach_current_thread();
+
     Ok(())
 }
