@@ -38,6 +38,41 @@ use local_ipaddress;
 //#[cfg(not(target_os = "android"))]
 use structopt::{clap::arg_enum, StructOpt};
 
+#[derive(Debug, StructOpt)]
+#[structopt(name = "openxr_client", about = "An OpenXR based ALVR client.")]
+pub struct Options {
+    /// Activate debug mode
+    // short and long flags (-d, --debug) will be deduced from the field's name
+    #[structopt(/*short,*/ long)]
+    pub localhost: bool,
+
+    #[structopt(short = "g", long = "graphics", parse(from_str))]
+    pub graphics_api: Option<crate::GraphicsCtxApi>,
+
+    #[structopt(short, long)]
+    pub verbose: bool,
+    // /// Set speed
+    // // we don't want to name it "speed", need to look smart
+    // #[structopt(short = "v", long = "velocity", default_value = "42")]
+    // speed: f64,
+
+    // /// Input file
+    // #[structopt(parse(from_os_str))]
+    // input: PathBuf,
+
+    // /// Output file, stdout if not present
+    // #[structopt(parse(from_os_str))]
+    // output: Option<PathBuf>,
+
+    // /// Where to write the output: to `stdout` or `file`
+    // #[structopt(short)]
+    // out_type: String,
+
+    // /// File name: only required when `out-type` is set to `file`
+    // #[structopt(name = "FILE", required_if("out-type", "file"))]
+    // file_name: Option<String>,
+}
+
 lazy_static! {
     pub static ref MAYBE_RUNTIME: Mutex<Option<Runtime>> = Mutex::new(None);
     static ref IDR_REQUEST_NOTIFIER: Notify = Notify::new();
@@ -55,6 +90,7 @@ lazy_static! {
 #[cfg(target_os = "android")]
 pub const APP_CONFIG: Options = Options {
     localhost: false,
+    verbose: false,
     graphics_api: Some(crate::GraphicsCtxApi::Auto),
 };
 
@@ -184,36 +220,4 @@ impl From<&str> for crate::GraphicsCtxApi {
             _ => crate::GraphicsCtxApi::Auto,
         }
     }
-}
-
-#[derive(Debug, StructOpt)]
-#[structopt(name = "openxr_client", about = "An OpenXR based ALVR client.")]
-pub struct Options {
-    /// Activate debug mode
-    // short and long flags (-d, --debug) will be deduced from the field's name
-    #[structopt(/*short,*/ long)]
-    pub localhost: bool,
-
-    #[structopt(short = "g", long = "graphics", parse(from_str))]
-    pub graphics_api: Option<crate::GraphicsCtxApi>,
-    // /// Set speed
-    // // we don't want to name it "speed", need to look smart
-    // #[structopt(short = "v", long = "velocity", default_value = "42")]
-    // speed: f64,
-
-    // /// Input file
-    // #[structopt(parse(from_os_str))]
-    // input: PathBuf,
-
-    // /// Output file, stdout if not present
-    // #[structopt(parse(from_os_str))]
-    // output: Option<PathBuf>,
-
-    // /// Where to write the output: to `stdout` or `file`
-    // #[structopt(short)]
-    // out_type: String,
-
-    // /// File name: only required when `out-type` is set to `file`
-    // #[structopt(name = "FILE", required_if("out-type", "file"))]
-    // file_name: Option<String>,
 }

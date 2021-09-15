@@ -16,6 +16,7 @@ fn main() {
             initConnections: Some(init_connections),
             legacySend: Some(legacy_send),
             graphicsApi: selected_api,
+            verbose: APP_CONFIG.verbose,
         };
         openxrMain(&ctx);
     }

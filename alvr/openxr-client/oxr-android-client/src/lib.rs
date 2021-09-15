@@ -111,6 +111,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
         let ctx = RustCtx {
             graphicsApi: GraphicsCtxApi::Auto,
+            verbose: false,
             applicationVM: vm_ptr as *mut std::ffi::c_void,
             applicationActivity: (*native_activity.ptr().as_ptr()).clazz as *mut std::ffi::c_void,
             initConnections: Some(init_connections),
