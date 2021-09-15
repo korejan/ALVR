@@ -1,11 +1,5 @@
-use oxr_common:: {
-    RustCtx,
-    GraphicsCtxApi,
-    init_connections,
-    legacy_send,
-    openxrMain,
-    shutdown,
-    APP_CONFIG
+use oxr_common::{
+    init_connections, legacy_send, openxrMain, shutdown, GraphicsCtxApi, RustCtx, APP_CONFIG,
 };
 
 // #[cfg(not(target_os = "android"))]
@@ -16,9 +10,7 @@ use oxr_common:: {
 #[cfg(not(target_os = "android"))]
 fn main() {
     println!("{:?}", *APP_CONFIG);
-    let selected_api = APP_CONFIG
-        .graphics_api
-        .unwrap_or(GraphicsCtxApi::Auto);
+    let selected_api = APP_CONFIG.graphics_api.unwrap_or(GraphicsCtxApi::Auto);
     unsafe {
         let ctx = RustCtx {
             initConnections: Some(init_connections),
