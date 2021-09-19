@@ -105,8 +105,8 @@ min_sdk_version = 24
 
 # Adds extra arbitrary XML attributes to the <application> tag in the manifest.
 # See https://developer.android.com/guide/topics/manifest/application-element.html
-#[package.metadata.android.application_attributes]
-#"android:debuggable" = "true"
+[package.metadata.android.application_attributes]
+"android:debuggable" = "true"
 #"android:hardwareAccelerated" = "true"
 
 # Adds extra arbitrary XML attributes to the <activity> tag in the manifest.
@@ -116,7 +116,8 @@ min_sdk_version = 24
 "android:launchMode" = "singleTask"
 "android:screenOrientation" = "landscape"
 "android:excludeFromRecents" = "false"
-"android:configChanges" = "screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode"
+"android:resizeableActivity"= "false"
+"android:configChanges" = "density|keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|uiMode"
 #"android:uiOptions" = "none"
 
 # See https://developer.android.com/guide/topics/manifest/uses-feature-element
@@ -134,9 +135,9 @@ required = true
 name = "oculus.software.handtracking"
 required = false
 
-[[package.metadata.android.uses_feature]]
-name = "android.hardware.microphone"
-required = true
+# [[package.metadata.android.uses_feature]]
+# name = "android.hardware.microphone"
+# required = true
 
 #[package.metadata.android.uses_feature]
 #glEsVersion = "0x00030002"
@@ -154,8 +155,8 @@ required = true
 
 #<uses-permission android:name="android.permission.INTERNET" />
 #<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-[[package.metadata.android.uses_permission]]
-name = "android.permission.RECORD_AUDIO"
+# [[package.metadata.android.uses_permission]]
+# name = "android.permission.RECORD_AUDIO"
 
 [[package.metadata.android.uses_permission]]
 name = "android.permission.INTERNET"
@@ -204,7 +205,7 @@ label = "openxr_client"
 # See https://developer.android.com/guide/topics/manifest/activity-element#config
 #
 # Defaults to "orientation|keyboardHidden|screenSize".
-config_changes = "screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode"
+config_changes = "density|keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|uiMode"
 
 # See https://developer.android.com/guide/topics/manifest/activity-element#label
 #
@@ -221,6 +222,8 @@ launch_mode = "singleTask"
 # Defaults to "unspecified".
 orientation = "landscape"
 
+resizeableActivity = "false"
+
 [[package.metadata.android.application.meta_data]]
 name = "com.samsung.android.vr.application.mode"
 value = "vr_only"
@@ -229,9 +232,9 @@ value = "vr_only"
 name = "com.oculus.supportedDevices"
 value = "all"
 
-[[package.metadata.android.application.meta_data]]
-name = "com.oculus.vr.focusaware"
-value = "true"
+# [[package.metadata.android.application.meta_data]]
+# name = "com.oculus.vr.focusaware"
+# value = "true"
 
 [[package.metadata.android.application.meta_data]]
 name = "com.oculus.handtracking.frequency"
