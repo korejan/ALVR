@@ -1,6 +1,13 @@
 use oxr_common::{
-    init_connections, isOpenXRSessionRunning, legacy_send, openxrInit, openxrProcesFrame,
-    openxrDestroy, shutdown, GraphicsCtxApi, RustCtx //, openxrRequestExitSession
+    init_connections,
+    isOpenXRSessionRunning,
+    legacy_send,
+    openxrDestroy,
+    openxrInit,
+    openxrProcesFrame,
+    shutdown,
+    GraphicsCtxApi,
+    RustCtx, //, openxrRequestExitSession
 };
 
 use ndk::looper::*;
@@ -33,9 +40,7 @@ impl AppData {
         match event {
             ndk_glue::Event::Pause => self.resumed = false,
             ndk_glue::Event::Resume => self.resumed = true,
-            ndk_glue::Event::Destroy => {
-                self.destroy_requested = true
-            }
+            ndk_glue::Event::Destroy => self.destroy_requested = true,
             _ => (),
         }
     }
@@ -83,7 +88,7 @@ pub fn poll_all_ms(block: bool) -> Option<ndk_glue::Event> {
 }
 
 fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
-    unsafe { 
+    unsafe {
         let native_activity = ndk_glue::native_activity();
         let vm_ptr = native_activity.vm();
 
@@ -102,16 +107,15 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
         };
         if !openxrInit(&ctx) {
             shutdown();
-            return Ok(())
+            return Ok(());
         }
-        
+
         while !app_data.destroy_requested {
             // Main game loop
             loop {
                 // event pump loop
-                let block = !app_data.destroy_requested &&
-                            !app_data.resumed &&
-                            !isOpenXRSessionRunning();
+                let block =
+                    !app_data.destroy_requested && !app_data.resumed && !isOpenXRSessionRunning();
                 // If the timeout is zero, returns immediately without blocking.
                 // If the timeout is negative, waits indefinitely until an event appears.
                 if let Some(event) = poll_all_ms(block) {
@@ -128,10 +132,10 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
                 break;
             }
         }
-        
+
         shutdown();
         openxrDestroy();
-        
+
         vm.detach_current_thread();
     }
     Ok(())
