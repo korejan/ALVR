@@ -1,10 +1,10 @@
 use oxr_common::{
-    init_connections, legacy_send, shutdown, GraphicsCtxApi, RustCtx, APP_CONFIG,
-    openxrInit, openxrDestroy, isOpenXRSessionRunning, openxrProcesFrame
+    init_connections, isOpenXRSessionRunning, legacy_send, openxrDestroy, openxrInit,
+    openxrProcesFrame, shutdown, GraphicsCtxApi, RustCtx, APP_CONFIG,
 };
 use std::{thread, time};
 
-const SLEEP_TIME : time::Duration = time::Duration::from_millis(250);
+const SLEEP_TIME: time::Duration = time::Duration::from_millis(250);
 
 #[cfg(not(target_os = "android"))]
 fn main() {
@@ -37,7 +37,7 @@ fn main() {
 
             shutdown();
             openxrDestroy();
-            
+
             if !request_restart {
                 break;
             }
