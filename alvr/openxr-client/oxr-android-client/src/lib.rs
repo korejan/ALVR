@@ -100,7 +100,10 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             initConnections: Some(init_connections),
             legacySend: Some(legacy_send),
         };
-        openxrInit(&ctx);
+        if !openxrInit(&ctx) {
+            shutdown();
+            return Ok(())
+        }
         
         while !app_data.destroy_requested {
             // Main game loop
