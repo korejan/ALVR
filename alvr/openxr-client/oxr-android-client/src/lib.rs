@@ -1,6 +1,6 @@
 use oxr_common::{
     init_connections, isOpenXRSessionRunning, legacy_send, openxrInit, openxrProcesFrame,
-    openxrShutdown, shutdown, GraphicsCtxApi, RustCtx,
+    openxrDestroy, shutdown, GraphicsCtxApi, RustCtx //, openxrRequestExitSession
 };
 
 use ndk::looper::*;
@@ -31,12 +31,12 @@ impl AppData {
         // InputQueueDestroyed,
         // ContentRectChanged,
         match event {
+            ndk_glue::Event::Pause => self.resumed = false,
             ndk_glue::Event::Resume => self.resumed = true,
-            ndk_glue::Event::Stop | ndk_glue::Event::Destroy | ndk_glue::Event::WindowDestroyed => {
-                println!("handle_lifecycle_event: destroy_requested.");
+            ndk_glue::Event::Destroy => {
                 self.destroy_requested = true
             }
-            _ => self.destroy_requested = false,
+            _ => (),
         }
     }
 }
@@ -48,7 +48,6 @@ pub fn main() {
         resumed: false,
     };
     run(&mut app).unwrap();
-    shutdown();
     println!("successfully shutdown.");
     // the ndk_glue api does not automatically call this and without
     // it main will hang on exit, currently there seems to be no plans to
@@ -84,31 +83,15 @@ pub fn poll_all_ms(block: bool) -> Option<ndk_glue::Event> {
 }
 
 fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
-    // Create a VM for executing Java calls
-    let native_activity = ndk_glue::native_activity();
-    let vm_ptr = native_activity.vm();
-    let vm = unsafe { jni::JavaVM::from_raw(vm_ptr) }?;
+    unsafe { 
+        let native_activity = ndk_glue::native_activity();
+        let vm_ptr = native_activity.vm();
 
-    unsafe {
-        match libloading::Library::new("libopenxr_loader.so") {
-            Err(e) => {
-                std::eprintln!("failed to load libopenxr_loader.so, reason: {0}", e)
-            }
-            _ => std::println!("libopenxr_loader.so loaded."),
-        }
-        // match libloading::Library::new("libc++_shared.so") {
-        //     Err(e) => { std::eprintln!("failed to load libc++_shared.so, reason: {0}", e) }
-        //     _ => std::println!("libc++_shared.so loaded.")
-        // }
-        // match libloading::Library::new("libopenxr_monado.so") {
-        //     Err(e) => { std::eprintln!("failed to load libopenxr_monado.so, reason: {0}", e) }
-        //     _ => std::println!("libopenxr_monado.so loaded.")
-        // }
-    }
+        let _lib = libloading::Library::new("libopenxr_loader.so")?;
 
-    let _env = vm.attach_current_thread()?;
+        let vm = jni::JavaVM::from_raw(vm_ptr)?;
+        let _env = vm.attach_current_thread()?;
 
-    unsafe {
         let ctx = RustCtx {
             graphicsApi: GraphicsCtxApi::Auto,
             verbose: false,
@@ -118,44 +101,35 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             legacySend: Some(legacy_send),
         };
         openxrInit(&ctx);
-    }
-
-    while !app_data.destroy_requested {
-        // Main game loop
-        loop {
-            // event pump loop
-            let block = !app_data.destroy_requested
-                && !app_data.resumed
-                && unsafe { !isOpenXRSessionRunning() }; // && app.ovr.is_none();
-                                                         // If the timeout is zero, returns immediately without blocking.
-                                                         // If the timeout is negative, waits indefinitely until an event appears.
-                                                         // const int timeoutMilliseconds =
-                                                         //     (!appState.Resumed && !program->IsSessionRunning() && app->destroyRequested == 0) ? -1 : 0;
-
-            if let Some(event) = poll_all_ms(block) {
-                //trace!("event: {:?}", event);
-                app_data.handle_lifecycle_event(&event);
-                //app.update_vr_mode();
-            } else {
+        
+        while !app_data.destroy_requested {
+            // Main game loop
+            loop {
+                // event pump loop
+                let block = !app_data.destroy_requested &&
+                            !app_data.resumed &&
+                            !isOpenXRSessionRunning();
+                // If the timeout is zero, returns immediately without blocking.
+                // If the timeout is negative, waits indefinitely until an event appears.
+                if let Some(event) = poll_all_ms(block) {
+                    app_data.handle_lifecycle_event(&event);
+                } else {
+                    break;
+                }
+            }
+            // update and render
+            let mut exit_render_loop = false;
+            let mut request_restart = false;
+            openxrProcesFrame(&mut exit_render_loop, &mut request_restart);
+            if exit_render_loop {
                 break;
             }
         }
-
-        // update and render
-        let mut exit_render_loop = false;
-        let mut request_restart = false;
-        unsafe {
-            openxrProcesFrame(&mut exit_render_loop, &mut request_restart);
-        }
-        if exit_render_loop {
-            break;
-        }
+        
+        shutdown();
+        openxrDestroy();
+        
+        vm.detach_current_thread();
     }
-    unsafe {
-        openxrShutdown();
-    }
-
-    vm.detach_current_thread();
-
     Ok(())
 }
