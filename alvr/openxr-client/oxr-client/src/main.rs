@@ -1,6 +1,6 @@
 use oxr_common::{
     init_connections, isOpenXRSessionRunning, legacy_send, openxrDestroy, openxrInit,
-    openxrProcesFrame, shutdown, GraphicsCtxApi, RustCtx, APP_CONFIG,
+    openxrProcesFrame, shutdown, GraphicsCtxApi, RustCtx, APP_CONFIG, SystemProperties
 };
 use std::{thread, time};
 
@@ -11,16 +11,17 @@ fn main() {
     println!("{:?}", *APP_CONFIG);
     let selected_api = APP_CONFIG.graphics_api.unwrap_or(GraphicsCtxApi::Auto);
     unsafe {
-        loop {
+        loop {            
             let ctx = RustCtx {
-                initConnections: Some(init_connections),
                 legacySend: Some(legacy_send),
                 graphicsApi: selected_api,
                 verbose: APP_CONFIG.verbose,
             };
-            if !openxrInit(&ctx) {
+            let mut sys_properties = SystemProperties::new();
+            if !openxrInit(&ctx, & mut sys_properties) {
                 break;
             }
+            init_connections(&sys_properties);
 
             let mut request_restart = false;
             loop {
