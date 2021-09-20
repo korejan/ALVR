@@ -7,7 +7,8 @@ use oxr_common::{
     openxrProcesFrame,
     shutdown,
     GraphicsCtxApi,
-    RustCtx, //, openxrRequestExitSession
+    RustCtx,
+    SystemProperties,
 };
 
 use ndk::looper::*;
@@ -102,13 +103,13 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             verbose: false,
             applicationVM: vm_ptr as *mut std::ffi::c_void,
             applicationActivity: (*native_activity.ptr().as_ptr()).clazz as *mut std::ffi::c_void,
-            initConnections: Some(init_connections),
             legacySend: Some(legacy_send),
         };
-        if !openxrInit(&ctx) {
-            shutdown();
+        let mut sys_properties = SystemProperties::new();
+        if !openxrInit(&ctx, & mut sys_properties) {
             return Ok(());
         }
+        init_connections(&sys_properties);
 
         while !app_data.destroy_requested {
             // Main game loop

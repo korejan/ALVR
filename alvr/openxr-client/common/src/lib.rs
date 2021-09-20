@@ -73,6 +73,19 @@ pub struct Options {
     // file_name: Option<String>,
 }
 
+impl SystemProperties {
+    pub fn new() -> SystemProperties {
+        SystemProperties { 
+            systemName: [0; 256],
+            currentRefreshRate: 90.0,
+            refreshRates: std::ptr::null(),
+            refreshRatesCount: 0,
+            recommendedEyeWidth: 0,
+            recommendedEyeHeight: 0
+        }
+    }
+}
+
 lazy_static! {
     pub static ref MAYBE_RUNTIME: Mutex<Option<Runtime>> = Mutex::new(None);
     static ref IDR_REQUEST_NOTIFIER: Notify = Notify::new();
@@ -94,10 +107,9 @@ pub const APP_CONFIG: Options = Options {
     graphics_api: Some(crate::GraphicsCtxApi::Auto),
 };
 
-pub extern "C" fn init_connections(sysProp: *const crate::SystemProperties) {
-    //println!("Hello world\n");
+pub fn init_connections(sys_properties: &crate::SystemProperties) {
     alvr_common::show_err(|| -> StrResult {
-        println!("Hello world\n");
+        //println!("init_connections\n");
 
         // // struct OnResumeResult {
         // //     DeviceType deviceType;
@@ -123,24 +135,20 @@ pub extern "C" fn init_connections(sysProp: *const crate::SystemProperties) {
         //     "Unknown device"
         // };
 
-        let systemProperties = unsafe { *sysProp };
-        let system_name = unsafe { CStr::from_ptr(systemProperties.systemName.as_ptr()) };
+        let system_name = unsafe { CStr::from_ptr(sys_properties.systemName.as_ptr()) };
         let device_name: &str = system_name.to_str().unwrap_or("UnknownHMD");
-        //let device_name = unsafe { CStr::from_ptr((*sysProp).systemName.as_ptr()).to_string_lossy().into_owned() };
-
-        //let current_refresh_rate = systemProperties.currentRefreshRate;
         let available_refresh_rates = unsafe {
             slice::from_raw_parts(
-                systemProperties.refreshRates,
-                systemProperties.refreshRatesCount as _,
+                sys_properties.refreshRates,
+                sys_properties.refreshRatesCount as _,
             )
             .to_vec()
-        }; //vec![90.0];
+        };
         let preferred_refresh_rate = available_refresh_rates.last().cloned().unwrap_or(60_f32); //90.0;
 
         let headset_info = HeadsetInfoPacket {
-            recommended_eye_width: systemProperties.recommendedEyeWidth as _,
-            recommended_eye_height: systemProperties.recommendedEyeHeight as _,
+            recommended_eye_width: sys_properties.recommendedEyeWidth as _,
+            recommended_eye_height: sys_properties.recommendedEyeHeight as _,
             available_refresh_rates,
             preferred_refresh_rate,
             reserved: format!("{}", *ALVR_VERSION),
@@ -150,7 +158,7 @@ pub extern "C" fn init_connections(sysProp: *const crate::SystemProperties) {
             "recommended eye width: {0}, height: {1}",
             headset_info.recommended_eye_width, headset_info.recommended_eye_height
         );
-
+        
         let ipAddr = if APP_CONFIG.localhost {
             std::net::Ipv4Addr::LOCALHOST.to_string()
         } else {
