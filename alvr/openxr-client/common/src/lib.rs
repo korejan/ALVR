@@ -73,6 +73,46 @@ pub struct Options {
     // file_name: Option<String>,
 }
 
+impl From<&str> for crate::GraphicsCtxApi {
+    fn from(input: &str) -> Self {
+        let trimmed = input.trim();
+        match trimmed {
+            "Vulkan2" => crate::GraphicsCtxApi::Vulkan2,
+            "Vulkan" => crate::GraphicsCtxApi::Vulkan,
+            "D3D12" => crate::GraphicsCtxApi::D3D12,
+            "D3D11" => crate::GraphicsCtxApi::D3D11,
+            "OpenGLES" => crate::GraphicsCtxApi::OpenGLES,
+            "OpenGL" => crate::GraphicsCtxApi::OpenGL,
+            _ => crate::GraphicsCtxApi::Auto,
+        }
+    }
+}
+
+#[cfg(target_os = "android")]
+impl Options {
+    pub fn from_system_properties() -> Options {
+        let mut new_options = Options {
+            localhost: false,
+            verbose: false,
+            graphics_api: Some(crate::GraphicsCtxApi::Auto),
+        };
+        unsafe {
+            let mut value = [0 as libc::c_char; libc::PROP_VALUE_MAX as usize];
+            let property_name = b"debug.xr.graphicsPlugin\0";
+            if libc::__system_property_get(property_name.as_ptr(), value.as_mut_ptr()) != 0 {
+                let val_str = CStr::from_bytes_with_nul(&value).unwrap();
+                new_options.graphics_api = Some(From::from(val_str.to_str().unwrap_or("auto")));
+            }
+            let property_name = b"debug.xr.verbose\0";
+            if libc::__system_property_get(property_name.as_ptr(), value.as_mut_ptr()) != 0 {
+                let val_str = CStr::from_bytes_with_nul(&value).unwrap();
+                new_options.verbose = FromStr::from_str(val_str.to_str().unwrap_or("false")).unwrap_or(false);
+            }
+        }
+        new_options
+    }
+}
+
 impl SystemProperties {
     pub fn new() -> SystemProperties {
         SystemProperties { 
@@ -99,13 +139,10 @@ lazy_static! {
 lazy_static! {
     pub static ref APP_CONFIG: Options = Options::from_args();
 }
-
 #[cfg(target_os = "android")]
-pub const APP_CONFIG: Options = Options {
-    localhost: false,
-    verbose: false,
-    graphics_api: Some(crate::GraphicsCtxApi::Auto),
-};
+lazy_static! {
+    pub static ref APP_CONFIG: Options = Options::from_system_properties();
+}
 
 pub fn init_connections(sys_properties: &crate::SystemProperties) {
     alvr_common::show_err(|| -> StrResult {
@@ -212,20 +249,5 @@ pub extern "C" fn legacy_send(
         }
 
         sender.send(vec_buffer).ok();
-    }
-}
-
-impl From<&str> for crate::GraphicsCtxApi {
-    fn from(input: &str) -> Self {
-        let trimmed = input.trim();
-        match trimmed {
-            "Vulkan2" => crate::GraphicsCtxApi::Vulkan2,
-            "Vulkan" => crate::GraphicsCtxApi::Vulkan,
-            "D3D12" => crate::GraphicsCtxApi::D3D12,
-            "D3D11" => crate::GraphicsCtxApi::D3D11,
-            "OpenGLES" => crate::GraphicsCtxApi::OpenGLES,
-            "OpenGL" => crate::GraphicsCtxApi::OpenGL,
-            _ => crate::GraphicsCtxApi::Auto,
-        }
     }
 }
