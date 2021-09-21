@@ -18,5 +18,6 @@ members = [
     "alvr/openxr-client/oxr-client",
     "alvr/openxr-client/oxr-android-client",
     "alvr/xtask",
+    "alvr/experiments/client", # needed for bug in cargo-subcommand
     "alvr/experiments/*",
 ]
