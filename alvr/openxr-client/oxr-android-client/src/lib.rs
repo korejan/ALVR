@@ -9,6 +9,7 @@ use oxr_common::{
     GraphicsCtxApi,
     RustCtx,
     SystemProperties,
+    APP_CONFIG
 };
 
 use ndk::looper::*;
@@ -49,6 +50,7 @@ impl AppData {
 
 #[cfg_attr(target_os = "android", ndk_glue::main(backtrace = "on"))]
 pub fn main() {
+    println!("{:?}", *APP_CONFIG);
     let mut app = AppData {
         destroy_requested: false,
         resumed: false,
@@ -88,7 +90,8 @@ pub fn poll_all_ms(block: bool) -> Option<ndk_glue::Event> {
     }
 }
 
-fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
+#[cfg(target_os = "android")]
+fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {    
     unsafe {
         let native_activity = ndk_glue::native_activity();
         let vm_ptr = native_activity.vm();
@@ -99,8 +102,8 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
         let _env = vm.attach_current_thread()?;
 
         let ctx = RustCtx {
-            graphicsApi: GraphicsCtxApi::Auto,
-            verbose: false,
+            graphicsApi: APP_CONFIG.graphics_api.unwrap_or(GraphicsCtxApi::Auto),
+            verbose: APP_CONFIG.verbose,
             applicationVM: vm_ptr as *mut std::ffi::c_void,
             applicationActivity: (*native_activity.ptr().as_ptr()).clazz as *mut std::ffi::c_void,
             legacySend: Some(legacy_send),
