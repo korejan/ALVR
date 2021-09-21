@@ -36,6 +36,9 @@ semver = "1"
 local_ipaddress = "0.1"
 structopt = "0.3"
 
+[target.'cfg(target_os = "android")'.dependencies]
+libc = "0.2"
+
 [build-dependencies]
 cmake = "0.1"
 bindgen = "0.59"
