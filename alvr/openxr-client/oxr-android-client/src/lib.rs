@@ -5,7 +5,7 @@ use oxr_common::{
     alxr_init,
     alxr_destroy,    
     alxr_is_session_running,
-    alxr_proces_frame,
+    alxr_process_frame,
     init_connections,
     shutdown,
     legacy_send,
@@ -131,7 +131,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             // update and render
             let mut exit_render_loop = false;
             let mut request_restart = false;
-            alxr_proces_frame(&mut exit_render_loop, &mut request_restart);
+            alxr_process_frame(&mut exit_render_loop, &mut request_restart);
             if exit_render_loop {
                 break;
             }

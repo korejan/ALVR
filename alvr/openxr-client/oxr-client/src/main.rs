@@ -1,6 +1,6 @@
 use oxr_common::{
     ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties,  
-    alxr_init, alxr_destroy, alxr_is_session_running, alxr_proces_frame,
+    alxr_init, alxr_destroy, alxr_is_session_running, alxr_process_frame,
     init_connections, shutdown, legacy_send, APP_CONFIG,
 };
 use std::{thread, time};
@@ -27,7 +27,7 @@ fn main() {
             let mut request_restart = false;
             loop {
                 let mut exit_render_loop = false;
-                alxr_proces_frame(&mut exit_render_loop, &mut request_restart);
+                alxr_process_frame(&mut exit_render_loop, &mut request_restart);
                 if exit_render_loop {
                     break;
                 }
