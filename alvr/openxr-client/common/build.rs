@@ -46,8 +46,8 @@ fn main() {
     let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     assert!(project_dir.ends_with("common")); //"openxr-client"));
 
-    let xr_engine_dir = project_dir.join("cpp/ALVR-OpenXR-Engine");
-    let xr_engine_src_dir = xr_engine_dir.join("src");
+    let alxr_engine_dir = project_dir.join("cpp/ALVR-OpenXR-Engine");
+    let alxr_engine_src_dir = alxr_engine_dir.join("src");
 
     let android_dir = project_dir.join("android");
     let alvr_common_cpp_dir = project_dir.join("../../client/android/ALVR-common");
@@ -74,7 +74,7 @@ fn main() {
     let cpp_paths = walkdir::WalkDir::new(&alvr_common_cpp_dir)
         .into_iter()
         .chain(walkdir::WalkDir::new(&android_dir).into_iter())
-        .chain(walkdir::WalkDir::new(&xr_engine_dir).into_iter())
+        .chain(walkdir::WalkDir::new(&alxr_engine_dir).into_iter())
         .filter_map(|maybe_entry| maybe_entry.ok())
         .filter(|dir_entry| {
             let path = dir_entry.path();
@@ -91,7 +91,7 @@ fn main() {
         .map(DirEntry::into_path)
         .collect::<Vec<_>>();
 
-    let xr_engine_output_dir = if is_android_env(&target_triple) {
+    let alxr_engine_output_dir = if is_android_env(&target_triple) {
         let gradle_output_dir = out_dir.join("gradle_build");
         let gradle_cmd_path = android_dir.join(gradle_cmd(target_lexicon::HOST.operating_system));
         let status = Command::new(gradle_cmd_path)
@@ -104,7 +104,7 @@ fn main() {
             .status()
             .unwrap();
         if !status.success() {
-            panic!("gradle failed to build libxr_engine.so");
+            panic!("gradle failed to build libalxr_engine.so");
         }
         let bin_dir_rel = PathBuf::from(format!(
             "intermediates/library_and_local_jars_jni/{0}/jni/{1}",
@@ -140,7 +140,7 @@ fn main() {
         ""
     };
 
-    let binding_file = xr_engine_src_dir.join("xr_engine/rust_bindings.h");
+    let binding_file = alxr_engine_src_dir.join("alxr_engine/rust_bindings.h");
     bindgen::builder()
         .clang_arg("-xc++")
         .clang_arg("-std=c++17")
@@ -156,21 +156,21 @@ fn main() {
     if is_android_env(&target_triple) {
         println!(
             "cargo:rustc-link-search=native={0}",
-            xr_engine_output_dir.to_string_lossy()
+            alxr_engine_output_dir.to_string_lossy()
         );
         //println!("cargo:rustc-link-lib=dylib=openxr_loader");
         //println!("cargo:rustc-link-lib=dylib={0}", "c++_shared");
         //println!("cargo:rustc-link-lib=dylib={0}", "openxr_monado");
     } else {
-        let xr_engine_bin_dir = xr_engine_output_dir.join("lib");
-        let xr_engine_lib_dir = xr_engine_output_dir.join("bin");
+        let alxr_engine_bin_dir = alxr_engine_output_dir.join("lib");
+        let alxr_engine_lib_dir = alxr_engine_output_dir.join("bin");
         println!(
             "cargo:rustc-link-search=native={0}",
-            xr_engine_bin_dir.to_string_lossy()
+            alxr_engine_bin_dir.to_string_lossy()
         );
         println!(
             "cargo:rustc-link-search=native={0}",
-            xr_engine_lib_dir.to_string_lossy()
+            alxr_engine_lib_dir.to_string_lossy()
         );
     };
 
@@ -179,7 +179,7 @@ fn main() {
     if target_triple.operating_system != OperatingSystem::Windows {
         println!("cargo:rustc-link-lib=dylib={0}", "openxr_loader");
     }
-    println!("cargo:rustc-link-lib=dylib={0}", "xr_engine");
+    println!("cargo:rustc-link-lib=dylib={0}", "alxr_engine");
 
     //println!("cargo:rustc-link-lib=static=stdc++");
     //println!("cargo:rustc-link-lib=static=stdc++");
