@@ -1,15 +1,6 @@
 use oxr_common::{
-    ALXRGraphicsApi,
-    ALXRRustCtx,
-    ALXRSystemProperties,
-    alxr_init,
-    alxr_destroy,    
-    alxr_is_session_running,
-    alxr_process_frame,
-    init_connections,
-    shutdown,
-    legacy_send,
-    APP_CONFIG
+    alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, init_connections,
+    legacy_send, shutdown, ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
 };
 
 use ndk::looper::*;
@@ -91,7 +82,7 @@ pub fn poll_all_ms(block: bool) -> Option<ndk_glue::Event> {
 }
 
 #[cfg(target_os = "android")]
-fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {    
+fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
         let native_activity = ndk_glue::native_activity();
         let vm_ptr = native_activity.vm();
@@ -109,7 +100,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             legacySend: Some(legacy_send),
         };
         let mut sys_properties = ALXRSystemProperties::new();
-        if !alxr_init(&ctx, & mut sys_properties) {
+        if !alxr_init(&ctx, &mut sys_properties) {
             return Ok(());
         }
         init_connections(&sys_properties);
