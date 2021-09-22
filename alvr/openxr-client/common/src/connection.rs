@@ -268,7 +268,7 @@ async fn connection_pipeline(
 
     //println!("setting display refresh to {0}Hz", config_packet.fps);
     unsafe {
-        crate::setStreamConfig(crate::StreamConfig {
+        crate::alxr_set_stream_config(crate::ALXRStreamConfig {
             // eyeWidth: config_packet.eye_resolution_width,
             // eyeHeight: config_packet.eye_resolution_height,
             refreshRate: config_packet.fps,
@@ -294,8 +294,7 @@ async fn connection_pipeline(
             // } else {
             //     0_f32
             // },
-            trackingSpaceType: matches!(settings.headset.tracking_space, TrackingSpace::Stage)
-                as crate::TrackingSpace,
+            trackingSpaceType: matches!(settings.headset.tracking_space, TrackingSpace::Stage) as crate::ALXRTrackingSpace,
             // extraLatencyMode: settings.headset.extra_latency_mode,
         });
     }
@@ -389,7 +388,7 @@ async fn connection_pipeline(
                     }
 
                     //println!("Receiving data...");
-                    crate::legacyReceive(data.as_mut_ptr(), data.len() as _);
+                    crate::alxr_on_receive(data.as_mut_ptr(), data.len() as _);
                 }
 
                 //crate::closeSocket(env_ptr);
@@ -403,13 +402,13 @@ async fn connection_pipeline(
     let tracking_loop = async move {
         let mut deadline = Instant::now();
         loop {
-            unsafe { crate::onTrackingNative(tracking_clientside_prediction) };
+            unsafe { crate::alxr_on_tracking_update(tracking_clientside_prediction) };
             deadline += tracking_interval;
             time::sleep_until(deadline).await;
         }
     };
 
-    unsafe impl Send for crate::GuardianData {}
+    unsafe impl Send for crate::ALXRGuardianData {}
     let playspace_sync_loop = {
         let control_sender = Arc::clone(&control_sender);
         async move {
