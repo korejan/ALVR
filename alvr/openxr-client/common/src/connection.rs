@@ -294,7 +294,8 @@ async fn connection_pipeline(
             // } else {
             //     0_f32
             // },
-            trackingSpaceType: matches!(settings.headset.tracking_space, TrackingSpace::Stage) as crate::ALXRTrackingSpace,
+            trackingSpaceType: matches!(settings.headset.tracking_space, TrackingSpace::Stage)
+                as crate::ALXRTrackingSpace,
             // extraLatencyMode: settings.headset.extra_latency_mode,
         });
     }
