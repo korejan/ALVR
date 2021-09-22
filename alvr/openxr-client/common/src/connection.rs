@@ -6,8 +6,8 @@ use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
 use alvr_session::{SessionDesc, TrackingSpace};
 use alvr_sockets::{
     spawn_cancelable, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket,
-    HeadsetInfoPacket, PeerType, PrivateIdentity, ProtoControlSocket,
-    ServerControlPacket, ServerHandshakePacket, StreamSocketBuilder, LEGACY,
+    HeadsetInfoPacket, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
+    ServerHandshakePacket, StreamSocketBuilder, LEGACY,
 };
 use futures::future::BoxFuture;
 use serde_json as json;
