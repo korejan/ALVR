@@ -47,7 +47,7 @@ pub struct Options {
     pub localhost: bool,
 
     #[structopt(short = "g", long = "graphics", parse(from_str))]
-    pub graphics_api: Option<crate::GraphicsCtxApi>,
+    pub graphics_api: Option<crate::ALXRGraphicsApi>,
 
     #[structopt(short, long)]
     pub verbose: bool,
@@ -73,28 +73,28 @@ pub struct Options {
     // file_name: Option<String>,
 }
 
-impl From<&str> for crate::GraphicsCtxApi {
+impl From<&str> for crate::ALXRGraphicsApi {
     fn from(input: &str) -> Self {
         let trimmed = input.trim();
         match trimmed {
-            "Vulkan2" => crate::GraphicsCtxApi::Vulkan2,
-            "Vulkan" => crate::GraphicsCtxApi::Vulkan,
-            "D3D12" => crate::GraphicsCtxApi::D3D12,
-            "D3D11" => crate::GraphicsCtxApi::D3D11,
-            "OpenGLES" => crate::GraphicsCtxApi::OpenGLES,
-            "OpenGL" => crate::GraphicsCtxApi::OpenGL,
-            _ => crate::GraphicsCtxApi::Auto,
+            "Vulkan2" => crate::ALXRGraphicsApi::Vulkan2,
+            "Vulkan" => crate::ALXRGraphicsApi::Vulkan,
+            "D3D12" => crate::ALXRGraphicsApi::D3D12,
+            "D3D11" => crate::ALXRGraphicsApi::D3D11,
+            "OpenGLES" => crate::ALXRGraphicsApi::OpenGLES,
+            "OpenGL" => crate::ALXRGraphicsApi::OpenGL,
+            _ => crate::ALXRGraphicsApi::Auto,
         }
     }
 }
 
 #[cfg(target_os = "android")]
 impl Options {
-    pub fn from_system_properties() -> Options {
+    pub fn from_system_properties() -> Self {
         let mut new_options = Options {
             localhost: false,
             verbose: false,
-            graphics_api: Some(crate::GraphicsCtxApi::Auto),
+            graphics_api: Some(crate::ALXRGraphicsApi::Auto),
         };
         unsafe {
             let mut value = [0 as libc::c_char; libc::PROP_VALUE_MAX as usize];
@@ -113,9 +113,9 @@ impl Options {
     }
 }
 
-impl SystemProperties {
-    pub fn new() -> SystemProperties {
-        SystemProperties { 
+impl ALXRSystemProperties {
+    pub fn new() -> ALXRSystemProperties {
+        ALXRSystemProperties { 
             systemName: [0; 256],
             currentRefreshRate: 90.0,
             refreshRates: std::ptr::null(),
@@ -144,7 +144,7 @@ lazy_static! {
     pub static ref APP_CONFIG: Options = Options::from_system_properties();
 }
 
-pub fn init_connections(sys_properties: &crate::SystemProperties) {
+pub fn init_connections(sys_properties: &crate::ALXRSystemProperties) {
     alvr_common::show_err(|| -> StrResult {
         //println!("init_connections\n");
 
