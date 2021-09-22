@@ -106,7 +106,8 @@ impl Options {
             let property_name = b"debug.xr.verbose\0";
             if libc::__system_property_get(property_name.as_ptr(), value.as_mut_ptr()) != 0 {
                 let val_str = CStr::from_bytes_with_nul(&value).unwrap();
-                new_options.verbose = FromStr::from_str(val_str.to_str().unwrap_or("false")).unwrap_or(false);
+                new_options.verbose =
+                    FromStr::from_str(val_str.to_str().unwrap_or("false")).unwrap_or(false);
             }
         }
         new_options
@@ -115,13 +116,13 @@ impl Options {
 
 impl ALXRSystemProperties {
     pub fn new() -> ALXRSystemProperties {
-        ALXRSystemProperties { 
+        ALXRSystemProperties {
             systemName: [0; 256],
             currentRefreshRate: 90.0,
             refreshRates: std::ptr::null(),
             refreshRatesCount: 0,
             recommendedEyeWidth: 0,
-            recommendedEyeHeight: 0
+            recommendedEyeHeight: 0,
         }
     }
 }
@@ -195,7 +196,7 @@ pub fn init_connections(sys_properties: &crate::ALXRSystemProperties) {
             "recommended eye width: {0}, height: {1}",
             headset_info.recommended_eye_width, headset_info.recommended_eye_height
         );
-        
+
         let ipAddr = if APP_CONFIG.localhost {
             std::net::Ipv4Addr::LOCALHOST.to_string()
         } else {
