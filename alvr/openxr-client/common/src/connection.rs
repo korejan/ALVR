@@ -3,24 +3,17 @@ use crate::{
     MAYBE_LEGACY_SENDER,
 };
 use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
-use alvr_session::{CodecType, SessionDesc, TrackingSpace};
+use alvr_session::{SessionDesc, TrackingSpace};
 use alvr_sockets::{
     spawn_cancelable, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket,
-    HeadsetInfoPacket, PeerType, PlayspaceSyncPacket, PrivateIdentity, ProtoControlSocket,
+    HeadsetInfoPacket, PeerType, PrivateIdentity, ProtoControlSocket,
     ServerControlPacket, ServerHandshakePacket, StreamSocketBuilder, LEGACY,
 };
 use futures::future::BoxFuture;
-// use jni::{
-//     objects::{GlobalRef, JClass},
-//     JavaVM,
-// };
-use nalgebra::{Point2, Point3, Quaternion, UnitQuaternion};
-use semver::Version;
 use serde_json as json;
 use settings_schema::Switch;
 use std::{
-    future, slice,
-    str::FromStr,
+    future,
     sync::{
         atomic::{AtomicBool, Ordering},
         mpsc as smpsc, Arc,
@@ -355,8 +348,8 @@ async fn connection_pipeline(
         //let java_vm = Arc::clone(&java_vm);
         //let activity_ref = Arc::clone(&activity_ref);
         //let nal_class_ref = Arc::clone(&nal_class_ref);
-        let codec = settings.video.codec;
-        let enable_fec = settings.connection.enable_fec;
+        let _codec = settings.video.codec;
+        let _enable_fec = settings.connection.enable_fec;
         move || -> StrResult {
             //let env = trace_err!(java_vm.attach_current_thread())?;
             //let env_ptr = env.get_native_interface() as _;
@@ -411,7 +404,7 @@ async fn connection_pipeline(
 
     unsafe impl Send for crate::ALXRGuardianData {}
     let playspace_sync_loop = {
-        let control_sender = Arc::clone(&control_sender);
+        //let control_sender = Arc::clone(&control_sender);
         async move {
             loop {
                 /*
