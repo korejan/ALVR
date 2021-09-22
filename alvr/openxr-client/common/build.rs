@@ -147,7 +147,7 @@ fn main() {
         .clang_arg(defines)
         .header(binding_file.to_string_lossy())
         .derive_default(true)
-        .rustified_enum("GraphicsCtxApi")
+        .rustified_enum("ALXRGraphicsApi")
         .generate()
         .expect("bindings")
         .write_to_file(out_dir.join("oxr_bindings.rs"))
