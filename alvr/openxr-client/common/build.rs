@@ -140,7 +140,7 @@ fn main() {
         ""
     };
 
-    let binding_file = alxr_engine_src_dir.join("alxr_engine/rust_bindings.h");
+    let binding_file = alxr_engine_src_dir.join("alxr_engine/alxr_engine.h");
     bindgen::builder()
         .clang_arg("-xc++")
         .clang_arg("-std=c++17")
@@ -150,8 +150,8 @@ fn main() {
         .rustified_enum("ALXRGraphicsApi")
         .generate()
         .expect("bindings")
-        .write_to_file(out_dir.join("oxr_bindings.rs"))
-        .expect("oxr_bindings.rs");
+        .write_to_file(out_dir.join("alxr_engine.rs"))
+        .expect("alxr_engine.rs");
 
     if is_android_env(&target_triple) {
         println!(
