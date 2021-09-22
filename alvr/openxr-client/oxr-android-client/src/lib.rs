@@ -1,14 +1,14 @@
 use oxr_common::{
+    ALXRGraphicsApi,
+    ALXRRustCtx,
+    ALXRSystemProperties,
+    alxr_init,
+    alxr_destroy,    
+    alxr_is_session_running,
+    alxr_proces_frame,
     init_connections,
-    isOpenXRSessionRunning,
-    legacy_send,
-    openxrDestroy,
-    openxrInit,
-    openxrProcesFrame,
     shutdown,
-    GraphicsCtxApi,
-    RustCtx,
-    SystemProperties,
+    legacy_send,
     APP_CONFIG
 };
 
@@ -101,15 +101,15 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
         let vm = jni::JavaVM::from_raw(vm_ptr)?;
         let _env = vm.attach_current_thread()?;
 
-        let ctx = RustCtx {
-            graphicsApi: APP_CONFIG.graphics_api.unwrap_or(GraphicsCtxApi::Auto),
+        let ctx = ALXRRustCtx {
+            graphicsApi: APP_CONFIG.graphics_api.unwrap_or(ALXRGraphicsApi::Auto),
             verbose: APP_CONFIG.verbose,
             applicationVM: vm_ptr as *mut std::ffi::c_void,
             applicationActivity: (*native_activity.ptr().as_ptr()).clazz as *mut std::ffi::c_void,
             legacySend: Some(legacy_send),
         };
-        let mut sys_properties = SystemProperties::new();
-        if !openxrInit(&ctx, & mut sys_properties) {
+        let mut sys_properties = ALXRSystemProperties::new();
+        if !alxr_init(&ctx, & mut sys_properties) {
             return Ok(());
         }
         init_connections(&sys_properties);
@@ -119,7 +119,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             loop {
                 // event pump loop
                 let block =
-                    !app_data.destroy_requested && !app_data.resumed && !isOpenXRSessionRunning();
+                    !app_data.destroy_requested && !app_data.resumed && !alxr_is_session_running();
                 // If the timeout is zero, returns immediately without blocking.
                 // If the timeout is negative, waits indefinitely until an event appears.
                 if let Some(event) = poll_all_ms(block) {
@@ -131,14 +131,14 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             // update and render
             let mut exit_render_loop = false;
             let mut request_restart = false;
-            openxrProcesFrame(&mut exit_render_loop, &mut request_restart);
+            alxr_proces_frame(&mut exit_render_loop, &mut request_restart);
             if exit_render_loop {
                 break;
             }
         }
 
         shutdown();
-        openxrDestroy();
+        alxr_destroy();
 
         vm.detach_current_thread();
     }
