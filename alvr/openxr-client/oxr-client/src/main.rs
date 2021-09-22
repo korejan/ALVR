@@ -1,7 +1,6 @@
 use oxr_common::{
-    ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties,  
-    alxr_init, alxr_destroy, alxr_is_session_running, alxr_process_frame,
-    init_connections, shutdown, legacy_send, APP_CONFIG,
+    alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, init_connections,
+    legacy_send, shutdown, ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
 };
 use std::{thread, time};
 
@@ -12,14 +11,14 @@ fn main() {
     println!("{:?}", *APP_CONFIG);
     let selected_api = APP_CONFIG.graphics_api.unwrap_or(ALXRGraphicsApi::Auto);
     unsafe {
-        loop {            
+        loop {
             let ctx = ALXRRustCtx {
                 legacySend: Some(legacy_send),
                 graphicsApi: selected_api,
                 verbose: APP_CONFIG.verbose,
             };
             let mut sys_properties = ALXRSystemProperties::new();
-            if !alxr_init(&ctx, & mut sys_properties) {
+            if !alxr_init(&ctx, &mut sys_properties) {
                 break;
             }
             init_connections(&sys_properties);
