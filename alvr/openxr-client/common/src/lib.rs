@@ -10,7 +10,7 @@ use std::{ffi::CStr, ffi::CString, str::FromStr};
 // #[cfg(target_os = "android")]
 // mod audio;
 
-include!(concat!(env!("OUT_DIR"), "/oxr_bindings.rs"));
+include!(concat!(env!("OUT_DIR"), "/alxr_engine.rs"));
 
 use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
 use alvr_sockets::{
