@@ -2,28 +2,21 @@
 
 mod connection;
 mod connection_utils;
-use std::{ffi::CStr};
+use std::ffi::CStr;
 
 include!(concat!(env!("OUT_DIR"), "/alxr_engine.rs"));
 
 use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
-use alvr_sockets::{
-    HeadsetInfoPacket,
-};
+use alvr_sockets::HeadsetInfoPacket;
 use lazy_static::lazy_static;
 use parking_lot::Mutex;
-use std::{
-    ptr, slice,
-    sync::{
-        atomic::{AtomicBool},
-    },
-};
+use std::{ptr, slice, sync::atomic::AtomicBool};
 use tokio::{runtime::Runtime, sync::mpsc, sync::Notify};
 
 use local_ipaddress;
 
 //#[cfg(not(target_os = "android"))]
-use structopt::{StructOpt};
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "openxr_client", about = "An OpenXR based ALVR client.")]
@@ -94,7 +87,8 @@ impl Options {
             if libc::__system_property_get(property_name.as_ptr(), value.as_mut_ptr()) != 0 {
                 let val_str = CStr::from_bytes_with_nul(&value).unwrap();
                 new_options.verbose =
-                    std::str::FromStr::from_str(val_str.to_str().unwrap_or("false")).unwrap_or(false);
+                    std::str::FromStr::from_str(val_str.to_str().unwrap_or("false"))
+                        .unwrap_or(false);
             }
         }
         new_options
