@@ -1,4 +1,4 @@
-use oxr_common::{
+use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, init_connections,
     legacy_send, shutdown, ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
 };
