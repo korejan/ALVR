@@ -14,8 +14,8 @@ members = [
     "alvr/launcher",
     "alvr/vrcompositor-wrapper",
     "alvr/vulkan-layer",
-    "alvr/openxr-client/oxr-client",
-    "alvr/openxr-client/oxr-android-client",
+    "alvr/openxr-client/alxr-client",
+    "alvr/openxr-client/alxr-android-client",
     "alvr/xtask",
     "alvr/experiments/client",     # needed for bug in cargo-subcommand
     "alvr/experiments/*",
