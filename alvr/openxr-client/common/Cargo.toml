@@ -1,5 +1,5 @@
 [package]
-name = "oxr_common"
+name = "alxr_common"
 version = "0.1.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2018"
