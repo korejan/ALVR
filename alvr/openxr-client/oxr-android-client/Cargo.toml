@@ -1,15 +1,16 @@
 [package]
-name = "oxr-android-client"
+name = "alxr-android-client"
 version = "0.1.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2018"
+description = "An OpenXR based ALVR client for android platorms"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-oxr_common = { path = "../common" }
+alxr_common = { path = "../common" }
 jni = "0.19"
 ndk = "0.4" #{ path = "../ndk", features = ["trace"] }
 ndk-glue = "0.4" #{ path = "../ndk-glue", features = ["logger"] }
@@ -30,12 +31,12 @@ build_targets = ["aarch64-linux-android"]
 
 # Name for final APK file.
 # Defaults to package name.
-#apk_name = "myapp"
+apk_name = "alxr-client"
 
 # Folder containing extra shared libraries intended to be dynamically loaded at runtime.
 # Files matching `libs_folder/${android_abi}/*.so` are added to the apk
 # according to the specified build_targets.
-#runtime_libs = "C:/Users/Korcan/Documents/GitHub/monado/src/xrt/targets/openxr_android/build/intermediates/cmake/inProcessDebug/obj"
+#runtime_libs = ""
 
 #
 # The following value can be customized on a per bin/example basis. See multiple_targets example
@@ -45,10 +46,10 @@ build_targets = ["aarch64-linux-android"]
 
 # The Java package name for your application.
 # Hyphens are converted to underscores.
-package_name = "com.alvr.openxr_client"
+package_name = "com.alvr.alxr_client"
 
 # The user-friendly name for your app, as displayed in the applications menu.
-label = "openxr_client"
+label = "alxr_client"
 
 # Internal version number used to determine whether one version is more recent than another. Must be an integer.
 # Defaults to 1
@@ -189,7 +190,7 @@ name = "com.oculus.permission.HAND_TRACKING"
 # See https://developer.android.com/guide/topics/manifest/application-element#label
 #
 # Defaults to the compiled artifact's name.
-label = "openxr_client"
+label = "alxr_client"
 
 # See https://developer.android.com/guide/topics/manifest/meta-data-element
 #
@@ -210,7 +211,7 @@ config_changes = "density|keyboard|keyboardHidden|navigation|orientation|screenL
 # See https://developer.android.com/guide/topics/manifest/activity-element#label
 #
 # Defaults to the application's label.
-label = "openxr_client"
+label = "alxr_client"
 
 # See https://developer.android.com/guide/topics/manifest/activity-element#lmode
 #
@@ -246,7 +247,7 @@ value = "HIGH"
 # Note: the `resource` attribute is currently not supported.
 #[[package.metadata.android.application.activity.meta_data]]
 #name = "android.app.lib_name"
-#value = "openxr_client"
+#value = "alxr_client"
 
 [[package.metadata.android.application.activity.intent_filter]]
 actions = ["android.intent.action.MAIN"]
