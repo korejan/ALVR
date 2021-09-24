@@ -162,15 +162,15 @@ fn main() {
         //println!("cargo:rustc-link-lib=dylib={0}", "c++_shared");
         //println!("cargo:rustc-link-lib=dylib={0}", "openxr_monado");
     } else {
-        let alxr_engine_bin_dir = alxr_engine_output_dir.join("lib");
-        let alxr_engine_lib_dir = alxr_engine_output_dir.join("bin");
-        println!(
-            "cargo:rustc-link-search=native={0}",
-            alxr_engine_bin_dir.to_string_lossy()
-        );
+        let alxr_engine_bin_dir = alxr_engine_output_dir.join("bin");
+        let alxr_engine_lib_dir = alxr_engine_output_dir.join("lib");
         println!(
             "cargo:rustc-link-search=native={0}",
             alxr_engine_lib_dir.to_string_lossy()
+        );
+        println!(
+            "cargo:rustc-link-search=native={0}",
+            alxr_engine_bin_dir.to_string_lossy()
         );
     };
 
