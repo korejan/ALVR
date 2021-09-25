@@ -402,7 +402,7 @@ async fn connection_pipeline(
         }
     };
 
-    unsafe impl Send for crate::ALXRGuardianData {}
+    //unsafe impl Send for crate::ALXRGuardianData {}
     let playspace_sync_loop = {
         //let control_sender = Arc::clone(&control_sender);
         async move {

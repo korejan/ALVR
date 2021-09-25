@@ -1,20 +1,15 @@
-#![allow(non_upper_case_globals, non_snake_case, clippy::missing_safety_doc)]
-
 mod connection;
 mod connection_utils;
+
+pub use alxr_engine_sys::{*};
 use std::ffi::CStr;
-
-include!(concat!(env!("OUT_DIR"), "/alxr_engine.rs"));
-
-use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
+use alvr_common::{prelude::*, ALVR_VERSION};
 use alvr_sockets::HeadsetInfoPacket;
 use lazy_static::lazy_static;
 use parking_lot::Mutex;
 use std::{ptr, slice, sync::atomic::AtomicBool};
 use tokio::{runtime::Runtime, sync::mpsc, sync::Notify};
-
 use local_ipaddress;
-
 //#[cfg(not(target_os = "android"))]
 use structopt::StructOpt;
 
@@ -27,7 +22,7 @@ pub struct Options {
     pub localhost: bool,
 
     #[structopt(short = "g", long = "graphics", parse(from_str))]
-    pub graphics_api: Option<crate::ALXRGraphicsApi>,
+    pub graphics_api: Option<ALXRGraphicsApi>,
 
     #[structopt(short, long)]
     pub verbose: bool,
@@ -53,28 +48,13 @@ pub struct Options {
     // file_name: Option<String>,
 }
 
-impl From<&str> for crate::ALXRGraphicsApi {
-    fn from(input: &str) -> Self {
-        let trimmed = input.trim();
-        match trimmed {
-            "Vulkan2" => crate::ALXRGraphicsApi::Vulkan2,
-            "Vulkan" => crate::ALXRGraphicsApi::Vulkan,
-            "D3D12" => crate::ALXRGraphicsApi::D3D12,
-            "D3D11" => crate::ALXRGraphicsApi::D3D11,
-            "OpenGLES" => crate::ALXRGraphicsApi::OpenGLES,
-            "OpenGL" => crate::ALXRGraphicsApi::OpenGL,
-            _ => crate::ALXRGraphicsApi::Auto,
-        }
-    }
-}
-
 #[cfg(target_os = "android")]
 impl Options {
     pub fn from_system_properties() -> Self {
         let mut new_options = Options {
             localhost: false,
             verbose: false,
-            graphics_api: Some(crate::ALXRGraphicsApi::Auto),
+            graphics_api: Some(ALXRGraphicsApi::Auto),
         };
         unsafe {
             let mut value = [0 as libc::c_char; libc::PROP_VALUE_MAX as usize];
@@ -92,19 +72,6 @@ impl Options {
             }
         }
         new_options
-    }
-}
-
-impl ALXRSystemProperties {
-    pub fn new() -> ALXRSystemProperties {
-        ALXRSystemProperties {
-            systemName: [0; 256],
-            currentRefreshRate: 90.0,
-            refreshRates: std::ptr::null(),
-            refreshRatesCount: 0,
-            recommendedEyeWidth: 0,
-            recommendedEyeHeight: 0,
-        }
     }
 }
 
@@ -126,7 +93,7 @@ lazy_static! {
     pub static ref APP_CONFIG: Options = Options::from_system_properties();
 }
 
-pub fn init_connections(sys_properties: &crate::ALXRSystemProperties) {
+pub fn init_connections(sys_properties: &ALXRSystemProperties) {
     alvr_common::show_err(|| -> StrResult {
         //println!("init_connections\n");
 
@@ -178,12 +145,12 @@ pub fn init_connections(sys_properties: &crate::ALXRSystemProperties) {
             headset_info.recommended_eye_width, headset_info.recommended_eye_height
         );
 
-        let ipAddr = if APP_CONFIG.localhost {
+        let ip_addr = if APP_CONFIG.localhost {
             std::net::Ipv4Addr::LOCALHOST.to_string()
         } else {
             local_ipaddress::get().unwrap_or(alvr_sockets::LOCAL_IP.to_string())
         };
-        let private_identity = alvr_sockets::create_identity(Some(ipAddr)).unwrap(); /*PrivateIdentity {
+        let private_identity = alvr_sockets::create_identity(Some(ip_addr)).unwrap(); /*PrivateIdentity {
                                                                                          hostname: //trace_err!(env.get_string(jhostname))?.into(),
                                                                                          certificate_pem: //trace_err!(env.get_string(jcertificate_pem))?.into(),
                                                                                          key_pem: //trace_err!(env.get_string(jprivate_key))?.into(),
