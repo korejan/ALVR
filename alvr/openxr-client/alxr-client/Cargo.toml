@@ -8,4 +8,4 @@ description = "An OpenXR based ALVR client for non-android platorms"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-alxr_common = { path = "../common" }
+alxr-common = { path = "../alxr-common" }
