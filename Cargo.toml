@@ -15,6 +15,7 @@ members = [
     "alvr/launcher",
     "alvr/vrcompositor-wrapper",
     "alvr/vulkan-layer",
+    "alvr/openxr-client/alxr-engine-sys",
     "alvr/openxr-client/alxr-client",
     "alvr/openxr-client/alxr-android-client",
     "alvr/xtask",
