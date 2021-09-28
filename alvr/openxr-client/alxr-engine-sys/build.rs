@@ -126,11 +126,9 @@ fn main() {
         assert!(!cmake_generator.is_empty());
         Config::new("cpp/ALVR-OpenXR-Engine")
             .generator(cmake_generator)
-            //.define("CMAKE_INSTALL_PREFIX", "cpp/ALVR-OpenXR-Engine/testout/install/test-x64-Debug")
-            //.always_configure(true)
-            //.profile("RELWITHDEBINFO")
-            //.define("S", "cpp/ALVR-OpenXR-Engine")
-            //.always_configure(true)
+            .define("BUILD_API_LAYERS", "OFF")
+            .define("BUILD_TESTS", "OFF")
+            .define("BUILD_CONFORMANCE_TESTS", "OFF")
             .build()
     };
 

@@ -7,6 +7,12 @@ use alvr_filesystem::{self as afs, Layout};
 use fs_extra::{self as fsx, dir as dirx};
 use pico_args::Arguments;
 use std::{env, fs, time::Instant};
+use std::collections::HashSet;
+use std::error::Error;
+use std::process::{Stdio};
+use std::io::BufReader;
+use cargo_metadata::{Message};
+use camino::{Utf8PathBuf};
 
 const HELP_STR: &str = r#"
 cargo xtask
@@ -20,6 +26,8 @@ SUBCOMMANDS:
     build-android-deps  Download and compile external dependencies for Android
     build-server        Build server driver, then copy binaries to build folder
     build-client        Build client, then copy binaries to build folder
+    build-alxr-client   Build OpenXR based client (non-android platforms only), then copy binaries to build folder
+    build-alxr-android  Build OpenXR based client (android platforms only), then copy binaries to build folder
     build-ffmpeg-linux  Build FFmpeg with VAAPI, NvEnc and Vulkan support. Only for CI
     publish-server      Build server in release mode, make portable version and installer
     publish-client      Build client for all headsets
@@ -303,6 +311,191 @@ pub fn build_client(is_release: bool, is_nightly: bool, for_oculus_go: bool) {
     .unwrap();
 }
 
+type PathSet = HashSet<Utf8PathBuf>;
+fn find_linked_native_paths(crate_path: &Path, build_flags:&str) -> Result<PathSet, Box<dyn Error> > {
+    // let manifest_file = crate_path.join("Cargo.toml");
+    // let metadata = MetadataCommand::new()
+    //     .manifest_path(manifest_file)
+    //     .exec()?;
+    // let package = match metadata.root_package() {
+    //     Some(p) => p,
+    //     None => return Err("cargo out-dir must be run from within a crate".into()),
+    // };
+    let mut args = vec!["check", "--message-format=json", "--quiet"];
+    args.extend(build_flags.split_ascii_whitespace());
+    
+    let mut command = std::process::Command::new("cargo")
+        .current_dir(crate_path)
+        .args(&args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    let reader = BufReader::new(command.stdout.take().unwrap());
+    let mut linked_path_set = PathSet::new();
+    for message in Message::parse_stream(reader) {
+        match message? {
+            Message::BuildScriptExecuted(script) => {
+                for lp in script.linked_paths.iter() {
+                    match lp.as_str().strip_prefix("native=") {
+                        Some(p) => { linked_path_set.insert(p.into()); },
+                        None => ()
+                    }
+                }
+            },
+            _ => ()
+        }
+    }
+    Ok(linked_path_set)
+}
+
+fn make_build_flags(is_release: bool, reproducible: bool) -> String {
+    format!("{} {}",
+        if is_release { "--release" } else { "" },
+        if reproducible {
+            "--offline --locked"
+        } else {
+            ""
+        }
+    )
+}
+
+pub fn build_alxr_client(
+    is_release: bool,
+    fetch_crates: bool,
+    root: Option<String>,
+    reproducible: bool,
+) {   
+    let build_type = if is_release { "release" } else { "debug" };
+    let build_flags = make_build_flags(is_release, reproducible);
+
+    if let Some(root) = root {
+        env::set_var("ALVR_ROOT_DIR", root);
+    }
+
+    let target_dir = afs::target_dir();
+    let artifacts_dir = target_dir.join(build_type);
+
+    if fetch_crates {
+        command::run("cargo update").unwrap();
+    }
+
+    let alxr_client_build_dir = afs::alxr_client_build_dir();
+    fs::remove_dir_all(&alxr_client_build_dir).ok();
+    fs::create_dir_all(&alxr_client_build_dir).unwrap();
+
+    let alxr_client_dir = afs::workspace_dir().join("alvr/openxr-client/alxr-client");
+    let (alxr_cargo_cmd, alxr_build_lid_dir) = if cfg!(target_os = "windows") {
+        (format!("cargo build {}", build_flags),
+        alxr_client_build_dir.to_owned())
+    }
+    else {
+        (format!("cargo rustc {} -- -C link-args=\'-Wl,-rpath,$ORIGIN/lib\'", build_flags),
+        alxr_client_build_dir.join("lib"))
+    };
+    command::run_in(&alxr_client_dir, &alxr_cargo_cmd).unwrap();
+        
+    fn is_linked_depends_file(path:&Path) -> bool {
+        if afs::is_dynlib_file(&path) {
+            return true;
+        }
+        if cfg!(target_os = "windows") {
+            if let Some(ext) = path.extension() { 
+                if ext.to_str().unwrap().eq("pdb") {
+                    return true;
+                }
+            }
+        }
+        if let Some(ext) = path.extension() { 
+            if ext.to_str().unwrap().eq("json") {
+                return true;
+            }
+        }
+        return false;
+    }
+    println!("Searching for linked native dependencies, please wait this may take some time.");
+    let linked_paths = find_linked_native_paths(&alxr_client_dir, &build_flags)
+        .unwrap();
+    for linked_path in linked_paths.iter() {
+        for linked_depend_file in walkdir::WalkDir::new(linked_path)
+            .into_iter()
+            .filter_map(|maybe_entry| maybe_entry.ok())
+            .map(|entry| entry.into_path())
+            .filter(|entry| is_linked_depends_file(&entry)) {
+            
+            let relative_lpf = linked_depend_file.strip_prefix(linked_path).unwrap();
+            let dst_file = alxr_build_lid_dir.join(relative_lpf);            
+            std::fs::create_dir_all(dst_file.parent().unwrap()).unwrap();
+            fs::copy(&linked_depend_file, &dst_file).unwrap();
+        }
+    }
+    
+    if cfg!(target_os = "windows") {
+        let pdb_fname = "alxr_client.pdb";
+        fs::copy(
+            artifacts_dir.join(&pdb_fname),
+            alxr_client_build_dir.join(&pdb_fname)
+        )
+        .unwrap();
+    }
+
+    let alxr_client_fname = afs::exec_fname("alxr-client");
+    fs::copy(
+        artifacts_dir.join(&alxr_client_fname),
+        alxr_client_build_dir.join(&alxr_client_fname)
+    )
+    .unwrap();
+}
+
+pub fn build_alxr_android(
+    is_release: bool,
+    fetch_crates: bool,
+    root: Option<String>,
+    reproducible: bool,
+) {   
+    let build_type = if is_release { "release" } else { "debug" };
+    let build_flags = make_build_flags(is_release, reproducible);
+
+    if let Some(root) = root {
+        env::set_var("ALVR_ROOT_DIR", root);
+    }
+
+    if fetch_crates {
+        command::run("cargo update").unwrap();
+    }
+    command::run("cargo install cargo-apk").unwrap();
+    
+    let alxr_client_build_dir = afs::alxr_android_build_dir();
+    fs::remove_dir_all(&alxr_client_build_dir).ok();
+    fs::create_dir_all(&alxr_client_build_dir).unwrap();
+
+    let alxr_client_dir = afs::workspace_dir().join("alvr/openxr-client/alxr-android-client");
+    command::run_in
+    (
+        &alxr_client_dir,
+        &format!("cargo apk build {}", build_flags)
+    ).unwrap();
+
+    fn is_package_file(p: &Path) -> bool {
+        p.extension().map_or(false, |ext| {
+            let ext_str = ext.to_str().unwrap();
+            return ["apk", "aar", "idsig"].contains(&ext_str);
+        })
+    }
+    let apk_dir = afs::target_dir().join(build_type).join("apk");
+    for file in walkdir::WalkDir::new(&apk_dir)
+        .into_iter()
+        .filter_map(|maybe_entry| maybe_entry.ok())
+        .map(|entry| entry.into_path())
+        .filter(|entry| is_package_file(&entry)) {
+
+        let relative_lpf = file.strip_prefix(&apk_dir).unwrap();
+        let dst_file = alxr_client_build_dir.join(relative_lpf);            
+        std::fs::create_dir_all(dst_file.parent().unwrap()).unwrap();
+        fs::copy(&file, &dst_file).unwrap();
+    }
+}
+
 // Avoid Oculus link popups when debugging the client
 pub fn kill_oculus_processes() {
     command::run_without_shell(
@@ -386,6 +579,18 @@ fn main() {
                         build_client(is_release, false, for_oculus_go);
                     }
                 }
+                "build-alxr-client" => build_alxr_client(
+                    is_release,
+                    fetch,
+                    root,
+                    reproducible,
+                ),
+                "build-alxr-android" => build_alxr_android(
+                    is_release,
+                    fetch,
+                    root,
+                    reproducible,
+                ),
                 "build-ffmpeg-linux" => {
                     dependencies::build_ffmpeg_linux(true);
                 }

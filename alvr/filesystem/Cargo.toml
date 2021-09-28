@@ -9,3 +9,6 @@ rust-version = "1.56"
 [dependencies]
 lazy_static = "1"
 dirs = "4"
+
+[target.'cfg(unix)'.dependencies]
+regex = "1"
