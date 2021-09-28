@@ -58,12 +58,12 @@ impl Options {
         };
         unsafe {
             let mut value = [0 as libc::c_char; libc::PROP_VALUE_MAX as usize];
-            let property_name = b"debug.xr.graphicsPlugin\0";
+            let property_name = b"debug.alxr.graphicsPlugin\0";
             if libc::__system_property_get(property_name.as_ptr(), value.as_mut_ptr()) != 0 {
                 let val_str = CStr::from_bytes_with_nul(&value).unwrap();
                 new_options.graphics_api = Some(From::from(val_str.to_str().unwrap_or("auto")));
             }
-            let property_name = b"debug.xr.verbose\0";
+            let property_name = b"debug.alxr.verbose\0";
             if libc::__system_property_get(property_name.as_ptr(), value.as_mut_ptr()) != 0 {
                 let val_str = CStr::from_bytes_with_nul(&value).unwrap();
                 new_options.verbose =
