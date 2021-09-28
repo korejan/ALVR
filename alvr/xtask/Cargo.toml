@@ -12,3 +12,7 @@ alvr_filesystem = { path = "../filesystem" }
 fs_extra = "1"
 pico-args = "0.4"
 walkdir = "2"
+cargo_metadata = "0.14"
+camino = "1.0"
+regex = "1.5"
+lazy_static = "1.4"

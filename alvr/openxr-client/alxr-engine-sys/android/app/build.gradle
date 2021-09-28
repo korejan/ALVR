@@ -19,7 +19,8 @@ android {
             cmake {
                 cppFlags "-std=c++17 -fexceptions -frtti"
                 // Passes optional arguments to CMake.
-                arguments "-DPython_ROOT_DIR='C:/Program Files/Python39'", "-DBUILD_LOADER=OFF", "-DUSE_OCULUS_MOBILE_LOADER=ON"
+                arguments "-DPython_ROOT_DIR='C:/Program Files/Python39'", "-DBUILD_LOADER=OFF", "-DUSE_OCULUS_MOBILE_LOADER=ON",
+                        "-DBUILD_API_LAYERS=OFF", "-DBUILD_TESTS=OFF", "-DBUILD_CONFORMANCE_TESTS=OFF"
             }
         }
     }

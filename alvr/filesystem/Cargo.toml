@@ -8,3 +8,6 @@ edition = "2018"
 [dependencies]
 lazy_static = "1"
 dirs = "3"
+
+[target.'cfg(unix)'.dependencies]
+regex = "1"
