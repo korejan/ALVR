@@ -1,15 +1,15 @@
 mod connection;
 mod connection_utils;
 
-pub use alxr_engine_sys::{*};
-use std::ffi::CStr;
 use alvr_common::{prelude::*, ALVR_VERSION};
 use alvr_sockets::HeadsetInfoPacket;
+pub use alxr_engine_sys::*;
 use lazy_static::lazy_static;
+use local_ipaddress;
 use parking_lot::Mutex;
+use std::ffi::CStr;
 use std::{ptr, slice, sync::atomic::AtomicBool};
 use tokio::{runtime::Runtime, sync::mpsc, sync::Notify};
-use local_ipaddress;
 //#[cfg(not(target_os = "android"))]
 use structopt::StructOpt;
 
@@ -151,10 +151,10 @@ pub fn init_connections(sys_properties: &ALXRSystemProperties) {
             local_ipaddress::get().unwrap_or(alvr_sockets::LOCAL_IP.to_string())
         };
         let private_identity = alvr_sockets::create_identity(Some(ip_addr)).unwrap(); /*PrivateIdentity {
-                                                                                         hostname: //trace_err!(env.get_string(jhostname))?.into(),
-                                                                                         certificate_pem: //trace_err!(env.get_string(jcertificate_pem))?.into(),
-                                                                                         key_pem: //trace_err!(env.get_string(jprivate_key))?.into(),
-                                                                                     };*/
+                                                                                          hostname: //trace_err!(env.get_string(jhostname))?.into(),
+                                                                                          certificate_pem: //trace_err!(env.get_string(jcertificate_pem))?.into(),
+                                                                                          key_pem: //trace_err!(env.get_string(jprivate_key))?.into(),
+                                                                                      };*/
 
         let runtime = trace_err!(Runtime::new())?;
 

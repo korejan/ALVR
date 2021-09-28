@@ -4,9 +4,9 @@ use std::{
 };
 
 #[cfg(target_os = "linux")]
-const SHARED_LIB_REG_EXPR : &'static str = r"^lib([[:word:]]|[-])+[.]so(([.]\d+){0,3})$";
+const SHARED_LIB_REG_EXPR: &'static str = r"^lib([[:word:]]|[-])+[.]so(([.]\d+){0,3})$";
 #[cfg(target_os = "macos")]
-const SHARED_LIB_REG_EXPR : &'static str = r"^lib([[:word:]]|[-])+(([.]\d+){0,3})[.]dylib$";
+const SHARED_LIB_REG_EXPR: &'static str = r"^lib([[:word:]]|[-])+(([.]\d+){0,3})[.]dylib$";
 
 #[cfg(not(windows))]
 pub fn is_dynlib_file(path: &Path) -> bool {
@@ -14,8 +14,8 @@ pub fn is_dynlib_file(path: &Path) -> bool {
         static ref LIB_REGEX: regex::Regex = regex::Regex::new(SHARED_LIB_REG_EXPR)
             .unwrap();
     }
-    path.file_name().map_or(false, |fname|
-        LIB_REGEX.is_match(fname.to_str().unwrap()))
+    path.file_name()
+        .map_or(false, |fname| LIB_REGEX.is_match(fname.to_str().unwrap()))
 }
 
 #[cfg(windows)]
