@@ -7,13 +7,14 @@ use alvr_session::{SessionDesc, TrackingSpace};
 use alvr_sockets::{
     spawn_cancelable, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket,
     HeadsetInfoPacket, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
-    ServerHandshakePacket, StreamSocketBuilder, LEGACY,
+    PlayspaceSyncPacket, ServerHandshakePacket, StreamSocketBuilder, LEGACY,
 };
 use futures::future::BoxFuture;
+use nalgebra::{Point2, Point3, Quaternion, UnitQuaternion};
 use serde_json as json;
 use settings_schema::Switch;
 use std::{
-    future,
+    future, slice,
     sync::{
         atomic::{AtomicBool, Ordering},
         mpsc as smpsc, Arc,
@@ -402,13 +403,11 @@ async fn connection_pipeline(
         }
     };
 
-    //unsafe impl Send for crate::ALXRGuardianData {}
     let playspace_sync_loop = {
-        //let control_sender = Arc::clone(&control_sender);
+        let control_sender = Arc::clone(&control_sender);
         async move {
             loop {
-                /*
-                let guardian_data = unsafe { crate::getGuardianData() };
+                let guardian_data = unsafe { crate::alxr_get_guardian_data() };
 
                 if guardian_data.shouldSync {
                     let perimeter_points = if guardian_data.perimeterPointsCount == 0 {
@@ -440,15 +439,14 @@ async fn connection_pipeline(
                         area_height: guardian_data.areaHeight,
                         perimeter_points,
                     };
-
+                    
                     control_sender
                         .lock()
                         .await
                         .send(&ClientControlPacket::PlayspaceSync(packet))
                         .await
                         .ok();
-                }*/
-
+                }
                 time::sleep(PLAYSPACE_SYNC_INTERVAL).await;
             }
         }
