@@ -246,6 +246,9 @@ uint64_t mapButtons(ovrInputTrackedRemoteCapabilities *remoteCapabilities,
         if (remoteInputState->Touches & ovrTouch_Joystick) {
             buttons |= ALVR_BUTTON_FLAG(ALVR_INPUT_JOYSTICK_TOUCH);
         }
+        if (remoteInputState->Touches & ovrTouch_ThumbRest) {
+            buttons |= ALVR_BUTTON_FLAG(ALVR_INPUT_THUMB_REST_TOUCH);
+        }
     } else {
         // GearVR or Oculus Go Controller
         if (remoteInputState->Buttons & ovrButton_A) {
@@ -771,8 +774,8 @@ void updateHapticsState() {
                 remoteCapabilities.HapticSamplesMax, remoteCapabilities.HapticSampleDurationMS);
 
             auto requiredHapticsBuffer = static_cast<uint32_t >((s.endUs - currentUs) /
-                                                                remoteCapabilities.HapticSampleDurationMS *
-                                                                1000);
+                                                                (remoteCapabilities.HapticSampleDurationMS *
+                                                                1000));
 
             std::vector<uint8_t> hapticBuffer(remoteCapabilities.HapticSamplesMax);
             ovrHapticBuffer buffer;
@@ -782,18 +785,11 @@ void updateHapticsState() {
                                          requiredHapticsBuffer);
             buffer.Terminated = false;
 
-            for (uint32_t i = 0; i < remoteCapabilities.HapticSamplesMax; i++) {
-                float current = ((currentUs - s.startUs) / 1000000.0f) +
-                                (remoteCapabilities.HapticSampleDurationMS * i) / 1000.0f;
-                float intensity =
-                        (sinf(static_cast<float>(current * M_PI * 2 * s.frequency)) + 1.0f) * 0.5f *
-                        s.amplitude;
-                if (intensity < 0) {
-                    intensity = 0;
-                } else if (intensity > 1.0) {
-                    intensity = 1.0;
-                }
-                hapticBuffer[i] = static_cast<uint8_t>(255 * intensity);
+            for (uint32_t i = 0; i < buffer.NumSamples; i++) {
+                if (s.amplitude > 1.0f)
+                    hapticBuffer[i] = 255;
+                else
+                    hapticBuffer[i] = static_cast<uint8_t>(255 * s.amplitude);
             }
 
             result = vrapi_SetHapticVibrationBuffer(g_ctx.Ovr, curCaps.DeviceID, &buffer);

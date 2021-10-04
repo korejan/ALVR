@@ -93,6 +93,8 @@ void Settings::Load()
 		m_adaptiveBitrateUseFrametime = config.get("latency_use_frametime").get<bool>();
 		m_adaptiveBitrateTargetMaximum = (int)config.get("latency_target_maximum").get<int64_t>();
 		m_adaptiveBitrateThreshold = (int)config.get("latency_threshold").get<int64_t>();
+		m_adaptiveBitrateUpRate = (int)config.get("bitrate_up_rate").get<int64_t>();
+		m_adaptiveBitrateDownRate = (int)config.get("bitrate_down_rate").get<int64_t>();
 		m_use10bitEncoder = config.get("use_10bit_encoder").get<bool>();
 
 		m_controllerTrackingSystemName = config.get("controllers_tracking_system_name").get<std::string>();
@@ -130,6 +132,10 @@ void Settings::Load()
 		m_leftControllerRotationOffset[2] = leftControllerRotationOffset[2].get<double>();
 
 		m_hapticsIntensity = config.get("haptics_intensity").get<double>();
+		m_hapticsAmplitudeCurve = config.get("haptics_amplitude_curve").get<double>();
+		m_hapticsMinDuration = config.get("haptics_min_duration").get<double>();
+		m_hapticsLowDurationAmplitudeMultiplier = config.get("haptics_low_duration_amplitude_multiplier").get<double>();
+		m_hapticsLowDurationRange = config.get("haptics_low_duration_range").get<double>();
 
 		m_useHeadsetTrackingSystem = config.get("use_headset_tracking_system").get<bool>();
 

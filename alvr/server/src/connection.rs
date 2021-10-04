@@ -261,6 +261,16 @@ async fn client_handshake(
             .adaptive_bitrate
             .content
             .latency_threshold,
+        bitrate_up_rate: session_settings
+            .video
+            .adaptive_bitrate
+            .content
+            .bitrate_up_rate,
+        bitrate_down_rate: session_settings
+            .video
+            .adaptive_bitrate
+            .content
+            .bitrate_down_rate,
         controllers_tracking_system_name: session_settings
             .headset
             .controllers
@@ -341,6 +351,26 @@ async fn client_handshake(
             .controllers
             .content
             .haptics_intensity,
+        haptics_amplitude_curve: session_settings
+            .headset
+            .controllers
+            .content
+            .haptics_amplitude_curve,
+        haptics_min_duration: session_settings
+            .headset
+            .controllers
+            .content
+            .haptics_min_duration,
+        haptics_low_duration_amplitude_multiplier: session_settings
+            .headset
+            .controllers
+            .content
+            .haptics_low_duration_amplitude_multiplier,
+        haptics_low_duration_range: session_settings
+            .headset
+            .controllers
+            .content
+            .haptics_low_duration_range,
         use_headset_tracking_system: session_settings
             .headset
             .controllers

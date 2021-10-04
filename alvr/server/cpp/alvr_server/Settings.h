@@ -66,6 +66,8 @@ public:
 	bool m_adaptiveBitrateUseFrametime;
 	uint64_t m_adaptiveBitrateTargetMaximum;
 	uint64_t m_adaptiveBitrateThreshold;
+	uint64_t m_adaptiveBitrateUpRate;
+	uint64_t m_adaptiveBitrateDownRate;
 	bool m_use10bitEncoder;
 
 	// Controller configs
@@ -90,6 +92,10 @@ public:
 	double m_leftControllerRotationOffset[3];
 
 	float m_hapticsIntensity;
+	float m_hapticsAmplitudeCurve;
+	float m_hapticsMinDuration;
+	float m_hapticsLowDurationAmplitudeMultiplier;
+	float m_hapticsLowDurationRange;
 
 	int32_t m_causePacketLoss;
 
