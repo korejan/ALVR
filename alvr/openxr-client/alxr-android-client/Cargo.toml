@@ -2,7 +2,7 @@
 name = "alxr-android-client"
 version = "0.1.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
-edition = "2018"
+edition = "2021"
 description = "An OpenXR based ALVR client for android platorms"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
