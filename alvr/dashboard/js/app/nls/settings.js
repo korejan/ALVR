@@ -26,15 +26,24 @@ define({
         // "_root_video_foveatedRendering.description": use "_root_video_foveatedRendering_enabled.description"
         "_root_video_foveatedRendering_enabled.description":
             "Rendering technique that reduces the resolution of the image at the periphery of the vision to reduce the computational load on the GPU. Results in a much lower video resolution that needs to be transmitted over the network.",
-        "_root_video_foveatedRendering_content_strength.name": "Strength",
-        "_root_video_foveatedRendering_content_strength.description":
-            "Higher value means less detail toward the edges of the frame and more artifacts",
-        "_root_video_foveatedRendering_content_shape.name": "Shape", // adv
-        "_root_video_foveatedRendering_content_shape.description":
-            "The shape of the foveated rendering", // adv
-        "_root_video_foveatedRendering_content_verticalOffset.name": "Vertical offset",
-        "_root_video_foveatedRendering_content_verticalOffset.description":
-            "Higher value means the high quality frame region is moved further down",
+        "_root_video_foveatedRendering_content_centerSizeX.name": "Center width",
+        "_root_video_foveatedRendering_content_centerSizeX.description":
+            "Width of the uncompressed center",
+        "_root_video_foveatedRendering_content_centerSizeY.name": "Center height",
+        "_root_video_foveatedRendering_content_centerSizeY.description":
+            "Height of the uncompressed center",
+        "_root_video_foveatedRendering_content_centerShiftX.name": "Center horizontal offset",
+        "_root_video_foveatedRendering_content_centerShiftX.description":
+            "Higher value moves the uncompressed center towards the middle of your vision",
+        "_root_video_foveatedRendering_content_centerShiftY.name": "Center vertical offset",
+        "_root_video_foveatedRendering_content_centerShiftY.description":
+            "Higher value moves the uncompressed center towards the bottom of your vision",
+        "_root_video_foveatedRendering_content_edgeRatioX.name": "Horizontal compression ratio",
+        "_root_video_foveatedRendering_content_edgeRatioX.description":
+            "Compression strength of the left and right edges",
+        "_root_video_foveatedRendering_content_edgeRatioY.name": "Vertical compression ratio",
+        "_root_video_foveatedRendering_content_edgeRatioY.description":
+            "Compression strength of the top and bottom edges",
         "_root_video_colorCorrection.name": "Color correction",
         // "_root_video_colorCorrection.description": use "_root_video_colorCorrection_enabled.description"
         "_root_video_colorCorrection_enabled.description":
@@ -92,6 +101,10 @@ define({
         "_root_video_adaptiveBitrate_content_bitrateDownRate.name": "Bitrate decreasing rate", // adv
         "_root_video_adaptiveBitrate_content_bitrateDownRate.description":
             "How much to decrease bitrate when the network latency reaches the latency threshold", // adv
+        "_root_video_adaptiveBitrate_content_bitrateLightLoadThreshold.name":
+            "Bitrate light load threshold", // adv
+        "_root_video_adaptiveBitrate_content_bitrateLightLoadThreshold.description":
+            "Limit increasing bitrate if sent rate is below threshold percentage of bitrate. Prevents stutters caused when switching from simple scenes to complex scenes", // adv
         // Audio tab
         "_root_audio_tab.name": "Audio",
         "_root_audio_gameAudio.name": "Stream game audio",
@@ -218,10 +231,34 @@ define({
             "Overrides the current controller profile's tracking system name with the current ALVR HMD's tracking system. Enable this in cases such as space calibration with OpenVR space calibrator.",
         "_root_headset_controllers_content_trackingSpeed.name": "Tracking speed",
         "_root_headset_controllers_content_trackingSpeed.description":
-            "Recommended to use Oculus Prediction. For fast paced games like Beatsaber, choose medium or fast. For slower games like Skyrim leave it on normal. \nOculus prediction means controller position is predicted on the headset instead of on the PC through SteamVR.",
+            "Recommended to use adaptive Oculus or SteamVR prediction. If you want to use fixed tracking speeds: Medium or fast for fast paced games like Beatsaber, normal for slower games like Skyrim. \nOculus prediction means controller position is predicted on the headset instead of on the PC through SteamVR.",
         "_root_headset_controllers_content_poseTimeOffset.name": "Pose time offset", // adv
         "_root_headset_controllers_content_poseTimeOffset.description":
             "Offset for the pose prediction algorithm", // adv
+        "_root_headset_controllers_content_clientsidePrediction.name":
+            "Adaptive prediction (Client)", // adv
+        "_root_headset_controllers_content_clientsidePrediction.description":
+            "Use adaptive prediction from the headset", // adv
+        "_root_headset_controllers_content_serversidePrediction.name":
+            "Adaptive prediction (Server)", // adv
+        "_root_headset_controllers_content_serversidePrediction.description":
+            "Use adaptive prediction from the server. \nAllows using prediction cutoffs to reduce jittering with slow or precise movements", // adv
+        "_root_headset_controllers_content_linearVelocityCutoff.name":
+            "Linear velocity cutoff (m/s)", // adv
+        "_root_headset_controllers_content_linearVelocityCutoff.description":
+            "Prediction cutoff for linear velocity", // adv
+        "_root_headset_controllers_content_linearAccelerationCutoff.name":
+            "Linear acceleration cutoff (m/s^2)", // adv
+        "_root_headset_controllers_content_linearAccelerationCutoff.description":
+            "Prediction cutoff for linear acceleration", // adv
+        "_root_headset_controllers_content_angularVelocityCutoff.name":
+            "Angular velocity cutoff (deg/s)", // adv
+        "_root_headset_controllers_content_angularVelocityCutoff.description":
+            "Prediction cutoff for angular velocity", // adv
+        "_root_headset_controllers_content_angularAccelerationCutoff.name":
+            "Angular acceleration cutoff (deg/s^2)", // adv
+        "_root_headset_controllers_content_angularAccelerationCutoff.description":
+            "Prediction cutoff for angular velocity", // adv
         "_root_headset_controllers_content_positionOffsetLeft.name": "Position offset", // adv
         "_root_headset_controllers_content_positionOffsetLeft.description":
             "Position offset in meters for the left controller. \nFor the right controller, x value is mirrored", // adv

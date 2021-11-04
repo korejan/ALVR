@@ -79,6 +79,10 @@ public:
     int batteryLevel;
     int batteryPlugged;
 
+    ovrHandPose lastHandPose[2];
+    ovrTracking lastTrackingRot[2];
+    ovrTracking lastTrackingPos[2];
+
     struct HapticsState {
         uint64_t startUs;
         uint64_t endUs;
@@ -347,14 +351,26 @@ void setControllerInfo(TrackingInfo *packet, double displayTime) {
                     c.handFingerConfidences |=
                             handPose.FingerConfidences[i] == ovrConfidence_HIGH ? (1 << i) : 0;
                 }
-
-                memcpy(&c.boneRootOrientation, &handPose.RootPose.Orientation,
-                       sizeof(handPose.RootPose.Orientation));
-                memcpy(&c.boneRootPosition, &handPose.RootPose.Position,
-                       sizeof(handPose.RootPose.Position));
-                for (int i = 0; i < ovrHandBone_MaxSkinnable; i++) {
-                    memcpy(&c.boneRotations[i], &handPose.BoneRotations[i],
-                           sizeof(handPose.BoneRotations[i]));
+                if (handPose.Status&ovrHandTrackingStatus_Tracked) {
+                    memcpy(&c.boneRootOrientation, &handPose.RootPose.Orientation,
+                           sizeof(handPose.RootPose.Orientation));
+                    memcpy(&c.boneRootPosition, &handPose.RootPose.Position,
+                           sizeof(handPose.RootPose.Position));
+                    for (int i = 0; i < ovrHandBone_MaxSkinnable; i++) {
+                        memcpy(&c.boneRotations[i], &handPose.BoneRotations[i],
+                               sizeof(handPose.BoneRotations[i]));
+                    }
+                    memcpy(&g_ctx.lastHandPose[controller], &handPose,
+                           sizeof(handPose));
+                } else if (g_ctx.lastHandPose[controller].Status&ovrHandTrackingStatus_Tracked) {
+                    memcpy(&c.boneRootOrientation, &g_ctx.lastHandPose[controller].RootPose.Orientation,
+                           sizeof(g_ctx.lastHandPose[controller].RootPose.Orientation));
+                    memcpy(&c.boneRootPosition, &g_ctx.lastHandPose[controller].RootPose.Position,
+                           sizeof(g_ctx.lastHandPose[controller].RootPose.Position));
+                    for (int i = 0; i < ovrHandBone_MaxSkinnable; i++) {
+                        memcpy(&c.boneRotations[i], &g_ctx.lastHandPose[controller].BoneRotations[i],
+                               sizeof(g_ctx.lastHandPose[controller].BoneRotations[i]));
+                    }
                 }
             }
             controller++;
@@ -455,13 +471,29 @@ void setControllerInfo(TrackingInfo *packet, double displayTime) {
                 LOG("vrapi_GetInputTrackingState failed. Device was disconnected?");
             } else {
 
-                memcpy(&c.orientation,
-                       &tracking.HeadPose.Pose.Orientation,
-                       sizeof(tracking.HeadPose.Pose.Orientation));
+                if (tracking.Status&VRAPI_TRACKING_STATUS_ORIENTATION_TRACKED) {
+                    memcpy(&c.orientation,
+                           &tracking.HeadPose.Pose.Orientation,
+                           sizeof(tracking.HeadPose.Pose.Orientation));
+                    memcpy(&g_ctx.lastTrackingRot[controller],
+                           &tracking,
+                           sizeof(tracking));
+                } else if (g_ctx.lastTrackingRot[controller].Status&VRAPI_TRACKING_STATUS_ORIENTATION_TRACKED)
+                    memcpy(&c.orientation,
+                           &g_ctx.lastTrackingRot[controller].HeadPose.Pose.Orientation,
+                           sizeof(g_ctx.lastTrackingRot[controller].HeadPose.Pose.Orientation));
 
-                memcpy(&c.position,
-                       &tracking.HeadPose.Pose.Position,
-                       sizeof(tracking.HeadPose.Pose.Position));
+                if (tracking.Status&VRAPI_TRACKING_STATUS_POSITION_TRACKED) {
+                    memcpy(&c.position,
+                           &tracking.HeadPose.Pose.Position,
+                           sizeof(tracking.HeadPose.Pose.Position));
+                    memcpy(&g_ctx.lastTrackingPos[controller],
+                           &tracking,
+                           sizeof(tracking));
+                } else if (g_ctx.lastTrackingPos[controller].Status&VRAPI_TRACKING_STATUS_POSITION_TRACKED)
+                    memcpy(&c.position,
+                           &g_ctx.lastTrackingPos[controller].HeadPose.Pose.Position,
+                           sizeof(g_ctx.lastTrackingPos[controller].HeadPose.Pose.Position));
 
                 memcpy(&c.angularVelocity,
                        &tracking.HeadPose.AngularVelocity,
@@ -535,6 +567,9 @@ void sendTrackingInfo(bool clientsidePrediction) {
     frame->displayTime = vrapi_GetTimeInSeconds() + LatencyCollector::Instance().getTrackingPredictionLatency() * 1e-6;
     frame->tracking = vrapi_GetPredictedTracking2(g_ctx.Ovr, frame->displayTime);
 
+    // sort of hacky, SteamVR will predict the position while the orientation is predicted from the client
+    ovrTracking2 trackingRaw = vrapi_GetPredictedTracking2(g_ctx.Ovr, 0.);
+
     {
         std::lock_guard<decltype(g_ctx.trackingFrameMutex)> lock(g_ctx.trackingFrameMutex);
         g_ctx.trackingFrameMap.insert(
@@ -560,7 +595,15 @@ void sendTrackingInfo(bool clientsidePrediction) {
 
     memcpy(&info.HeadPose_Pose_Orientation, &frame->tracking.HeadPose.Pose.Orientation,
            sizeof(ovrQuatf));
-    memcpy(&info.HeadPose_Pose_Position, &frame->tracking.HeadPose.Pose.Position,
+    memcpy(&info.HeadPose_Pose_Position, &trackingRaw.HeadPose.Pose.Position,
+           sizeof(ovrVector3f));
+    memcpy(&info.HeadPose_AngularVelocity, &trackingRaw.HeadPose.AngularVelocity,
+           sizeof(ovrVector3f));
+    memcpy(&info.HeadPose_LinearVelocity, &trackingRaw.HeadPose.LinearVelocity,
+           sizeof(ovrVector3f));
+    memcpy(&info.HeadPose_AngularAcceleration, &trackingRaw.HeadPose.AngularAcceleration,
+           sizeof(ovrVector3f));
+    memcpy(&info.HeadPose_LinearAcceleration, &trackingRaw.HeadPose.LinearAcceleration,
            sizeof(ovrVector3f));
 
     setControllerInfo(&info, clientsidePrediction ? frame->displayTime : 0.);
@@ -651,10 +694,11 @@ void onStreamStartNative() {
     ovrRenderer_Destroy(&g_ctx.Renderer);
     ovrRenderer_Create(&g_ctx.Renderer, g_ctx.streamConfig.eyeWidth, g_ctx.streamConfig.eyeHeight,
                        g_ctx.streamTexture.get(), g_ctx.loadingTexture,
-                       {g_ctx.streamConfig.enableFoveation, g_ctx.streamConfig.eyeWidth,
-                        g_ctx.streamConfig.eyeHeight, EyeFov(),
-                        g_ctx.streamConfig.foveationStrength, g_ctx.streamConfig.foveationShape,
-                        g_ctx.streamConfig.foveationVerticalOffset});
+                       {g_ctx.streamConfig.enableFoveation,
+                        g_ctx.streamConfig.eyeWidth, g_ctx.streamConfig.eyeHeight,
+                        g_ctx.streamConfig.foveationCenterSizeX, g_ctx.streamConfig.foveationCenterSizeY,
+                        g_ctx.streamConfig.foveationCenterShiftX, g_ctx.streamConfig.foveationCenterShiftY,
+                        g_ctx.streamConfig.foveationEdgeRatioX, g_ctx.streamConfig.foveationEdgeRatioY});
     ovrRenderer_CreateScene(&g_ctx.Renderer, g_ctx.darkMode);
 
     // On Oculus Quest, without ExtraLatencyMode frames passed to vrapi_SubmitFrame2 are sometimes discarded from VrAPI(?).
@@ -920,7 +964,7 @@ void onHapticsFeedbackNative(long long startTime, float amplitude, float duratio
 
 void onBatteryChangedNative(int battery, int plugged) {
     g_ctx.batteryLevel = battery;
-	g_ctx.batteryPlugged = plugged;
+    g_ctx.batteryPlugged = plugged;
 }
 
 GuardianData getGuardianData() {

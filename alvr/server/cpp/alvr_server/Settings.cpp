@@ -95,6 +95,7 @@ void Settings::Load()
 		m_adaptiveBitrateThreshold = (int)config.get("latency_threshold").get<int64_t>();
 		m_adaptiveBitrateUpRate = (int)config.get("bitrate_up_rate").get<int64_t>();
 		m_adaptiveBitrateDownRate = (int)config.get("bitrate_down_rate").get<int64_t>();
+		m_adaptiveBitrateLightLoadThreshold = config.get("bitrate_light_load_threshold").get<double>();
 		m_use10bitEncoder = config.get("use_10bit_encoder").get<bool>();
 
 		m_controllerTrackingSystemName = config.get("controllers_tracking_system_name").get<std::string>();
@@ -120,6 +121,11 @@ void Settings::Load()
 
 		m_trackingFrameOffset = (int32_t)config.get("tracking_frame_offset").get<int64_t>();
 		m_controllerPoseOffset = (double)config.get("controller_pose_offset").get<double>();
+		m_serversidePrediction = config.get("serverside_prediction").get<bool>();
+		m_linearVelocityCutoff = (float)config.get("linear_velocity_cutoff").get<double>();
+		m_linearAccelerationCutoff = (float)config.get("linear_acceleration_cutoff").get<double>();
+		m_angularVelocityCutoff = (float)config.get("angular_velocity_cutoff").get<double>();
+		m_angularAccelerationCutoff = (float)config.get("angular_acceleration_cutoff").get<double>();
 
 		auto leftControllerPositionOffset = config.get("position_offset_left").get<picojson::array>();
 		m_leftControllerPositionOffset[0] = leftControllerPositionOffset[0].get<double>();
@@ -140,9 +146,12 @@ void Settings::Load()
 		m_useHeadsetTrackingSystem = config.get("use_headset_tracking_system").get<bool>();
 
 		m_enableFoveatedRendering = config.get("enable_foveated_rendering").get<bool>();
-		m_foveationStrength = (float)config.get("foveation_strength").get<double>();
-		m_foveationShape = (float)config.get("foveation_shape").get<double>();
-		m_foveationVerticalOffset = (float)config.get("foveation_vertical_offset").get<double>();
+		m_foveationCenterSizeX = (float)config.get("foveation_center_size_x").get<double>();
+		m_foveationCenterSizeY = (float)config.get("foveation_center_size_y").get<double>();
+		m_foveationCenterShiftX = (float)config.get("foveation_center_shift_x").get<double>();
+		m_foveationCenterShiftY = (float)config.get("foveation_center_shift_y").get<double>();
+		m_foveationEdgeRatioX = (float)config.get("foveation_edge_ratio_x").get<double>();
+		m_foveationEdgeRatioY = (float)config.get("foveation_edge_ratio_y").get<double>();
 
 		m_enableColorCorrection = config.get("enable_color_correction").get<bool>();
 		m_brightness = (float)config.get("brightness").get<double>();
