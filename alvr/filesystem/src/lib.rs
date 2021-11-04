@@ -207,6 +207,10 @@ impl Layout {
         self.executables_dir.join(exe)
     }
 
+    pub fn resources_dir(&self) -> PathBuf {
+        self.static_resources_dir.join("resources")
+    }
+
     pub fn dashboard_dir(&self) -> PathBuf {
         self.static_resources_dir.join("dashboard")
     }

@@ -24,12 +24,12 @@ pub enum MediacodecDataType {
     String(String), // Note: Double, Rect and Size are for level 28 and not compatible with the Oculus Go
 }
 
-#[derive(SettingsSchema, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VideoCoding {
-    codec: CodecType,
-    mediacodec_extra_options: Vec<(String, MediacodecDataType)>,
-}
+// #[derive(SettingsSchema, Serialize, Deserialize)]
+// #[serde(rename_all = "camelCase")]
+// pub struct VideoCoding {
+//     codec: CodecType,
+//     mediacodec_extra_options: Vec<(String, MediacodecDataType)>,
+// }
 
 #[derive(SettingsSchema, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,19 +58,31 @@ pub struct AdaptiveBitrateDesc {
 
     #[schema(advanced, min = 1, max = 10, step = 1)]
     pub bitrate_down_rate: u64,
+
+    #[schema(advanced, min = 0., max = 1., step = 0.01)]
+    pub bitrate_light_load_threshold: f32,
 }
 
 #[derive(SettingsSchema, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FoveatedRenderingDesc {
-    #[schema(min = 0.5, max = 10., step = 0.1)]
-    pub strength: f32,
+    #[schema(min = 0., max = 1., step = 0.01)]
+    pub center_size_x: f32,
 
-    #[schema(advanced, min = 0.5, max = 2., step = 0.1)]
-    pub shape: f32,
+    #[schema(min = 0., max = 1., step = 0.01)]
+    pub center_size_y: f32,
 
-    #[schema(min = -0.05, max = 0.05, step = 0.001)]
-    pub vertical_offset: f32,
+    #[schema(min = -1., max = 1., step = 0.01)]
+    pub center_shift_x: f32,
+
+    #[schema(min = -1., max = 1., step = 0.01)]
+    pub center_shift_y: f32,
+
+    #[schema(min = 1., max = 10., step = 1.)]
+    pub edge_ratio_x: f32,
+
+    #[schema(min = 1., max = 10., step = 1.)]
+    pub edge_ratio_y: f32,
 }
 
 #[derive(SettingsSchema, Clone, Copy, Serialize, Deserialize, Pod, Zeroable)]
@@ -138,9 +150,8 @@ pub struct VideoDesc {
 
     pub codec: CodecType,
 
-    #[schema(advanced)]
-    pub video_coding: VideoCoding,
-
+    // #[schema(advanced)]
+    // pub video_coding: VideoCoding,
     #[schema(advanced)]
     pub client_request_realtime_decoder: bool,
 
@@ -267,6 +278,21 @@ pub struct ControllersDesc {
 
     #[schema(advanced)]
     pub clientside_prediction: bool,
+
+    #[schema(advanced)]
+    pub serverside_prediction: bool,
+
+    #[schema(advanced, min = 0., max = 0.1, step = 0.001)]
+    pub linear_velocity_cutoff: f32,
+
+    #[schema(advanced, min = 0., max = 0.1, step = 0.001)]
+    pub linear_acceleration_cutoff: f32,
+
+    #[schema(advanced, min = 0., max = 100., step = 1.)]
+    pub angular_velocity_cutoff: f32,
+
+    #[schema(advanced, min = 0., max = 100., step = 1.)]
+    pub angular_acceleration_cutoff: f32,
 
     #[schema(advanced)]
     pub position_offset_left: [f32; 3],
@@ -472,32 +498,32 @@ pub fn session_settings_default() -> SettingsDefault {
             codec: CodecTypeDefault {
                 variant: CodecTypeDefaultVariant::H264,
             },
-            video_coding: VideoCodingDefault {
-                codec: CodecTypeDefault {
-                    variant: CodecTypeDefaultVariant::H264,
-                },
-                mediacodec_extra_options: DictionaryDefault {
-                    key: "".into(),
-                    value: MediacodecDataTypeDefault {
-                        variant: MediacodecDataTypeDefaultVariant::String,
-                        Float: 0.0,
-                        Int32: 0,
-                        Int64: 0,
-                        String: "".into(),
-                    },
-                    content: vec![
-                        ("operating-rate".into(), MediacodecDataType::Int32(i32::MAX)),
-                        ("priority".into(), MediacodecDataType::Int32(0)),
-                        // low-latency: only applicable on API level 30. Quest 1 and 2 might not be
-                        // cabable, since they are on level 29.
-                        ("low-latency".into(), MediacodecDataType::Int32(1)),
-                        (
-                            "vendor.qti-ext-dec-low-latency.enable".into(),
-                            MediacodecDataType::Int32(1),
-                        ),
-                    ],
-                },
-            },
+            // video_coding: VideoCodingDefault {
+            //     codec: CodecTypeDefault {
+            //         variant: CodecTypeDefaultVariant::H264,
+            //     },
+            //     mediacodec_extra_options: DictionaryDefault {
+            //         key: "".into(),
+            //         value: MediacodecDataTypeDefault {
+            //             variant: MediacodecDataTypeDefaultVariant::String,
+            //             Float: 0.0,
+            //             Int32: 0,
+            //             Int64: 0,
+            //             String: "".into(),
+            //         },
+            //         content: vec![
+            //             ("operating-rate".into(), MediacodecDataType::Int32(i32::MAX)),
+            //             ("priority".into(), MediacodecDataType::Int32(0)),
+            //             // low-latency: only applicable on API level 30. Quest 1 and 2 might not be
+            //             // cabable, since they are on level 29.
+            //             ("low-latency".into(), MediacodecDataType::Int32(1)),
+            //             (
+            //                 "vendor.qti-ext-dec-low-latency.enable".into(),
+            //                 MediacodecDataType::Int32(1),
+            //             ),
+            //         ],
+            //     },
+            // },
             client_request_realtime_decoder: true,
             use_10bit_encoder: false,
             encode_bitrate_mbs: 30,
@@ -507,31 +533,35 @@ pub fn session_settings_default() -> SettingsDefault {
                     bitrate_maximum: 200,
                     latency_target: 12000,
                     latency_use_frametime: SwitchDefault {
-                        enabled: true,
+                        enabled: false,
                         content: LatencyUseFrametimeDescDefault {
                             latency_target_maximum: 50000,
                         },
                     },
-                    latency_threshold: 4000,
+                    latency_threshold: 3000,
                     bitrate_up_rate: 1,
                     bitrate_down_rate: 3,
+                    bitrate_light_load_threshold: 0.7,
                 },
             },
             seconds_from_vsync_to_photons: 0.005,
             foveated_rendering: SwitchDefault {
                 enabled: !cfg!(target_os = "linux"),
                 content: FoveatedRenderingDescDefault {
-                    strength: 2.,
-                    shape: 1.5,
-                    vertical_offset: 0.,
+                    center_size_x: 0.5,
+                    center_size_y: 0.4,
+                    center_shift_x: 0.4,
+                    center_shift_y: 0.1,
+                    edge_ratio_x: 4.,
+                    edge_ratio_y: 4.,
                 },
             },
             color_correction: SwitchDefault {
-                enabled: false,
+                enabled: true,
                 content: ColorCorrectionDescDefault {
                     brightness: 0.,
                     contrast: 0.,
-                    saturation: 0.,
+                    saturation: 0.5,
                     gamma: 1.,
                     sharpening: 0.,
                 },
@@ -596,17 +626,22 @@ pub fn session_settings_default() -> SettingsDefault {
                     tracking_system_name: "oculus".into(),
                     manufacturer_name: "Oculus".into(),
                     model_number: "Miramar".into(),
-                    render_model_name_left: "oculus_quest2_controller_left".into(),
-                    render_model_name_right: "oculus_quest2_controller_right".into(),
+                    render_model_name_left: "{alvr_server}oculus_quest2_controller_left".into(),
+                    render_model_name_right: "{alvr_server}oculus_quest2_controller_right".into(),
                     serial_number: "1WMGH000XX0000_Controller".into(),
                     ctrl_type_left: "oculus_touch".into(),
                     ctrl_type_right: "oculus_touch".into(),
                     registered_device_type: "oculus/1WMGH000XX0000_Controller".into(),
                     input_profile_path: "{oculus}/input/touch_profile.json".into(),
                     pose_time_offset: 0.01,
-                    clientside_prediction: true,
-                    position_offset_left: [-0.007, 0.005, -0.053],
-                    rotation_offset_left: [36., 0., 0.],
+                    clientside_prediction: false,
+                    serverside_prediction: true,
+                    linear_velocity_cutoff: 0.01,
+                    linear_acceleration_cutoff: 0.01,
+                    angular_velocity_cutoff: 10.,
+                    angular_acceleration_cutoff: 10.,
+                    position_offset_left: [-0.0065, 0.002, -0.051],
+                    rotation_offset_left: [40., 0., 0.],
                     haptics_intensity: 1.,
                     haptics_amplitude_curve: 0.4,
                     haptics_min_duration: 0.01,

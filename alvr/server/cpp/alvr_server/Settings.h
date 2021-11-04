@@ -47,9 +47,12 @@ public:
 	float m_flIPD;
 
 	bool m_enableFoveatedRendering;
-	float m_foveationStrength;
-	float m_foveationShape;
-	float m_foveationVerticalOffset;
+	float m_foveationCenterSizeX;
+	float m_foveationCenterSizeY;
+	float m_foveationCenterShiftX;
+	float m_foveationCenterShiftY;
+	float m_foveationEdgeRatioX;
+	float m_foveationEdgeRatioY;
 
 	bool m_enableColorCorrection;
 	float m_brightness;
@@ -68,6 +71,7 @@ public:
 	uint64_t m_adaptiveBitrateThreshold;
 	uint64_t m_adaptiveBitrateUpRate;
 	uint64_t m_adaptiveBitrateDownRate;
+	float m_adaptiveBitrateLightLoadThreshold;
 	bool m_use10bitEncoder;
 
 	// Controller configs
@@ -84,6 +88,11 @@ public:
 	bool m_disableController;
 	
 	double m_controllerPoseOffset = 0;
+	bool m_serversidePrediction;
+	float m_linearVelocityCutoff;
+	float m_linearAccelerationCutoff;
+	float m_angularVelocityCutoff;
+	float m_angularAccelerationCutoff;
 
 	float m_OffsetPos[3];
 	bool m_EnableOffsetPos;

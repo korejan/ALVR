@@ -72,6 +72,8 @@ define([
 
                 updateClients();
             });
+
+            setInterval(fillPerformanceGraphs, 8);
         }
 
         function updateClients() {
@@ -342,9 +344,21 @@ define([
 
             const skipWithoutId = $("#_root_extra_excludeNotificationsWithoutId").prop("checked");
 
+            let addToTable = true;
             if (idObject !== undefined) {
                 idObject = JSON.parse(idObject);
                 handleJson(idObject);
+                switch (idObject.id) {
+                    case "Statistics":
+                        addToTable = false;
+                        break;
+                    case "GraphStatistics":
+                        addToTable = false;
+                        break;
+                    default:
+                        line = idObject.id;
+                        break;
+                }
             }
 
             if (notificationLevels.includes(split[1].trim())) {
@@ -361,10 +375,14 @@ define([
                 }
             }
 
-            const row = `<tr><td>${split[0]}</td><td>${split[1]}</td><td>${line.trim()}</td></tr>`;
-            $("#loggingTable").append(row);
-            if ($("#loggingTable").children().length > 500) {
-                $("#loggingTable tr").first().remove();
+            if (addToTable) {
+                const row = `<tr><td>${split[0]}</td><td>${
+                    split[1]
+                }</td><td>${line.trim()}</td></tr>`;
+                $("#loggingTable").append(row);
+                if ($("#loggingTable").children().length > 500) {
+                    $("#loggingTable tr").first().remove();
+                }
             }
         }
 
@@ -405,6 +423,9 @@ define([
             switch (json.id) {
                 case "Statistics":
                     updateStatistics(json.data);
+                    break;
+                case "GraphStatistics":
+                    updateGraphStatistics(json.data);
                     break;
                 case "SessionUpdated":
                     updateSession();
@@ -599,6 +620,20 @@ define([
             return opts;
         }
 
+        function getLatencyGraphSize() {
+            return {
+                width: document.getElementById("statisticsCard").clientWidth,
+                height: 160,
+            };
+        }
+
+        function getFramerateGraphSize() {
+            return {
+                width: document.getElementById("statisticsCard").clientWidth,
+                height: 100,
+            };
+        }
+
         let themeColor = $("input[name='theme']:checked").val();
 
         if (themeColor == "systemDefault") {
@@ -615,8 +650,8 @@ define([
         const duration = 10000;
 
         let latencyGraphData = [
-            Array(length).fill(now),
-            ...Array(7)
+            Array(length + 1).fill(now),
+            ...Array(8)
                 .fill(null)
                 .map((x) => Array(length).fill(null)),
         ];
@@ -627,8 +662,6 @@ define([
         const graphColors = ["#7f7f7f", "#d62728", "#ff7f0e", "#1f77b4"];
 
         let latencyGraphOptions = {
-            width: 560,
-            height: 160,
             series: [
                 {
                     label: i18n["performanceTotalLatency"],
@@ -677,6 +710,13 @@ define([
                     latencyGraphData,
                     " ms"
                 ),
+                getSeries(
+                    i18n["performanceClientIdle"],
+                    graphColors[2],
+                    graphColors[2],
+                    latencyGraphData,
+                    " ms"
+                ),
             ],
         };
 
@@ -687,7 +727,7 @@ define([
         latencyGraphOptions = getStackedOpts(latencyGraphOptions, latencyGraphData);
 
         let framerateGraphData = [
-            Array(length).fill(now),
+            Array(length + 1).fill(now),
             Array(length).fill(null),
             Array(length).fill(null),
         ];
@@ -696,8 +736,6 @@ define([
         framerateGraphData[0].unshift(now - duration);
 
         let framerateGraphOptions = {
-            width: 560,
-            height: 100,
             series: [
                 {
                     label: "---",
@@ -739,6 +777,10 @@ define([
             );
         }
 
+        let lastStatisticsUpdate = now;
+        let lastGraphUpdate = now;
+        let lastGraphRedraw = now;
+
         function updatePerformanceGraphs(statistics) {
             const now = parseInt(new Date().getTime());
 
@@ -746,38 +788,114 @@ define([
                 latencyGraphData[i].shift();
             }
 
-            latencyGraphData[0].push(statistics["time"]);
-            if (statistics["totalLatency"] < Infinity) {
-                latencyGraphData[1].push(statistics["receiveLatency"]);
-                latencyGraphData[2].push(statistics["renderTime"]);
-                latencyGraphData[3].push(statistics["idleTime"] + statistics["waitTime"]);
-                latencyGraphData[4].push(statistics["encodeLatency"]);
-                latencyGraphData[5].push(statistics["sendLatency"]);
-                latencyGraphData[6].push(statistics["decodeLatency"]);
-                latencyGraphData[7].push(statistics["totalLatency"]);
+            latencyGraphData[0].pop();
+            latencyGraphData[0].push(statistics[0]);
+
+            latencyGraphData[0].push(statistics[0]);
+            if (statistics[1] < Infinity) {
+                latencyGraphData[1].push(statistics[2]);
+                latencyGraphData[2].push(statistics[3]);
+                latencyGraphData[3].push(statistics[4] + statistics[5]);
+                latencyGraphData[4].push(statistics[6]);
+                latencyGraphData[5].push(statistics[7]);
+                latencyGraphData[6].push(statistics[8]);
+                latencyGraphData[7].push(statistics[9]);
+                latencyGraphData[8].push(statistics[1]);
             } else {
                 for (let i = 1; i < latencyGraphData.length; i++) {
                     latencyGraphData[i].push(null);
                 }
             }
 
-            latencyGraphData[0].shift();
-            latencyGraphData[0].unshift(statistics["time"] - duration);
-
             for (let i = 0; i < framerateGraphData.length; i++) {
                 framerateGraphData[i].shift();
             }
 
-            framerateGraphData[0].push(statistics["time"]);
-            framerateGraphData[1].push(statistics["serverFPS"]);
-            framerateGraphData[2].push(statistics["clientFPS"]);
+            framerateGraphData[0].pop();
+            framerateGraphData[0].push(statistics[0]);
 
-            framerateGraphData[0].shift();
-            framerateGraphData[0].unshift(statistics["time"] - duration);
+            framerateGraphData[0].push(statistics[0]);
+            framerateGraphData[1].push(statistics[11]);
+            framerateGraphData[2].push(statistics[10]);
+
+            lastStatistics = statistics;
+            lastGraphUpdate = now;
         }
 
-        let lastStatisticsUpdate = now;
-        let lastGraphUpdate = now;
+        function redrawPerformanceGraphs(statistics) {
+            const now = parseInt(new Date().getTime());
+
+            latencyGraphData[0].pop();
+            latencyGraphData[0].push(statistics[0]);
+
+            latencyGraphData[0].shift();
+            latencyGraphData[0].unshift(statistics[0] - duration);
+
+            framerateGraphData[0].pop();
+            framerateGraphData[0].push(statistics[0]);
+
+            framerateGraphData[0].shift();
+            framerateGraphData[0].unshift(statistics[0] - duration);
+
+            if (now > lastGraphRedraw + 16) {
+                const ldata = []
+                    .concat(latencyGraphData[latencyGraphData.length - 1])
+                    .filter((v, i) => latencyGraphData[0][i] > now - 10 * 1000)
+                    .filter(Boolean);
+                const lq1 = quantile(ldata, 0.25);
+                const lq3 = quantile(ldata, 0.75);
+                //const lq1 = 0;
+                //const lq3 = quantile(ldata,0.5);
+                latencyGraph.batch(() => {
+                    latencyGraph.setScale("y", { min: 0, max: lq3 + (lq3 - lq1) * 3 });
+                    //latencyGraph.setScale("y", {min: 0, max: lq3+(lq3-lq1)*1.5});
+                    latencyGraph.setData(stack(latencyGraphData, (i) => false).data);
+                });
+                const fdata1 = []
+                    .concat(framerateGraphData[1])
+                    .filter((v, i) => latencyGraphData[0][i] > now - 10 * 1000)
+                    .filter(Boolean);
+                const fdata2 = []
+                    .concat(framerateGraphData[2])
+                    .filter((v, i) => latencyGraphData[0][i] > now - 10 * 1000)
+                    .filter(Boolean);
+                const fdata = fdata1.concat(fdata2);
+                const fq1 = quantile(fdata, 0.25);
+                const fq3 = quantile(fdata, 0.75);
+                latencyGraph.batch(() => {
+                    framerateGraph.setScale("y", {
+                        min: fq1 - (fq3 - fq1) * 1.5,
+                        max: fq3 + (fq3 - fq1) * 1.5,
+                    });
+                    framerateGraph.setData(framerateGraphData);
+                });
+                lastGraphRedraw = now;
+            }
+        }
+
+        let lastStatistics = {};
+        let statisticsUpdateStopped = true;
+        let statisticsRedrawStopped = true;
+
+        function fillPerformanceGraphs() {
+            latencyGraph.setSize(getLatencyGraphSize());
+            framerateGraph.setSize(getFramerateGraphSize());
+            if (!statisticsRedrawStopped) {
+                const now = parseInt(new Date().getTime());
+                lastStatistics[0] = now;
+                if ((now - 16 > lastGraphRedraw) & (now - 1000 < lastStatisticsUpdate)) {
+                    if (now - 100 > lastGraphUpdate) {
+                        if (!statisticsUpdateStopped) {
+                            statisticsUpdateStopped = true;
+                            lastStatistics.fill(null);
+                            lastStatistics[0] = lastGraphUpdate + 16;
+                            updatePerformanceGraphs(lastStatistics);
+                        }
+                    }
+                    redrawPerformanceGraphs(lastStatistics);
+                } else if (now - 1000 > lastStatisticsUpdate) statisticsRedrawStopped = true;
+            }
+        }
 
         function updateStatistics(statistics) {
             clearTimeout(timeoutHandler);
@@ -798,40 +916,6 @@ define([
                 if ($("#logging").hasClass("active")) $("#logging").removeClass("active");
                 if ($("#logging").hasClass("show")) $("#logging").removeClass("show");
             }
-
-            const now = parseInt(new Date().getTime());
-
-            if (now > lastStatisticsUpdate + 100) {
-                for (const stat in statistics) {
-                    $("#statistic_" + stat).text(statistics[stat]);
-                }
-                lastStatisticsUpdate = now;
-            }
-            if (now > lastGraphUpdate + 16) {
-                const ldata = []
-                    .concat(latencyGraphData[latencyGraphData.length - 1])
-                    .filter(Boolean);
-                const lq1 = quantile(ldata, 0.25);
-                const lq3 = quantile(ldata, 0.75);
-                //const lq1 = 0;
-                //const lq3 = quantile(ldata,0.5);
-                latencyGraph.batch(() => {
-                    latencyGraph.setScale("y", { min: 0, max: lq3 + (lq3 - lq1) * 3 });
-                    //latencyGraph.setScale("y", {min: 0, max: lq3+(lq3-lq1)*1.5});
-                    latencyGraph.setData(stack(latencyGraphData, (i) => false).data);
-                });
-                const fdata = framerateGraphData[1].concat(framerateGraphData[2]).filter(Boolean);
-                const fq1 = quantile(fdata, 0.25);
-                const fq3 = quantile(fdata, 0.75);
-                latencyGraph.batch(() => {
-                    framerateGraph.setScale("y", {
-                        min: fq1 - (fq3 - fq1) * 1.5,
-                        max: fq3 + (fq3 - fq1) * 1.5,
-                    });
-                    framerateGraph.setData(framerateGraphData);
-                });
-                lastGraphUpdate = now;
-            }
             timeoutHandler = setTimeout(() => {
                 // $("#connectionCard").show();
                 // $("#statisticsCard").hide();
@@ -850,7 +934,24 @@ define([
                 if ($("#logging").hasClass("show")) $("#logging").removeClass("show");
             }, 2000);
 
+            for (const stat in statistics) {
+                $("#statistic_" + stat).text(statistics[stat]);
+            }
+        }
+
+        function updateGraphStatistics(statistics) {
+            const now = parseInt(new Date().getTime());
+
+            lastStatisticsUpdate = now;
+
+            if (statisticsUpdateStopped) statisticsUpdateStopped = false;
+            if (statisticsRedrawStopped) {
+                lastStatistics[0] = now - 1;
+                updatePerformanceGraphs(lastStatistics);
+                statisticsRedrawStopped = false;
+            }
             updatePerformanceGraphs(statistics);
+            redrawPerformanceGraphs(statistics);
         }
 
         let isUpdating = false;

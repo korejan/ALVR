@@ -1,5 +1,7 @@
+mod events;
 mod settings;
 
+pub use events::*;
 pub use settings::*;
 
 use alvr_common::prelude::*;
@@ -37,7 +39,7 @@ pub fn save_session(session_desc: &SessionDesc, path: &Path) -> StrResult {
 // dynamically.
 // todo: properties that can be set after the OpenVR initialization should be removed and set with
 // UpdateForStream.
-#[derive(Serialize, Deserialize, PartialEq, Default, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Default, Clone, Debug)]
 pub struct OpenvrConfig {
     pub universe_id: u64,
     pub headset_serial_number: String,
@@ -69,6 +71,7 @@ pub struct OpenvrConfig {
     pub latency_threshold: u64,
     pub bitrate_up_rate: u64,
     pub bitrate_down_rate: u64,
+    pub bitrate_light_load_threshold: f32,
     pub controllers_tracking_system_name: String,
     pub controllers_manufacturer_name: String,
     pub controllers_model_number: String,
@@ -84,6 +87,11 @@ pub struct OpenvrConfig {
     pub position_offset: [f32; 3],
     pub tracking_frame_offset: i32,
     pub controller_pose_offset: f32,
+    pub serverside_prediction: bool,
+    pub linear_velocity_cutoff: f32,
+    pub linear_acceleration_cutoff: f32,
+    pub angular_velocity_cutoff: f32,
+    pub angular_acceleration_cutoff: f32,
     pub position_offset_left: [f32; 3],
     pub rotation_offset_left: [f32; 3],
     pub haptics_intensity: f32,
@@ -93,9 +101,12 @@ pub struct OpenvrConfig {
     pub haptics_low_duration_range: f32,
     pub use_headset_tracking_system: bool,
     pub enable_foveated_rendering: bool,
-    pub foveation_strength: f32,
-    pub foveation_shape: f32,
-    pub foveation_vertical_offset: f32,
+    pub foveation_center_size_x: f32,
+    pub foveation_center_size_y: f32,
+    pub foveation_center_shift_x: f32,
+    pub foveation_center_shift_y: f32,
+    pub foveation_edge_ratio_x: f32,
+    pub foveation_edge_ratio_y: f32,
     pub enable_color_correction: bool,
     pub brightness: f32,
     pub contrast: f32,
@@ -104,7 +115,7 @@ pub struct OpenvrConfig {
     pub sharpening: f32,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ClientConnectionDesc {
     pub display_name: String,
@@ -112,7 +123,7 @@ pub struct ClientConnectionDesc {
     pub trusted: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionDesc {
     pub setup_wizard: bool,
@@ -123,6 +134,7 @@ pub struct SessionDesc {
     // The hashmap key is the hostname
     pub client_connections: HashMap<String, ClientConnectionDesc>,
     pub session_settings: SessionSettings,
+    pub advanced: bool,
 }
 
 impl Default for SessionDesc {
@@ -155,6 +167,7 @@ impl Default for SessionDesc {
             },
             client_connections: HashMap::new(),
             session_settings: settings::session_settings_default(),
+            advanced: false,
         }
     }
 }
@@ -213,7 +226,7 @@ impl SessionDesc {
             Err(e) => {
                 *self = session_desc_mut;
 
-                log_event(Event::SessionSettingsExtrapolationFailed);
+                log_event(ServerEvent::SessionSettingsExtrapolationFailed);
                 fmt_e!(
                     "Error while deserializing extrapolated session settings: {}",
                     e
@@ -579,10 +592,15 @@ impl DerefMut for SessionLock<'_> {
 impl Drop for SessionLock<'_> {
     fn drop(&mut self) {
         save_session(self.session_desc, self.session_path).unwrap();
-        log_event(Event::SessionUpdated);
+        log_event(ServerEvent::SessionUpdated);
     }
 }
 
+// Correct usage:
+// SessionManager should be used behind a Mutex. Each write of the session should be preceded by a
+// read, within the same lock.
+// fixme: the dashboard is doing this wrong because it is holding its own session state. If read and
+// write need to happen on separate threads, a critical region should be implemented.
 pub struct SessionManager {
     session_desc: SessionDesc,
     session_path: PathBuf,

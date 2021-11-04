@@ -3,11 +3,13 @@ name = "alvr_filesystem"
 version = "16.0.0"
 authors = ["alvr-org", "Patrick Nicolas <patricknicolas@laposte.net>"]
 license = "MIT"
-edition = "2018"
+edition = "2021"
+rust-version = "1.56"
 
 [dependencies]
 lazy_static = "1"
-dirs = "3"
+dirs = "4"
 
 [target.'cfg(unix)'.dependencies]
 regex = "1"
+

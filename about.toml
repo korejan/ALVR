@@ -7,6 +7,7 @@ accepted = [
     "CC0-1.0",
     "ISC",
     "MPL-2.0",
+    "OFL-1.1",
     "OpenSSL",
     "Unlicense",
     "Zlib",
@@ -19,3 +20,5 @@ targets = [
     "aarch64-linux-android",
     "wasm32-unknown-unknown",
 ]
+
+workarounds = ["ring"]
