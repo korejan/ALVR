@@ -3,6 +3,29 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[cfg(target_os = "linux")]
+const SHARED_LIB_REG_EXPR: &'static str = r"^lib([[:word:]]|[-])+[.]so(([.]\d+){0,3})$";
+#[cfg(target_os = "macos")]
+const SHARED_LIB_REG_EXPR: &'static str = r"^lib([[:word:]]|[-])+(([.]\d+){0,3})[.]dylib$";
+
+#[cfg(not(windows))]
+pub fn is_dynlib_file(path: &Path) -> bool {
+    lazy_static::lazy_static! {
+        static ref LIB_REGEX: regex::Regex = regex::Regex::new(SHARED_LIB_REG_EXPR)
+            .unwrap();
+    }
+    path.file_name()
+        .map_or(false, |fname| LIB_REGEX.is_match(fname.to_str().unwrap()))
+}
+
+#[cfg(windows)]
+pub fn is_dynlib_file(path: &Path) -> bool {
+    if let Some(ext) = path.extension() {
+        return ext.to_str().unwrap().eq("dll");
+    }
+    return false;
+}
+
 #[cfg(not(windows))]
 pub fn exec_fname(name: &str) -> String {
     name.to_owned()
@@ -53,6 +76,28 @@ pub fn server_build_dir() -> PathBuf {
     };
 
     build_dir().join(server_build_dir)
+}
+
+pub fn alxr_android_build_dir() -> PathBuf {
+    build_dir().join("alxr_client_android")
+}
+
+pub fn alxr_client_build_dir() -> PathBuf {
+    if cfg!(target_os = "android") {
+        return alxr_android_build_dir();
+    }
+
+    let alxr_client_dir = if cfg!(windows) {
+        "alxr_client_windows"
+    } else if cfg!(target_os = "linux") {
+        "alxr_client_linux"
+    } else if cfg!(target_os = "macos") {
+        "alxr_client_macos"
+    } else {
+        unimplemented!()
+    };
+
+    build_dir().join(alxr_client_dir)
 }
 
 pub fn installer_path() -> PathBuf {

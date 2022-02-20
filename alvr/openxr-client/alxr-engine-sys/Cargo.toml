@@ -1,0 +1,13 @@
+[package]
+name = "alxr-engine-sys"
+version = "0.3.0"
+authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
+edition = "2021"
+links = "alxr_engine"
+
+[build-dependencies]
+cmake = "0.1"
+bindgen = "0.59"
+cc = { version = "1", features = ["parallel"] }
+walkdir = "2"
+target-lexicon = "0.12"
