@@ -6,7 +6,7 @@ mod version;
 use alvr_filesystem::{self as afs, Layout};
 use fs_extra::{self as fsx, dir as dirx};
 use pico_args::Arguments;
-use std::{env, fs, time::Instant};
+use std::{env, fs, time::Instant, path::{Path}};
 use std::collections::HashSet;
 use std::error::Error;
 use std::process::{Stdio};
