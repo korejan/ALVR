@@ -52,7 +52,7 @@ fn main() {
     let android_dir = project_dir.join("android");
     let alvr_client_dir = project_dir.join("../../client");
     let alvr_common_cpp_dir = alvr_client_dir.join("android/ALVR-common");
-   
+
     let file_filters = vec!["CMakeLists.txt", "AndroidManifest.xml"];
     let file_ext_filters = vec![
         "h",
