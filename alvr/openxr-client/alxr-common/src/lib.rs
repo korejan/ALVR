@@ -1,17 +1,18 @@
 mod connection;
 mod connection_utils;
 
-use alvr_common::{prelude::*, ALVR_VERSION};
-use alvr_sockets::HeadsetInfoPacket;
+use alvr_common::{prelude::*, Fov, MotionData, ALVR_VERSION};
+use alvr_sockets::{HeadsetInfoPacket,Input,ViewConfig,HandPoseInput,LegacyInput};
 pub use alxr_engine_sys::*;
 use lazy_static::lazy_static;
 use local_ipaddress;
 use parking_lot::Mutex;
 use std::ffi::CStr;
-use std::{ptr, slice, sync::atomic::AtomicBool};
+use std::{slice, sync::atomic::AtomicBool};
 use tokio::{runtime::Runtime, sync::mpsc, sync::Notify};
 //#[cfg(not(target_os = "android"))]
 use structopt::StructOpt;
+use glam::{Quat, Vec2, Vec3};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "openxr_client", about = "An OpenXR based ALVR client.")]
@@ -76,11 +77,10 @@ impl Options {
 }
 
 lazy_static! {
-    pub static ref MAYBE_RUNTIME: Mutex<Option<Runtime>> = Mutex::new(None);
+    pub static ref RUNTIME: Mutex<Option<Runtime>> = Mutex::new(None);
     static ref IDR_REQUEST_NOTIFIER: Notify = Notify::new();
     static ref IDR_PARSED: AtomicBool = AtomicBool::new(false);
-    static ref MAYBE_LEGACY_SENDER: Mutex<Option<mpsc::UnboundedSender<Vec<u8>>>> =
-        Mutex::new(None);
+    static ref INPUT_SENDER: Mutex<Option<mpsc::UnboundedSender<Input>>> = Mutex::new(None);
     pub static ref ON_PAUSE_NOTIFIER: Notify = Notify::new();
 }
 
@@ -174,7 +174,7 @@ pub fn init_connections(sys_properties: &ALXRSystemProperties) {
             };
         });
 
-        *MAYBE_RUNTIME.lock() = Some(runtime);
+        *RUNTIME.lock() = Some(runtime);
 
         Ok(())
     }());
@@ -182,21 +182,215 @@ pub fn init_connections(sys_properties: &ALXRSystemProperties) {
 
 pub fn shutdown() {
     ON_PAUSE_NOTIFIER.notify_waiters();
-    drop(MAYBE_RUNTIME.lock().take());
+    drop(RUNTIME.lock().take());
 }
 
-pub extern "C" fn legacy_send(
-    buffer_ptr: *const ::std::os::raw::c_uchar,
-    len: ::std::os::raw::c_uint,
-) {
-    if let Some(sender) = &*MAYBE_LEGACY_SENDER.lock() {
-        let mut vec_buffer = vec![0; len as _];
+const OCULUS_HANDS_FLAG : ::std::os::raw::c_uint = 1 << 5;
 
-        // use copy_nonoverlapping (aka memcpy) to avoid freeing memory allocated by C++
-        unsafe {
-            ptr::copy_nonoverlapping(buffer_ptr, vec_buffer.as_mut_ptr(), len as _);
-        }
+pub extern "C" fn input_send(data_ptr: *const TrackingInfo) {
+    
+    #[inline(always)]
+    fn from_tracking_quat(quat: &TrackingQuat) -> Quat {
+        Quat::from_xyzw(quat.x, quat.y, quat.z, quat.w)
+    }    
+    #[inline(always)]
+    fn from_tracking_quat_val(quat: TrackingQuat) -> Quat {
+        from_tracking_quat(&quat)
+    }
+    #[inline(always)]
+    fn from_tracking_vector3(vec: &TrackingVector3) -> Vec3 {
+        Vec3::new(vec.x, vec.y, vec.z)
+    }
+    #[inline(always)]
+    fn from_tracking_vector3_val(vec: TrackingVector3) -> Vec3 {
+        from_tracking_vector3(&vec)
+    }
+    
+    unsafe {
+        let data : &TrackingInfo = &*data_ptr;
 
-        sender.send(vec_buffer).ok();
+        if let Some(sender) = &*INPUT_SENDER.lock() {
+            let head_orientation = from_tracking_quat(&data.HeadPose_Pose_Orientation);
+            let head_to_right_eye_position = head_orientation * Vec3::X * data.ipd / 2_f32;
+            let head_position = from_tracking_vector3(&data.HeadPose_Pose_Position);
+            let right_eye_position = head_position + head_to_right_eye_position;
+            let left_eye_position = head_position - head_to_right_eye_position;
+
+            let input = Input {
+                target_timestamp: std::time::Duration::from_secs_f64(data.predictedDisplayTime),
+                view_configs: vec![
+                    ViewConfig {
+                        orientation: head_orientation,
+                        position: left_eye_position,
+                        fov: Fov {
+                            left: data.eyeFov[0].left,
+                            right: data.eyeFov[0].right,
+                            top: data.eyeFov[0].top,
+                            bottom: data.eyeFov[0].bottom,
+                        },
+                    },
+                    ViewConfig {
+                        orientation: head_orientation,
+                        position: right_eye_position,
+                        fov: Fov {
+                            left: data.eyeFov[1].left,
+                            right: data.eyeFov[1].right,
+                            top: data.eyeFov[1].top,
+                            bottom: data.eyeFov[1].bottom,
+                        },
+                    },
+                ],
+                left_pose_input: HandPoseInput {
+                    grip_motion: MotionData {
+                        orientation: from_tracking_quat(
+                            if data.controller[0].flags & OCULUS_HANDS_FLAG > 0 {
+                                &data.controller[0].boneRootOrientation
+                            } else {
+                                 &data.controller[0].orientation
+                            },
+                        ),
+                        position: from_tracking_vector3(
+                            if data.controller[0].flags & OCULUS_HANDS_FLAG > 0 {
+                                &data.controller[0].boneRootPosition
+                            } else {
+                                &data.controller[0].position
+                            },
+                        ),
+                        linear_velocity: Some(from_tracking_vector3(
+                            &data.controller[0].linearVelocity,
+                        )),
+                        angular_velocity: Some(from_tracking_vector3(
+                            &data.controller[0].angularVelocity,
+                        )),
+                    },
+                    hand_tracking_input: None,
+                },
+                right_pose_input: HandPoseInput {
+                    grip_motion: MotionData {
+                        orientation: from_tracking_quat(
+                            if data.controller[1].flags & OCULUS_HANDS_FLAG > 0 {
+                                &data.controller[1].boneRootOrientation
+                            } else {
+                                &data.controller[1].orientation
+                            },
+                        ),
+                        position: from_tracking_vector3(
+                            if data.controller[1].flags & OCULUS_HANDS_FLAG > 0 {
+                                &data.controller[1].boneRootPosition
+                            } else {
+                                &data.controller[1].position
+                            },
+                        ),
+                        linear_velocity: Some(from_tracking_vector3(
+                            &data.controller[1].linearVelocity,
+                        )),
+                        angular_velocity: Some(from_tracking_vector3(
+                            &data.controller[1].angularVelocity,
+                        )),
+                    },
+                    hand_tracking_input: None,
+                },
+                trackers_pose_input: vec![],
+                button_values: std::collections::HashMap::new(), // unused for now
+                legacy: LegacyInput {
+                    flags: data.flags,
+                    client_time: data.clientTime,
+                    frame_index: data.FrameIndex,
+                    battery: data.battery,
+                    plugged: data.plugged,
+                    mounted: data.mounted,
+                    controller_flags: [data.controller[0].flags, data.controller[1].flags],
+                    buttons: [data.controller[0].buttons, data.controller[1].buttons],
+                    trackpad_position: [
+                        Vec2::new(
+                            data.controller[0].trackpadPosition.x,
+                            data.controller[0].trackpadPosition.y,
+                        ),
+                        Vec2::new(
+                            data.controller[1].trackpadPosition.x,
+                            data.controller[1].trackpadPosition.y,
+                        ),
+                    ],
+                    trigger_value: [
+                        data.controller[0].triggerValue,
+                        data.controller[1].triggerValue,
+                    ],
+                    grip_value: [data.controller[0].gripValue, data.controller[1].gripValue],
+                    controller_battery: [
+                        data.controller[0].batteryPercentRemaining,
+                        data.controller[1].batteryPercentRemaining,
+                    ],
+                    bone_rotations: [
+                        {
+                            let vec = data.controller[0]
+                                .boneRotations
+                                .iter()
+                                .cloned()
+                                .map(from_tracking_quat_val)
+                                .collect::<Vec<_>>();
+
+                            let mut array = [Quat::IDENTITY; 19];
+                            array.copy_from_slice(&vec);
+
+                            array
+                        },
+                        {
+                            let vec = data.controller[1]
+                                .boneRotations
+                                .iter()
+                                .cloned()
+                                .map(from_tracking_quat_val)
+                                .collect::<Vec<_>>();
+
+                            let mut array = [Quat::IDENTITY; 19];
+                            array.copy_from_slice(&vec);
+
+                            array
+                        },
+                    ],
+                    bone_positions_base: [
+                        {
+                            let vec = data.controller[0]
+                                .bonePositionsBase
+                                .iter()
+                                .cloned()
+                                .map(from_tracking_vector3_val)
+                                .collect::<Vec<_>>();
+
+                            let mut array = [Vec3::ZERO; 19];
+                            array.copy_from_slice(&vec);
+
+                            array
+                        },
+                        {
+                            let vec = data.controller[1]
+                                .bonePositionsBase
+                                .iter()
+                                .cloned()
+                                .map(from_tracking_vector3_val)
+                                .collect::<Vec<_>>();
+
+                            let mut array = [Vec3::ZERO; 19];
+                            array.copy_from_slice(&vec);
+
+                            array
+                        },
+                    ],
+                    input_state_status: [
+                        data.controller[0].inputStateStatus,
+                        data.controller[1].inputStateStatus,
+                    ],
+                    finger_pinch_strengths: [
+                        data.controller[0].fingerPinchStrengths,
+                        data.controller[1].fingerPinchStrengths,
+                    ],
+                    hand_finger_confience: [
+                        data.controller[0].handFingerConfidences,
+                        data.controller[1].handFingerConfidences,
+                    ],
+                },
+            };
+            sender.send(input).ok();
+        };
     }
 }

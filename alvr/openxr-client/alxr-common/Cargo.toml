@@ -1,6 +1,6 @@
 [package]
 name = "alxr-common"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 
@@ -27,7 +27,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
 semver = "1"
 local_ipaddress = "0.1"
 structopt = "0.3"
-nalgebra = "0.29"
+glam = { version = "0.20", features = ["serde"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 libc = "0.2"

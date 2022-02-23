@@ -158,6 +158,7 @@ struct HapticsFeedback {
     unsigned char hand; // 0:Right, 1:Left
 };
 
+#ifndef ALXR_CLIENT
 struct OnCreateResult {
     int streamSurfaceHandle;
     int loadingSurfaceHandle;
@@ -230,3 +231,4 @@ extern "C" void closeSocket(void *env);
 extern "C" void (*inputSend)(TrackingInfo data);
 extern "C" void (*timeSyncSend)(TimeSync data);
 extern "C" void (*videoErrorReportSend)();
+#endif
