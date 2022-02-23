@@ -2,7 +2,7 @@ mod connection;
 mod connection_utils;
 
 use alvr_common::{prelude::*, Fov, MotionData, ALVR_VERSION};
-use alvr_sockets::{HeadsetInfoPacket,Input,ViewConfig,HandPoseInput,LegacyInput};
+use alvr_sockets::{HandPoseInput, HeadsetInfoPacket, Input, LegacyInput, ViewConfig};
 pub use alxr_engine_sys::*;
 use lazy_static::lazy_static;
 use local_ipaddress;
@@ -11,8 +11,8 @@ use std::ffi::CStr;
 use std::{slice, sync::atomic::AtomicBool};
 use tokio::{runtime::Runtime, sync::mpsc, sync::Notify};
 //#[cfg(not(target_os = "android"))]
-use structopt::StructOpt;
 use glam::{Quat, Vec2, Vec3};
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "openxr_client", about = "An OpenXR based ALVR client.")]
@@ -185,14 +185,13 @@ pub fn shutdown() {
     drop(RUNTIME.lock().take());
 }
 
-const OCULUS_HANDS_FLAG : ::std::os::raw::c_uint = 1 << 5;
+const OCULUS_HANDS_FLAG: ::std::os::raw::c_uint = 1 << 5;
 
 pub extern "C" fn input_send(data_ptr: *const TrackingInfo) {
-    
     #[inline(always)]
     fn from_tracking_quat(quat: &TrackingQuat) -> Quat {
         Quat::from_xyzw(quat.x, quat.y, quat.z, quat.w)
-    }    
+    }
     #[inline(always)]
     fn from_tracking_quat_val(quat: TrackingQuat) -> Quat {
         from_tracking_quat(&quat)
@@ -205,9 +204,9 @@ pub extern "C" fn input_send(data_ptr: *const TrackingInfo) {
     fn from_tracking_vector3_val(vec: TrackingVector3) -> Vec3 {
         from_tracking_vector3(&vec)
     }
-    
+
     unsafe {
-        let data : &TrackingInfo = &*data_ptr;
+        let data: &TrackingInfo = &*data_ptr;
 
         if let Some(sender) = &*INPUT_SENDER.lock() {
             let head_orientation = from_tracking_quat(&data.HeadPose_Pose_Orientation);
@@ -246,7 +245,7 @@ pub extern "C" fn input_send(data_ptr: *const TrackingInfo) {
                             if data.controller[0].flags & OCULUS_HANDS_FLAG > 0 {
                                 &data.controller[0].boneRootOrientation
                             } else {
-                                 &data.controller[0].orientation
+                                &data.controller[0].orientation
                             },
                         ),
                         position: from_tracking_vector3(

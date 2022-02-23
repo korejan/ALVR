@@ -1,14 +1,24 @@
 use crate::{
     connection_utils::{self, ConnectionError},
-    HapticsFeedback,
-    INPUT_SENDER
+    HapticsFeedback, INPUT_SENDER,
 };
 use alvr_common::{prelude::*, Haptics, TrackedDeviceType, ALVR_NAME, ALVR_VERSION};
 use alvr_session::{SessionDesc, TrackingSpace};
 use alvr_sockets::{
-    spawn_cancelable, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket,
-    HeadsetInfoPacket, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
-    PlayspaceSyncPacket, ServerHandshakePacket, StreamSocketBuilder, HAPTICS, INPUT, //VIDEO,
+    spawn_cancelable,
+    ClientConfigPacket,
+    ClientControlPacket,
+    ClientHandshakePacket,
+    HeadsetInfoPacket,
+    PeerType,
+    PlayspaceSyncPacket,
+    PrivateIdentity,
+    ProtoControlSocket,
+    ServerControlPacket,
+    ServerHandshakePacket,
+    StreamSocketBuilder,
+    HAPTICS,
+    INPUT, //VIDEO,
 };
 use futures::future::BoxFuture;
 use glam::{Quat, Vec2, Vec3};
@@ -474,7 +484,7 @@ async fn connection_pipeline(
                         area_height: guardian_data.areaHeight,
                         perimeter_points,
                     };
-                    
+
                     control_sender
                         .lock()
                         .await
