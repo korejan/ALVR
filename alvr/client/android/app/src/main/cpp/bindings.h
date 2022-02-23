@@ -110,6 +110,7 @@ struct VideoFrame {
     // char frameBuffer[];
 };
 
+#ifndef ALXR_CLIENT
 struct OnCreateResult {
     int streamSurfaceHandle;
     int loadingSurfaceHandle;
@@ -182,3 +183,4 @@ extern "C" void (*videoErrorReportSend)();
 extern "C" void (*viewsConfigSend)(EyeFov fov[2], float ipd_m);
 extern "C" void (*batterySend)(unsigned long long device_path, float gauge_value, bool is_plugged);
 extern "C" unsigned long long (*pathStringToHash)(const char *path);
+#endif

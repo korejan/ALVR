@@ -1,6 +1,6 @@
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, init_connections,
-    legacy_send, shutdown, ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
+    input_send, shutdown, ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
 };
 use std::{thread, time};
 
@@ -13,7 +13,7 @@ fn main() {
     unsafe {
         loop {
             let ctx = ALXRRustCtx {
-                legacySend: Some(legacy_send),
+                inputSend: Some(input_send),
                 graphicsApi: selected_api,
                 verbose: APP_CONFIG.verbose,
             };
