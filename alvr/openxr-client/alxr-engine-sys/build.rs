@@ -50,8 +50,9 @@ fn main() {
     let alxr_engine_src_dir = alxr_engine_dir.join("src");
 
     let android_dir = project_dir.join("android");
-    let alvr_common_cpp_dir = project_dir.join("../../client/android/ALVR-common");
-
+    let alvr_client_dir = project_dir.join("../../client");
+    let alvr_common_cpp_dir = alvr_client_dir.join("android/ALVR-common");
+   
     let file_filters = vec!["CMakeLists.txt", "AndroidManifest.xml"];
     let file_ext_filters = vec![
         "h",
@@ -138,11 +139,14 @@ fn main() {
         ""
     };
 
+    let tracking_binding_path = alvr_client_dir.join("android/app/src/main/cpp");
     let binding_file = alxr_engine_src_dir.join("alxr_engine/alxr_engine.h");
     bindgen::builder()
         .clang_arg("-xc++")
         .clang_arg("-std=c++17")
+        .clang_arg("-DALXR_CLIENT")
         .clang_arg(defines)
+        .clang_arg(format!("-I{0}", tracking_binding_path.to_string_lossy()))
         .header(binding_file.to_string_lossy())
         .derive_default(true)
         .rustified_enum("ALXRGraphicsApi")

@@ -1,16 +1,17 @@
 use crate::{
     connection_utils::{self, ConnectionError},
-    MAYBE_LEGACY_SENDER,
+    HapticsFeedback,
+    INPUT_SENDER
 };
-use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
+use alvr_common::{prelude::*, Haptics, TrackedDeviceType, ALVR_NAME, ALVR_VERSION};
 use alvr_session::{SessionDesc, TrackingSpace};
 use alvr_sockets::{
     spawn_cancelable, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket,
     HeadsetInfoPacket, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
-    PlayspaceSyncPacket, ServerHandshakePacket, StreamSocketBuilder, LEGACY,
+    PlayspaceSyncPacket, ServerHandshakePacket, StreamSocketBuilder, HAPTICS, INPUT, //VIDEO,
 };
 use futures::future::BoxFuture;
-use nalgebra::{Point2, Point3, Quaternion, UnitQuaternion};
+use glam::{Quat, Vec2, Vec3};
 use serde_json as json;
 use settings_schema::Switch;
 use std::{
@@ -234,7 +235,7 @@ async fn connection_pipeline(
     }
     println!("StreamReady");
 
-    let mut stream_socket = tokio::select! {
+    let stream_socket = tokio::select! {
         res = stream_socket_builder.accept_from_server(
             server_ip,
             settings.connection.stream_port,
@@ -244,7 +245,7 @@ async fn connection_pipeline(
             return fmt_e!("Timeout while setting up streams");
         }
     };
-
+    let stream_socket = Arc::new(stream_socket);
     info!("Connected to server");
     println!("Connected to server");
 
@@ -315,16 +316,16 @@ async fn connection_pipeline(
 
     // setup stream loops
 
-    let legacy_send_loop = {
-        let mut socket_sender = stream_socket.request_stream::<_, LEGACY>().await?;
+    let input_send_loop = {
+        let mut socket_sender = stream_socket.request_stream(INPUT).await?;
         async move {
             let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
-            *MAYBE_LEGACY_SENDER.lock() = Some(data_sender);
-
-            while let Some(data) = data_receiver.recv().await {
-                let mut buffer = socket_sender.new_buffer(&(), data.len())?;
-                buffer.get_mut().extend(data);
-                socket_sender.send_buffer(buffer).await.ok();
+            *INPUT_SENDER.lock() = Some(data_sender);
+            while let Some(input) = data_receiver.recv().await {
+                socket_sender
+                    .send_buffer(socket_sender.new_buffer(&input, 0)?)
+                    .await
+                    .ok();
             }
 
             Ok(())
@@ -332,12 +333,46 @@ async fn connection_pipeline(
     };
 
     let (legacy_receive_data_sender, legacy_receive_data_receiver) = smpsc::channel();
-    let legacy_receive_loop = {
-        let mut receiver = stream_socket.subscribe_to_stream::<(), LEGACY>().await?;
+    let legacy_receive_data_sender = Arc::new(Mutex::new(legacy_receive_data_sender));
+
+    // let legacy_receive_loop = {
+    //     let mut receiver = stream_socket.subscribe_to_stream::<()>(VIDEO).await?;
+    //     async move {
+    //         loop {
+    //             let packet = receiver.recv().await?;
+    //             legacy_receive_data_sender.send(packet.buffer).ok();
+    //         }
+    //     }
+    // };
+
+    let haptics_receive_loop = {
+        let mut receiver = stream_socket
+            .subscribe_to_stream::<Haptics<TrackedDeviceType>>(HAPTICS)
+            .await?;
+        let legacy_receive_data_sender = legacy_receive_data_sender.clone();
         async move {
             loop {
                 let packet = receiver.recv().await?;
-                legacy_receive_data_sender.send(packet.buffer).ok();
+
+                let haptics = HapticsFeedback {
+                    type_: 13, // ALVR_PACKET_TYPE_HAPTICS
+                    startTime: 0,
+                    amplitude: packet.header.amplitude,
+                    duration: packet.header.duration.as_secs_f32(),
+                    frequency: packet.header.frequency,
+                    hand: if matches!(packet.header.device, TrackedDeviceType::LeftHand) {
+                        0
+                    } else {
+                        1
+                    },
+                };
+
+                let mut buffer = vec![0_u8; std::mem::size_of::<HapticsFeedback>()];
+                buffer.copy_from_slice(unsafe {
+                    &std::mem::transmute::<_, [u8; std::mem::size_of::<HapticsFeedback>()]>(haptics)
+                });
+
+                legacy_receive_data_sender.lock().await.send(buffer).ok();
             }
         }
     };
@@ -422,19 +457,19 @@ async fn connection_pipeline(
 
                         let perimeter_points = perimeter_slice
                             .iter()
-                            .map(|p| Point2::from_slice(&[p[0], p[2]]))
+                            .map(|p| Vec2::from_slice(&[p[0], p[2]]))
                             .collect::<Vec<_>>();
 
                         Some(perimeter_points)
                     };
                     let packet = PlayspaceSyncPacket {
-                        position: Point3::from_slice(&guardian_data.position),
-                        rotation: UnitQuaternion::from_quaternion(Quaternion::new(
-                            guardian_data.rotation[3],
+                        position: Vec3::from_slice(&guardian_data.position),
+                        rotation: Quat::from_xyzw(
                             guardian_data.rotation[0],
                             guardian_data.rotation[1],
                             guardian_data.rotation[2],
-                        )),
+                            guardian_data.rotation[3],
+                        ),
                         area_width: guardian_data.areaWidth,
                         area_height: guardian_data.areaHeight,
                         perimeter_points,
@@ -551,9 +586,11 @@ async fn connection_pipeline(
         }
     };
 
+    let receive_loop = async move { stream_socket.receive_loop().await };
+
     // Run many tasks concurrently. Threading is managed by the runtime, for best performance.
     tokio::select! {
-        res = spawn_cancelable(stream_socket.receive_loop()) => {
+        res = spawn_cancelable(receive_loop) => {
             if let Err(e) = res {
                 info!("Server disconnected. Cause: {}", e);
                 println!("Server disconnected. Cause: {}", e);
@@ -571,8 +608,9 @@ async fn connection_pipeline(
         res = spawn_cancelable(microphone_loop) => res,
         res = spawn_cancelable(tracking_loop) => res,
         res = spawn_cancelable(playspace_sync_loop) => res,
-        res = spawn_cancelable(legacy_send_loop) => res,
-        res = spawn_cancelable(legacy_receive_loop) => res,
+        res = spawn_cancelable(input_send_loop) => res,
+        //res = spawn_cancelable(legacy_receive_loop) => res,
+        res = spawn_cancelable(haptics_receive_loop) => res,
         res = legacy_stream_socket_loop => trace_err!(res)?,
 
         // keep these loops on the current task
