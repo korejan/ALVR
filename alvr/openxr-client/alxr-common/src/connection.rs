@@ -1,31 +1,33 @@
 use crate::{
     connection_utils::{self, ConnectionError},
-    HapticsFeedback, INPUT_SENDER,
+    INPUT_SENDER, BATTERY_SENDER, VIEWS_CONFIG_SENDER,
+    ALXRTrackingSpace_StageRefSpace
 };
-use alvr_common::{prelude::*, Haptics, TrackedDeviceType, ALVR_NAME, ALVR_VERSION};
-use alvr_session::{SessionDesc, TrackingSpace};
+use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
+use alvr_session::{SessionDesc};
 use alvr_sockets::{
     spawn_cancelable,
     ClientConfigPacket,
     ClientControlPacket,
     ClientHandshakePacket,
     HeadsetInfoPacket,
+    Haptics,
     PeerType,
-    PlayspaceSyncPacket,
     PrivateIdentity,
     ProtoControlSocket,
     ServerControlPacket,
     ServerHandshakePacket,
     StreamSocketBuilder,
     HAPTICS,
-    INPUT, //VIDEO,
+    INPUT,
+    //VIDEO,
 };
 use futures::future::BoxFuture;
-use glam::{Quat, Vec2, Vec3};
+use glam::{Vec2};
 use serde_json as json;
 use settings_schema::Switch;
 use std::{
-    future, slice,
+    future,
     sync::{
         atomic::{AtomicBool, Ordering},
         mpsc as smpsc, Arc,
@@ -271,7 +273,12 @@ async fn connection_pipeline(
     //     &[settings.extra.client_dark_mode.into()],
     // ))?;
 
-    //println!("setting display refresh to {0}Hz", config_packet.fps);
+    // create this before initializing the stream on cpp side
+    let (views_config_sender, mut views_config_receiver) = tmpsc::unbounded_channel();
+    *VIEWS_CONFIG_SENDER.lock() = Some(views_config_sender);
+    let (battery_sender, mut battery_receiver) = tmpsc::unbounded_channel();
+    *BATTERY_SENDER.lock() = Some(battery_sender);
+    
     unsafe {
         crate::alxr_set_stream_config(crate::ALXRStreamConfig {
             // eyeWidth: config_packet.eye_resolution_width,
@@ -299,8 +306,7 @@ async fn connection_pipeline(
             // } else {
             //     0_f32
             // },
-            trackingSpaceType: matches!(settings.headset.tracking_space, TrackingSpace::Stage)
-                as crate::ALXRTrackingSpace,
+            trackingSpaceType: ALXRTrackingSpace_StageRefSpace
             // extraLatencyMode: settings.headset.extra_latency_mode,
         });
     }
@@ -342,7 +348,40 @@ async fn connection_pipeline(
         }
     };
 
-    let (legacy_receive_data_sender, legacy_receive_data_receiver) = smpsc::channel();
+    let views_config_send_loop = {
+        let control_sender = Arc::clone(&control_sender);
+        async move {
+            while let Some(config) = views_config_receiver.recv().await {
+                control_sender
+                    .lock()
+                    .await
+                    .send(&ClientControlPacket::ViewsConfig(config))
+                    .await
+                    .ok();
+            }
+
+            Ok(())
+        }
+    };
+
+    let battery_send_loop = {
+        let control_sender = Arc::clone(&control_sender);
+        async move {
+            while let Some(packet) = battery_receiver.recv().await {
+                control_sender
+                    .lock()
+                    .await
+                    .send(&ClientControlPacket::Battery(packet))
+                    .await
+                    .ok();
+            }
+
+            Ok(())
+        }
+    };
+
+    let (legacy_receive_data_sender, legacy_receive_data_receiver) : (_, std::sync::mpsc::Receiver<Vec<u8>>)
+        = smpsc::channel();
     let legacy_receive_data_sender = Arc::new(Mutex::new(legacy_receive_data_sender));
 
     // let legacy_receive_loop = {
@@ -357,32 +396,20 @@ async fn connection_pipeline(
 
     let haptics_receive_loop = {
         let mut receiver = stream_socket
-            .subscribe_to_stream::<Haptics<TrackedDeviceType>>(HAPTICS)
+            .subscribe_to_stream::<Haptics>(HAPTICS)
             .await?;
-        let legacy_receive_data_sender = legacy_receive_data_sender.clone();
         async move {
             loop {
-                let packet = receiver.recv().await?;
+                let packet = receiver.recv().await?.header;
 
-                let haptics = HapticsFeedback {
-                    type_: 13, // ALVR_PACKET_TYPE_HAPTICS
-                    startTime: 0,
-                    amplitude: packet.header.amplitude,
-                    duration: packet.header.duration.as_secs_f32(),
-                    frequency: packet.header.frequency,
-                    hand: if matches!(packet.header.device, TrackedDeviceType::LeftHand) {
-                        0
-                    } else {
-                        1
-                    },
+                unsafe {
+                    crate::alxr_on_haptics_feedback(
+                        packet.path,
+                        packet.duration.as_secs_f32(),
+                        packet.frequency,
+                        packet.amplitude,
+                    )
                 };
-
-                let mut buffer = vec![0_u8; std::mem::size_of::<HapticsFeedback>()];
-                buffer.copy_from_slice(unsafe {
-                    &std::mem::transmute::<_, [u8; std::mem::size_of::<HapticsFeedback>()]>(haptics)
-                });
-
-                legacy_receive_data_sender.lock().await.send(buffer).ok();
             }
         }
     };
@@ -413,7 +440,7 @@ async fn connection_pipeline(
 
                 let mut idr_request_deadline = None;
 
-                while let Ok(mut data) = legacy_receive_data_receiver.recv() {
+                while let Ok(data) = legacy_receive_data_receiver.recv() {
                     // Send again IDR packet every 2s in case it is missed
                     // (due to dropped burst of packets at the start of the stream or otherwise).
                     if !crate::IDR_PARSED.load(Ordering::Relaxed) {
@@ -428,7 +455,7 @@ async fn connection_pipeline(
                     }
 
                     //println!("Receiving data...");
-                    crate::alxr_on_receive(data.as_mut_ptr(), data.len() as _);
+                    crate::alxr_on_receive(data.as_ptr(), data.len() as _);
                 }
 
                 //crate::closeSocket(env_ptr);
@@ -455,43 +482,17 @@ async fn connection_pipeline(
                 let guardian_data = unsafe { crate::alxr_get_guardian_data() };
 
                 if guardian_data.shouldSync {
-                    let perimeter_points = if guardian_data.perimeterPointsCount == 0 {
-                        None
-                    } else {
-                        let perimeter_slice = unsafe {
-                            slice::from_raw_parts(
-                                guardian_data.perimeterPoints,
-                                guardian_data.perimeterPointsCount as _,
-                            )
-                        };
-
-                        let perimeter_points = perimeter_slice
-                            .iter()
-                            .map(|p| Vec2::from_slice(&[p[0], p[2]]))
-                            .collect::<Vec<_>>();
-
-                        Some(perimeter_points)
-                    };
-                    let packet = PlayspaceSyncPacket {
-                        position: Vec3::from_slice(&guardian_data.position),
-                        rotation: Quat::from_xyzw(
-                            guardian_data.rotation[0],
-                            guardian_data.rotation[1],
-                            guardian_data.rotation[2],
-                            guardian_data.rotation[3],
-                        ),
-                        area_width: guardian_data.areaWidth,
-                        area_height: guardian_data.areaHeight,
-                        perimeter_points,
-                    };
-
                     control_sender
                         .lock()
                         .await
-                        .send(&ClientControlPacket::PlayspaceSync(packet))
+                        .send(&ClientControlPacket::PlayspaceSync(Vec2::new(
+                            guardian_data.areaWidth,
+                            guardian_data.areaHeight,
+                        )))
                         .await
                         .ok();
                 }
+
                 time::sleep(PLAYSPACE_SYNC_INTERVAL).await;
             }
         }
@@ -620,6 +621,8 @@ async fn connection_pipeline(
         res = spawn_cancelable(playspace_sync_loop) => res,
         res = spawn_cancelable(input_send_loop) => res,
         //res = spawn_cancelable(legacy_receive_loop) => res,
+        res = spawn_cancelable(views_config_send_loop) => res,
+        res = spawn_cancelable(battery_send_loop) => res,
         res = spawn_cancelable(haptics_receive_loop) => res,
         res = legacy_stream_socket_loop => trace_err!(res)?,
 
