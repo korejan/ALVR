@@ -31,6 +31,9 @@ pub fn is_dynlib_file(path: &Path) -> bool {
 
 #[cfg(not(windows))]
 pub fn exec_fname(name: &str) -> String {
+    name.to_owned()
+}
+pub fn exec_fname(name: &str) -> String {
     format!("{name}{EXE_SUFFIX}")
 }
 
