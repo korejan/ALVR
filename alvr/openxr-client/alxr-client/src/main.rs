@@ -1,6 +1,6 @@
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, init_connections,
-    input_send, shutdown, ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
+    input_send, views_config_send, path_string_to_hash, shutdown, ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
 };
 use std::{thread, time};
 
@@ -14,6 +14,8 @@ fn main() {
         loop {
             let ctx = ALXRRustCtx {
                 inputSend: Some(input_send),
+                viewsConfigSend: Some(views_config_send),
+                pathStringToHash: Some(path_string_to_hash),
                 graphicsApi: selected_api,
                 verbose: APP_CONFIG.verbose,
             };

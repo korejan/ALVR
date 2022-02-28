@@ -1,6 +1,6 @@
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, init_connections,
-    input_send, shutdown, ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
+    input_send, views_config_send, path_string_to_hash, shutdown, ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
 };
 
 use ndk::looper::*;
@@ -98,6 +98,8 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             applicationVM: vm_ptr as *mut std::ffi::c_void,
             applicationActivity: (*native_activity.ptr().as_ptr()).clazz as *mut std::ffi::c_void,
             inputSend: Some(input_send),
+            viewsConfigSend: Some(views_config_send),
+            pathStringToHash: Some(path_string_to_hash),
         };
         let mut sys_properties = ALXRSystemProperties::new();
         if !alxr_init(&ctx, &mut sys_properties) {
