@@ -1,7 +1,8 @@
 use crate::{
     connection_utils::{self, ConnectionError},
-    INPUT_SENDER, BATTERY_SENDER, VIEWS_CONFIG_SENDER,
-    ALXRTrackingSpace_StageRefSpace
+    VideoFrame, TimeSync, ALXRTrackingSpace_StageRefSpace,
+    INPUT_SENDER, BATTERY_SENDER, VIEWS_CONFIG_SENDER, TIME_SYNC_SENDER, VIDEO_ERROR_REPORT_SENDER,
+    APP_CONFIG
 };
 use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
 use alvr_session::{SessionDesc};
@@ -17,10 +18,11 @@ use alvr_sockets::{
     ProtoControlSocket,
     ServerControlPacket,
     ServerHandshakePacket,
+    VideoFrameHeaderPacket,
     StreamSocketBuilder,
     HAPTICS,
     INPUT,
-    //VIDEO,
+    VIDEO,
 };
 use futures::future::BoxFuture;
 use glam::{Vec2};
@@ -207,6 +209,7 @@ async fn connection_pipeline(
             //     SERVER_DISCONNECTED_MESSAGE,
             // )?;
             println!("{0}", SERVER_DISCONNECTED_MESSAGE);
+            unsafe { crate::alxr_on_server_disconnect() };
             return Ok(());
         }
         _ => {
@@ -243,6 +246,7 @@ async fn connection_pipeline(
         //     hostname,
         //     SERVER_DISCONNECTED_MESSAGE,
         // )?;
+        unsafe { crate::alxr_on_server_disconnect() };
         return Ok(());
     }
     println!("StreamReady");
@@ -279,35 +283,67 @@ async fn connection_pipeline(
     let (battery_sender, mut battery_receiver) = tmpsc::unbounded_channel();
     *BATTERY_SENDER.lock() = Some(battery_sender);
     
+    // assert!((config_packet.eye_resolution_width % headset_info.recommended_eye_width) == 0);
+    // assert!((config_packet.eye_resolution_height % headset_info.recommended_eye_height) == 0);
+    println!("selected eye resolution: w:{0} h:{1}", config_packet.eye_resolution_width, config_packet.eye_resolution_height);
+    //println!("setting display refresh to {0}Hz", config_packet.fps);
     unsafe {
         crate::alxr_set_stream_config(crate::ALXRStreamConfig {
-            // eyeWidth: config_packet.eye_resolution_width,
-            // eyeHeight: config_packet.eye_resolution_height,
-            refreshRate: config_packet.fps,
-            // enableFoveation: matches!(settings.video.foveated_rendering, Switch::Enabled(_)),
-            // foveationStrength: if let Switch::Enabled(foveation_vars) =
-            //     &settings.video.foveated_rendering
-            // {
-            //     foveation_vars.strength
-            // } else {
-            //     0_f32
-            // },
-            // foveationShape: if let Switch::Enabled(foveation_vars) =
-            //     &settings.video.foveated_rendering
-            // {
-            //     foveation_vars.shape
-            // } else {
-            //     1_f32
-            // },
-            // foveationVerticalOffset: if let Switch::Enabled(foveation_vars) =
-            //     &settings.video.foveated_rendering
-            // {
-            //     foveation_vars.vertical_offset
-            // } else {
-            //     0_f32
-            // },
-            trackingSpaceType: ALXRTrackingSpace_StageRefSpace
-            // extraLatencyMode: settings.headset.extra_latency_mode,
+            trackingSpaceType: ALXRTrackingSpace_StageRefSpace,
+            renderConfig: crate::ALXRRenderConfig {                
+                eyeWidth: config_packet.eye_resolution_width,
+                eyeHeight: config_packet.eye_resolution_height,
+                refreshRate: config_packet.fps,
+                
+                foveationCenterSizeX: if let Switch::Enabled(foveation_vars) =
+                    &settings.video.foveated_rendering
+                {
+                    foveation_vars.center_size_x
+                } else {
+                    3_f32 / 5_f32
+                },
+                foveationCenterSizeY: if let Switch::Enabled(foveation_vars) =
+                    &settings.video.foveated_rendering
+                {
+                    foveation_vars.center_size_y
+                } else {
+                    2_f32 / 5_f32
+                },
+                foveationCenterShiftX: if let Switch::Enabled(foveation_vars) =
+                    &settings.video.foveated_rendering
+                {
+                    foveation_vars.center_shift_x
+                } else {
+                    2_f32 / 5_f32
+                },
+                foveationCenterShiftY: if let Switch::Enabled(foveation_vars) =
+                    &settings.video.foveated_rendering
+                {
+                    foveation_vars.center_shift_y
+                } else {
+                    1_f32 / 10_f32
+                },
+                foveationEdgeRatioX: if let Switch::Enabled(foveation_vars) =
+                    &settings.video.foveated_rendering
+                {
+                    foveation_vars.edge_ratio_x
+                } else {
+                    2_f32
+                },
+                foveationEdgeRatioY: if let Switch::Enabled(foveation_vars) =
+                    &settings.video.foveated_rendering
+                {
+                    foveation_vars.edge_ratio_y
+                } else {
+                    2_f32
+                },
+                enableFoveation: matches!(settings.video.foveated_rendering, Switch::Enabled(_))
+            },
+            decoderConfig: crate::ALXRDecoderConfig {
+                codecType: settings.video.codec as crate::ALXRCodecType,
+                realtimePriority: settings.video.client_request_realtime_decoder,
+                cpuThreadCount: APP_CONFIG.decoder_thread_count
+            }
         });
     }
 
@@ -348,6 +384,44 @@ async fn connection_pipeline(
         }
     };
 
+    let time_sync_send_loop = {
+        let control_sender = Arc::clone(&control_sender);
+        async move {
+            let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
+            *TIME_SYNC_SENDER.lock() = Some(data_sender);
+
+            while let Some(time_sync) = data_receiver.recv().await {
+                control_sender
+                    .lock()
+                    .await
+                    .send(&ClientControlPacket::TimeSync(time_sync))
+                    .await
+                    .ok();
+            }
+
+            Ok(())
+        }
+    };
+
+    let video_error_report_send_loop = {
+        let control_sender = Arc::clone(&control_sender);
+        async move {
+            let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
+            *VIDEO_ERROR_REPORT_SENDER.lock() = Some(data_sender);
+
+            while let Some(()) = data_receiver.recv().await {
+                control_sender
+                    .lock()
+                    .await
+                    .send(&ClientControlPacket::VideoErrorReport)
+                    .await
+                    .ok();
+            }
+
+            Ok(())
+        }
+    };
+
     let views_config_send_loop = {
         let control_sender = Arc::clone(&control_sender);
         async move {
@@ -380,19 +454,52 @@ async fn connection_pipeline(
         }
     };
 
-    let (legacy_receive_data_sender, legacy_receive_data_receiver) : (_, std::sync::mpsc::Receiver<Vec<u8>>)
-        = smpsc::channel();
+    let (legacy_receive_data_sender, legacy_receive_data_receiver) = smpsc::channel();
     let legacy_receive_data_sender = Arc::new(Mutex::new(legacy_receive_data_sender));
 
-    // let legacy_receive_loop = {
+    // let video_receive_loop = {
     //     let mut receiver = stream_socket.subscribe_to_stream::<()>(VIDEO).await?;
+    //     let legacy_receive_data_sender = legacy_receive_data_sender.clone();
     //     async move {
     //         loop {
     //             let packet = receiver.recv().await?;
-    //             legacy_receive_data_sender.send(packet.buffer).ok();
+    //             legacy_receive_data_sender.lock().await.send(packet.buffer).ok();
     //         }
     //     }
     // };
+    
+    let video_receive_loop = {
+        let mut receiver = stream_socket
+            .subscribe_to_stream::<VideoFrameHeaderPacket>(VIDEO)
+            .await?;
+        let legacy_receive_data_sender = legacy_receive_data_sender.clone();
+        async move {
+            loop {
+                let packet = receiver.recv().await?;
+
+                //let now = std::time::Instant::now();
+
+                let mut buffer = vec![0_u8; std::mem::size_of::<VideoFrame>() + packet.buffer.len()];
+                let header = VideoFrame {
+                    type_: 9, // ALVR_PACKET_TYPE_VIDEO_FRAME
+                    packetCounter: packet.header.packet_counter,
+                    trackingFrameIndex: packet.header.tracking_frame_index,
+                    videoFrameIndex: packet.header.video_frame_index,
+                    sentTime: packet.header.sent_time,
+                    frameByteSize: packet.header.frame_byte_size,
+                    fecIndex: packet.header.fec_index,
+                    fecPercentage: packet.header.fec_percentage,
+                };
+
+                buffer[..std::mem::size_of::<VideoFrame>()].copy_from_slice(unsafe {
+                    &std::mem::transmute::<_, [u8; std::mem::size_of::<VideoFrame>()]>(header)
+                });
+                buffer[std::mem::size_of::<VideoFrame>()..].copy_from_slice(&packet.buffer);
+
+                legacy_receive_data_sender.lock().await.send(buffer).ok();
+            }
+        }
+    };
 
     let haptics_receive_loop = {
         let mut receiver = stream_socket
@@ -446,6 +553,7 @@ async fn connection_pipeline(
                     if !crate::IDR_PARSED.load(Ordering::Relaxed) {
                         if let Some(deadline) = idr_request_deadline {
                             if deadline < Instant::now() {
+                                println!("IDR_PARSED sending IDR request");
                                 crate::IDR_REQUEST_NOTIFIER.notify_waiters();
                                 idr_request_deadline = None;
                             }
@@ -465,7 +573,7 @@ async fn connection_pipeline(
         }
     });
 
-    let tracking_interval = Duration::from_secs_f32(1_f32 / 360_f32); //Duration::from_secs_f32(1_f32 / (config_packet.fps * 3_f32));
+    let tracking_interval = Duration::from_secs_f32(1_f32 / (config_packet.fps * 3_f32)); // Duration::from_secs_f32(1_f32 / 360_f32);// 
     let tracking_loop = async move {
         let mut deadline = Instant::now();
         loop {
@@ -549,6 +657,7 @@ async fn connection_pipeline(
                     //     hostname,
                     //     SERVER_DISCONNECTED_MESSAGE,
                     // )?;
+                    unsafe { crate::alxr_on_server_disconnect() };
                     break Ok(());
                 }
 
@@ -564,6 +673,7 @@ async fn connection_pipeline(
             loop {
                 tokio::select! {
                     _ = crate::IDR_REQUEST_NOTIFIER.notified() => {
+                        println!("Sending IDR Request!");
                         control_sender.lock().await.send(&ClientControlPacket::RequestIdr).await?;
                     }
                     control_packet = control_receiver.recv() =>
@@ -579,6 +689,35 @@ async fn connection_pipeline(
                                 // )?;
                                 break Ok(());
                             }
+                            Ok(ServerControlPacket::TimeSync(data)) => {
+                                let time_sync = TimeSync {
+                                    type_: 7, // ALVR_PACKET_TYPE_TIME_SYNC
+                                    mode: data.mode,
+                                    serverTime: data.server_time,
+                                    clientTime: data.client_time,
+                                    sequence: 0,
+                                    packetsLostTotal: data.packets_lost_total,
+                                    packetsLostInSecond: data.packets_lost_in_second,
+                                    averageTotalLatency: 0,
+                                    averageSendLatency: data.average_send_latency,
+                                    averageTransportLatency: data.average_transport_latency,
+                                    averageDecodeLatency: data.average_decode_latency,
+                                    idleTime: data.idle_time,
+                                    fecFailure: data.fec_failure,
+                                    fecFailureInSecond: data.fec_failure_in_second,
+                                    fecFailureTotal: data.fec_failure_total,
+                                    fps: data.fps,
+                                    serverTotalLatency: data.server_total_latency,
+                                    trackingRecvFrameIndex: data.tracking_recv_frame_index,
+                                };
+
+                                let mut buffer = vec![0_u8; std::mem::size_of::<TimeSync>()];
+                                buffer.copy_from_slice(unsafe {
+                                    &std::mem::transmute::<_, [u8; std::mem::size_of::<TimeSync>()]>(time_sync)
+                                });
+
+                                legacy_receive_data_sender.lock().await.send(buffer).ok();
+                            },
                             Ok(_) => (),
                             Err(e) => {
                                 info!("Server disconnected. Cause: {}", e);
@@ -589,6 +728,7 @@ async fn connection_pipeline(
                                 //     hostname,
                                 //     SERVER_DISCONNECTED_MESSAGE
                                 // )?;
+                                unsafe { crate::alxr_on_server_disconnect() };
                                 break Ok(());
                             }
                         }
@@ -613,6 +753,7 @@ async fn connection_pipeline(
             //     SERVER_DISCONNECTED_MESSAGE
             // )?;
             println!("{0}", SERVER_DISCONNECTED_MESSAGE);
+            unsafe { crate::alxr_on_server_disconnect() };
             Ok(())
         },
         res = spawn_cancelable(game_audio_loop) => res,
@@ -620,9 +761,11 @@ async fn connection_pipeline(
         res = spawn_cancelable(tracking_loop) => res,
         res = spawn_cancelable(playspace_sync_loop) => res,
         res = spawn_cancelable(input_send_loop) => res,
-        //res = spawn_cancelable(legacy_receive_loop) => res,
+        res = spawn_cancelable(time_sync_send_loop) => res,
+        res = spawn_cancelable(video_error_report_send_loop) => res,
         res = spawn_cancelable(views_config_send_loop) => res,
         res = spawn_cancelable(battery_send_loop) => res,
+        res = spawn_cancelable(video_receive_loop) => res,
         res = spawn_cancelable(haptics_receive_loop) => res,
         res = legacy_stream_socket_loop => trace_err!(res)?,
 
@@ -674,6 +817,7 @@ pub async fn connection_lifecycle_loop(
                     //     &message,
                     // )
                     // .ok();
+                    unsafe { crate::alxr_on_server_disconnect() };
                 }
 
                 // let any running task or socket shutdown

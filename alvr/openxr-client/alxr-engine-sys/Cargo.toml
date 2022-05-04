@@ -1,9 +1,18 @@
 [package]
 name = "alxr-engine-sys"
-version = "0.5.0"
+version = "0.7.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 links = "alxr_engine"
+
+[features]
+# These are only used for android builds.
+generic-flavor = [] # default if none specified.
+quest-flavor = []
+pico-neo-flavor = []
+# These features are only for non-android builds.
+cuda-interop = []
+bundled-ffmpeg = []
 
 [build-dependencies]
 cmake = "0.1"

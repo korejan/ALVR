@@ -156,43 +156,92 @@ fn find_linked_native_paths(crate_path: &Path, build_flags:&str) -> Result<PathS
     Ok(linked_path_set)
 }
 
-fn make_build_flags(is_release: bool, reproducible: bool) -> String {
-    format!("{} {}",
-        if is_release { "--release" } else { "" },
-        if reproducible {
-            "--offline --locked"
-        } else {
-            ""
-        }
-    )
+#[derive(Clone,Copy,Debug)]
+pub struct AlxBuildFlags {
+    is_release: bool,
+    reproducible: bool,
+    no_nvidia: bool,
+    bundle_ffmpeg: bool,
+    fetch_crates: bool
 }
 
-pub fn build_alxr_client(
-    is_release: bool,
-    fetch_crates: bool,
-    root: Option<String>,
-    reproducible: bool,
-) {   
-    let build_type = if is_release { "release" } else { "debug" };
-    let build_flags = make_build_flags(is_release, reproducible);
+impl Default for AlxBuildFlags {
+    fn default() -> Self {
+        AlxBuildFlags {
+            is_release: true,
+            reproducible: true,
+            no_nvidia: true,
+            bundle_ffmpeg: true,
+            fetch_crates: false
+        }
+    }
+}
 
+impl AlxBuildFlags {
+    pub fn make_build_string(&self) -> String {
+                
+        let enable_bundle_ffmpeg = cfg!(target_os = "linux") && self.bundle_ffmpeg;
+        let feature_map = vec![(enable_bundle_ffmpeg, "bundled-ffmpeg"),
+                               (!self.no_nvidia, "cuda-interop")];
+        
+        let flag_map = vec![(self.is_release, "--release"),
+                            (self.reproducible, "--offline --locked")];
+        
+        fn to_str_vec(m: &Vec<(bool,&'static str)>) -> Vec<&'static str> {
+            let mut strs : Vec<&str> = vec![];
+            for (_,strv) in m.iter().filter(|(f,_)| *f) {
+                strs.push(strv);
+            }
+            strs
+        }
+        let feature_strs = to_str_vec(&feature_map);
+        let flag_strs = to_str_vec(&flag_map);
+
+        let features = feature_strs.join(",");
+        let mut build_str = flag_strs.join(" ").to_string();
+        if features.len() > 0 {
+            if build_str.len() > 0 {
+                build_str.push(' ');
+            }
+            build_str.push_str("--features ");
+            build_str.push_str(features.as_str());
+        }
+        build_str
+    }
+}
+
+pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxBuildFlags)
+{
     if let Some(root) = root {
         env::set_var("ALVR_ROOT_DIR", root);
     }
 
+    let build_flags = flags.make_build_string();
     let target_dir = afs::target_dir();
+    let build_type = if flags.is_release { "release" } else { "debug" };
     let artifacts_dir = target_dir.join(build_type);
 
-    if fetch_crates {
-        command::run("cargo update").unwrap();
-    }
-
-    let alxr_client_build_dir = afs::alxr_client_build_dir();
+    let alxr_client_build_dir = afs::alxr_client_build_dir(build_type, !flags.no_nvidia);
     fs::remove_dir_all(&alxr_client_build_dir).ok();
     fs::create_dir_all(&alxr_client_build_dir).unwrap();
 
+    let bundle_ffmpeg_enabled = cfg!(target_os = "linux") && flags.bundle_ffmpeg;
+    if bundle_ffmpeg_enabled {
+        assert!(!ffmpeg_version.is_empty(), "ffmpeg-version is empty!");
+        
+        let ffmpeg_lib_dir = &alxr_client_build_dir;        
+        dependencies::build_ffmpeg_linux_install(true, ffmpeg_version, /*enable_decoders=*/true, &ffmpeg_lib_dir);
+
+        assert!(ffmpeg_lib_dir.exists());
+        env::set_var("ALXR_BUNDLE_FFMPEG_INSTALL_PATH", ffmpeg_lib_dir.to_str().unwrap());
+    }
+
+    if flags.fetch_crates {
+        command::run("cargo update").unwrap();
+    }
+
     let alxr_client_dir = afs::workspace_dir().join("alvr/openxr-client/alxr-client");
-    let (alxr_cargo_cmd, alxr_build_lid_dir) = if cfg!(target_os = "windows") {
+    let (alxr_cargo_cmd, alxr_build_lib_dir) = if cfg!(target_os = "windows") {
         (format!("cargo build {}", build_flags),
         alxr_client_build_dir.to_owned())
     }
@@ -201,7 +250,7 @@ pub fn build_alxr_client(
         alxr_client_build_dir.join("lib"))
     };
     command::run_in(&alxr_client_dir, &alxr_cargo_cmd).unwrap();
-        
+
     fn is_linked_depends_file(path:&Path) -> bool {
         if afs::is_dynlib_file(&path) {
             return true;
@@ -231,7 +280,7 @@ pub fn build_alxr_client(
             .filter(|entry| is_linked_depends_file(&entry)) {
             
             let relative_lpf = linked_depend_file.strip_prefix(linked_path).unwrap();
-            let dst_file = alxr_build_lid_dir.join(relative_lpf);            
+            let dst_file = alxr_build_lib_dir.join(relative_lpf);            
             std::fs::create_dir_all(dst_file.parent().unwrap()).unwrap();
             fs::copy(&linked_depend_file, &dst_file).unwrap();
         }
@@ -254,33 +303,123 @@ pub fn build_alxr_client(
     .unwrap();
 }
 
+fn setup_cargo_appimage()
+{
+    let ait_dir = afs::deps_dir().join("linux/appimagetool");
+
+    fs::remove_dir_all(&ait_dir).ok();
+    fs::create_dir_all(&ait_dir).unwrap();
+
+    #[cfg(target_arch = "x86_64")]
+    let target_arch_str = "x86_64";
+    #[cfg(target_arch = "x86")]
+    let target_arch_str = "i686";
+    #[cfg(target_arch = "aarch64")]
+    let target_arch_str = "aarch64";
+    #[cfg(target_arch = "arm")]
+    let target_arch_str = "armhf";
+    
+    let ait_exe = format!("appimagetool-{}.AppImage", &target_arch_str);
+    
+    let run_ait_cmd = |cmd:&str| { command::run_in(&ait_dir, &cmd).unwrap() };
+    run_ait_cmd(&format!("wget https://github.com/AppImage/AppImageKit/releases/download/13/{}", &ait_exe));
+    run_ait_cmd(&format!("mv {} appimagetool", &ait_exe));
+    run_ait_cmd("chmod +x appimagetool");
+    
+    assert!(ait_dir.exists());
+
+    env::set_var("PATH", format!("{}:{}",
+    ait_dir.canonicalize().unwrap().to_str().unwrap(),
+        env::var("PATH").unwrap_or_default()
+    ));
+    
+    command::run("cargo install cargo-appimage").unwrap();
+}
+
+pub fn build_alxr_app_image(root: Option<String>, _ffmpeg_version: &str, flags: AlxBuildFlags)
+{
+    println!("Not Implemented!");
+    // setup_cargo_appimage();
+
+    // // let target_dir = afs::target_dir();
+
+    // // let bundle_ffmpeg_enabled = cfg!(target_os = "linux") && flags.bundle_ffmpeg;
+    // // if bundle_ffmpeg_enabled {
+    // //     assert!(!ffmpeg_version.is_empty(), "ffmpeg-version is empty!");
+        
+    // //     let ffmpeg_lib_dir = &alxr_client_build_dir;        
+    // //     dependencies::build_ffmpeg_linux_install(true, ffmpeg_version, /*enable_decoders=*/true, &ffmpeg_lib_dir);
+
+    // //     assert!(ffmpeg_lib_dir.exists());
+    // //     env::set_var("ALXR_BUNDLE_FFMPEG_INSTALL_PATH", ffmpeg_lib_dir.to_str().unwrap());
+    // // }
+
+    // if let Some(root) = root {
+    //     env::set_var("ALVR_ROOT_DIR", root);
+    // }
+    // if flags.fetch_crates {
+    //     command::run("cargo update").unwrap();
+    // }
+    // let build_flags = flags.make_build_string();
+    // let alxr_client_dir = afs::workspace_dir().join("alvr/openxr-client/alxr-client");
+
+    // let rustflags = r#"RUSTFLAGS="-C link-args=-Wl,-rpath,$ORIGIN/lib""#;
+    // //env::set_var("RUSTFLAGS", "-C link-args=\'-Wl,-rpath,$ORIGIN/lib\'");
+    // command::run_in(&alxr_client_dir, &format!("{} cargo appimage {}", rustflags, build_flags)).unwrap();
+}
+
+fn install_alxr_depends() {
+    command::run("rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android").unwrap();
+    command::run("cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries").unwrap();
+}
+
+#[derive(Clone,Copy,Debug)]
+pub enum AndroidFlavor {
+    Generic,
+    OculusQuest, // Q1 or Q2
+    PicoNeo3
+}
+
 pub fn build_alxr_android(
-    is_release: bool,
-    fetch_crates: bool,
     root: Option<String>,
-    reproducible: bool,
+    client_flavor: AndroidFlavor,
+    flags: AlxBuildFlags
 ) {   
-    let build_type = if is_release { "release" } else { "debug" };
-    let build_flags = make_build_flags(is_release, reproducible);
+    let build_type = if flags.is_release { "release" } else { "debug" };
+    let build_flags = flags.make_build_string();
 
     if let Some(root) = root {
         env::set_var("ALVR_ROOT_DIR", root);
     }
-
-    if fetch_crates {
+    
+    if flags.fetch_crates {
         command::run("cargo update").unwrap();
     }
-    command::run("cargo install cargo-apk").unwrap();
+    install_alxr_depends();
     
-    let alxr_client_build_dir = afs::alxr_android_build_dir();
-    fs::remove_dir_all(&alxr_client_build_dir).ok();
+    let alxr_client_build_dir = afs::alxr_android_build_dir(build_type);
+    //fs::remove_dir_all(&alxr_client_build_dir).ok();
     fs::create_dir_all(&alxr_client_build_dir).unwrap();
-
-    let alxr_client_dir = afs::workspace_dir().join("alvr/openxr-client/alxr-android-client");
+    
+    let client_dir = match client_flavor {
+        AndroidFlavor::OculusQuest => { "quest" }
+        AndroidFlavor::PicoNeo3 => { "pico-neo" }
+        _ => ""
+    };    
+    // cargo-apk has an issue where it will search the entire "target" build directory for "output" files that contain
+    // a build.rs print of out "cargo:rustc-link-search=...." and use those paths to determine which
+    // shared libraries copy into the final apk, this can causes issues if there are multiple versions of shared libs
+    // with the same name.
+    //     E.g.: The wrong platform build of libopenxr_loader.so gets copied into the wrong apk when
+    //           more than one variant of android client gets built.
+    // The workaround is set different "target-dir" for each variant/flavour of android builds.
+    let target_dir = afs::target_dir().join(client_dir);
+    let alxr_client_dir = afs::workspace_dir().join("alvr/openxr-client/alxr-android-client").join(client_dir);
+    
     command::run_in
     (
         &alxr_client_dir,
-        &format!("cargo apk build {}", build_flags)
+        &format!("cargo apk build {0} --target-dir={1}", build_flags, target_dir.display())
     ).unwrap();
 
     fn is_package_file(p: &Path) -> bool {
@@ -289,7 +428,7 @@ pub fn build_alxr_android(
             return ["apk", "aar", "idsig"].contains(&ext_str);
         })
     }
-    let apk_dir = afs::target_dir().join(build_type).join("apk");
+    let apk_dir = target_dir.join(build_type).join("apk");
     for file in walkdir::WalkDir::new(&apk_dir)
         .into_iter()
         .filter_map(|maybe_entry| maybe_entry.ok())
@@ -341,6 +480,15 @@ fn main() {
         let platform: Option<String> = args.opt_value_from_str("--platform").unwrap();
         let version: Option<String> = args.opt_value_from_str("--version").unwrap();
         let root: Option<String> = args.opt_value_from_str("--root").unwrap();
+
+        let default_var = String::from("n5.0");
+        let mut ffmpeg_version: String = args.opt_value_from_str("--ffmpeg-version")
+            .unwrap()
+            .map_or(default_var.clone(), |s: String| if s.is_empty() { default_var } else { s });
+        assert!(!ffmpeg_version.is_empty());
+        if !ffmpeg_version.starts_with('n') {
+            ffmpeg_version.insert(0, 'n');
+        }
 
         if args.finish().is_empty() {
             match subcommand.as_str() {

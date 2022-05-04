@@ -80,26 +80,26 @@ pub fn streamer_build_dir() -> PathBuf {
     build_dir().join(format!("alvr_streamer_{OS}"))
 }
 
-pub fn alxr_android_build_dir() -> PathBuf {
-    build_dir().join("alxr_client_android")
+pub fn alxr_android_build_dir< P: AsRef<Path> >(prefix: P) -> PathBuf {
+    build_dir().join(prefix).join("alxr_client_android")
 }
 
-pub fn alxr_client_build_dir() -> PathBuf {
+pub fn alxr_client_build_dir< P: AsRef<Path> >(prefix: P, cuda_enabled: bool) -> PathBuf {
     if cfg!(target_os = "android") {
-        return alxr_android_build_dir();
+        return alxr_android_build_dir(prefix);
     }
 
     let alxr_client_dir = if cfg!(windows) {
-        "alxr_client_windows"
+        if cuda_enabled { "alxr_client_windows_cuda" } else { "alxr_client_windows" }
     } else if cfg!(target_os = "linux") {
-        "alxr_client_linux"
+        if cuda_enabled { "alxr_client_linux_cuda" } else { "alxr_client_linux" }
     } else if cfg!(target_os = "macos") {
         "alxr_client_macos"
     } else {
         unimplemented!()
     };
 
-    build_dir().join(alxr_client_dir)
+    build_dir().join(prefix).join(alxr_client_dir)
 }
 
 pub fn installer_path() -> PathBuf {

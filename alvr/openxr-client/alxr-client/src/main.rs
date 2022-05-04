@@ -1,22 +1,36 @@
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, init_connections,
-    input_send, views_config_send, path_string_to_hash, shutdown, ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
+    input_send, views_config_send, path_string_to_hash, time_sync_send, video_error_report_send,
+    battery_send, set_waiting_next_idr, request_idr, shutdown,
+    ALXRGraphicsApi, ALXRDecoderType, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
 };
 use std::{thread, time};
 
 const SLEEP_TIME: time::Duration = time::Duration::from_millis(250);
 
+#[cfg(target_os = "windows")]
+const DEFAULT_DECODER_TYPE : ALXRDecoderType = ALXRDecoderType::D311VA;
+#[cfg(not(target_os = "windows"))]
+const DEFAULT_DECODER_TYPE : ALXRDecoderType = ALXRDecoderType::VAAPI;
+
 #[cfg(not(target_os = "android"))]
 fn main() {
     println!("{:?}", *APP_CONFIG);
     let selected_api = APP_CONFIG.graphics_api.unwrap_or(ALXRGraphicsApi::Auto);
+    let selected_decoder = APP_CONFIG.decoder_type.unwrap_or(DEFAULT_DECODER_TYPE);
     unsafe {
         loop {
             let ctx = ALXRRustCtx {
                 inputSend: Some(input_send),
                 viewsConfigSend: Some(views_config_send),
                 pathStringToHash: Some(path_string_to_hash),
+                timeSyncSend: Some(time_sync_send),
+                videoErrorReportSend: Some(video_error_report_send),
+                batterySend: Some(battery_send),
+                setWaitingNextIDR: Some(set_waiting_next_idr),
+                requestIDR: Some(request_idr),
                 graphicsApi: selected_api,
+                decoderType: selected_decoder,
                 verbose: APP_CONFIG.verbose,
             };
             let mut sys_properties = ALXRSystemProperties::new();

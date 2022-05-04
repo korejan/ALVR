@@ -1,10 +1,18 @@
 [package]
 name = "alxr-common"
-version = "0.4.0"
+version = "0.7.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+# These are only used for android builds.
+generic-flavor = ["alxr-engine-sys/generic-flavor"] # default if none specified.
+quest-flavor = ["alxr-engine-sys/quest-flavor"]
+pico-neo-flavor = ["alxr-engine-sys/pico-neo-flavor"]
+# These features are only for non-android builds.
+cuda-interop = ["alxr-engine-sys/cuda-interop"]
+bundled-ffmpeg = ["alxr-engine-sys/bundled-ffmpeg"]
 
 [dependencies]
 alxr-engine-sys = { path = "../alxr-engine-sys" }
@@ -15,7 +23,7 @@ alvr_sockets = { path = "../../sockets" }
 settings-schema = { path = "../../settings-schema", features = ["rename_camel_case"] }
 # Basic utilities
 lazy_static = "1"
-parking_lot = "0.11"
+parking_lot = "0.12"
 # Serialization
 serde = "1"
 serde_json = "1"

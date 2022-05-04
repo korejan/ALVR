@@ -16,6 +16,23 @@ impl From<&str> for crate::ALXRGraphicsApi {
     }
 }
 
+impl From<&str> for crate::ALXRDecoderType {
+    fn from(input: &str) -> Self {
+        let trimmed = input.trim();
+        match trimmed {
+            "D311VA" => crate::ALXRDecoderType::D311VA,
+            "NVDEC"  => crate::ALXRDecoderType::NVDEC,
+            "CUVID"  => crate::ALXRDecoderType::CUVID,
+            "VAAPI"  => crate::ALXRDecoderType::VAAPI,
+            "CPU"    => crate::ALXRDecoderType::CPU,
+            #[cfg(target_os = "windows")]
+            _ => crate::ALXRDecoderType::D311VA,
+            #[cfg(not(target_os = "windows"))]
+            _ => crate::ALXRDecoderType::VAAPI,
+        }
+    }
+}
+
 impl ALXRSystemProperties {
     pub fn new() -> ALXRSystemProperties {
         ALXRSystemProperties {

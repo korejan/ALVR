@@ -1,11 +1,23 @@
 [package]
 name = "alxr-client"
-version = "0.3.0"
+version = "0.7.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 description = "An OpenXR based ALVR client for non-android platorms"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+cuda-interop = ["alxr-common/cuda-interop"]
+bundled-ffmpeg = ["alxr-common/bundled-ffmpeg"]
 
 [dependencies]
 alxr-common = { path = "../alxr-common" }
+
+# for building linux AppImages with cargo-appimage: https://crates.io/crates/cargo-appimage
+#[package.metadata.appimage]
+#auto_link = true
+# auto_link_exclude_list = [
+#     # "libc.so*",
+#     # "libdl.so*",
+#     # "libpthread.so*",
+# ]
