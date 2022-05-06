@@ -1,13 +1,13 @@
 use alxr_common::{
-    alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, init_connections,
-    input_send, views_config_send, path_string_to_hash, time_sync_send, video_error_report_send,
-    battery_send, set_waiting_next_idr, request_idr, shutdown,
-    ALXRGraphicsApi, ALXRDecoderType, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
+    alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, battery_send,
+    init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
+    time_sync_send, video_error_report_send, views_config_send, ALXRDecoderType, ALXRGraphicsApi,
+    ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
 };
 
 use ndk::looper::*;
-use ndk_glue;
 use ndk_context;
+use ndk_glue;
 
 struct AppData {
     destroy_requested: bool,
@@ -34,7 +34,7 @@ impl AppData {
         // InputQueueDestroyed,
         // ContentRectChanged,
         match event {
-            // ndk_glue::Event::WindowCreated => {                
+            // ndk_glue::Event::WindowCreated => {
             //     let win = ndk_glue::native_window();
             //     if let Some(win2) = win.as_ref() {
             //         let width = win2.width();
@@ -103,9 +103,9 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
         //let _libcpp = libloading::Library::new("libc++_shared.so")?;
         let _lib = libloading::Library::new("libopenxr_loader.so")?;
         //let _lib2 = libloading::Library::new("libXrApiLayer_core_validation.so")?;
-        
-        // in-order: # avutil, avresample, avcodec, avformat 
-        // avutil, avresample, avcodec, avformat 
+
+        // in-order: # avutil, avresample, avcodec, avformat
+        // avutil, avresample, avcodec, avformat
         // let _lib2 = libloading::Library::new("libavutil.so")?;
         // let _lib2 = libloading::Library::new("libswresample.so")?;
         // let _lib3 = libloading::Library::new("libavcodec.so")?;
@@ -122,7 +122,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             //decoderThreadCount: APP_CONFIG.decoder_thread_count,
             verbose: APP_CONFIG.verbose,
             applicationVM: vm_ptr as *mut std::ffi::c_void,
-            applicationActivity: native_activity,//(*native_activity.ptr().as_ptr()).clazz as *mut std::ffi::c_void,
+            applicationActivity: native_activity, //(*native_activity.ptr().as_ptr()).clazz as *mut std::ffi::c_void,
             inputSend: Some(input_send),
             viewsConfigSend: Some(views_config_send),
             pathStringToHash: Some(path_string_to_hash),
@@ -130,7 +130,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             videoErrorReportSend: Some(video_error_report_send),
             batterySend: Some(battery_send),
             setWaitingNextIDR: Some(set_waiting_next_idr),
-            requestIDR: Some(request_idr)
+            requestIDR: Some(request_idr),
         };
         let mut sys_properties = ALXRSystemProperties::new();
         if !alxr_init(&ctx, &mut sys_properties) {
@@ -163,7 +163,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
 
         shutdown();
         alxr_destroy();
-        
+
         vm.detach_current_thread();
     }
     Ok(())

@@ -1,31 +1,17 @@
 use crate::{
     connection_utils::{self, ConnectionError},
-    VideoFrame, TimeSync, ALXRTrackingSpace_StageRefSpace,
-    INPUT_SENDER, BATTERY_SENDER, VIEWS_CONFIG_SENDER, TIME_SYNC_SENDER, VIDEO_ERROR_REPORT_SENDER,
-    APP_CONFIG
+    ALXRTrackingSpace_StageRefSpace, TimeSync, VideoFrame, APP_CONFIG, BATTERY_SENDER,
+    INPUT_SENDER, TIME_SYNC_SENDER, VIDEO_ERROR_REPORT_SENDER, VIEWS_CONFIG_SENDER,
 };
 use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
-use alvr_session::{SessionDesc};
+use alvr_session::SessionDesc;
 use alvr_sockets::{
-    spawn_cancelable,
-    ClientConfigPacket,
-    ClientControlPacket,
-    ClientHandshakePacket,
-    HeadsetInfoPacket,
-    Haptics,
-    PeerType,
-    PrivateIdentity,
-    ProtoControlSocket,
-    ServerControlPacket,
-    ServerHandshakePacket,
-    VideoFrameHeaderPacket,
-    StreamSocketBuilder,
-    HAPTICS,
-    INPUT,
-    VIDEO,
+    spawn_cancelable, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, Haptics,
+    HeadsetInfoPacket, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
+    ServerHandshakePacket, StreamSocketBuilder, VideoFrameHeaderPacket, HAPTICS, INPUT, VIDEO,
 };
 use futures::future::BoxFuture;
-use glam::{Vec2};
+use glam::Vec2;
 use serde_json as json;
 use settings_schema::Switch;
 use std::{
@@ -282,19 +268,22 @@ async fn connection_pipeline(
     *VIEWS_CONFIG_SENDER.lock() = Some(views_config_sender);
     let (battery_sender, mut battery_receiver) = tmpsc::unbounded_channel();
     *BATTERY_SENDER.lock() = Some(battery_sender);
-    
+
     // assert!((config_packet.eye_resolution_width % headset_info.recommended_eye_width) == 0);
     // assert!((config_packet.eye_resolution_height % headset_info.recommended_eye_height) == 0);
-    println!("selected eye resolution: w:{0} h:{1}", config_packet.eye_resolution_width, config_packet.eye_resolution_height);
+    println!(
+        "selected eye resolution: w:{0} h:{1}",
+        config_packet.eye_resolution_width, config_packet.eye_resolution_height
+    );
     //println!("setting display refresh to {0}Hz", config_packet.fps);
     unsafe {
         crate::alxr_set_stream_config(crate::ALXRStreamConfig {
             trackingSpaceType: ALXRTrackingSpace_StageRefSpace,
-            renderConfig: crate::ALXRRenderConfig {                
+            renderConfig: crate::ALXRRenderConfig {
                 eyeWidth: config_packet.eye_resolution_width,
                 eyeHeight: config_packet.eye_resolution_height,
                 refreshRate: config_packet.fps,
-                
+
                 foveationCenterSizeX: if let Switch::Enabled(foveation_vars) =
                     &settings.video.foveated_rendering
                 {
@@ -337,13 +326,13 @@ async fn connection_pipeline(
                 } else {
                     2_f32
                 },
-                enableFoveation: matches!(settings.video.foveated_rendering, Switch::Enabled(_))
+                enableFoveation: matches!(settings.video.foveated_rendering, Switch::Enabled(_)),
             },
             decoderConfig: crate::ALXRDecoderConfig {
                 codecType: settings.video.codec as crate::ALXRCodecType,
                 realtimePriority: settings.video.client_request_realtime_decoder,
-                cpuThreadCount: APP_CONFIG.decoder_thread_count
-            }
+                cpuThreadCount: APP_CONFIG.decoder_thread_count,
+            },
         });
     }
 
@@ -467,7 +456,7 @@ async fn connection_pipeline(
     //         }
     //     }
     // };
-    
+
     let video_receive_loop = {
         let mut receiver = stream_socket
             .subscribe_to_stream::<VideoFrameHeaderPacket>(VIDEO)
@@ -479,7 +468,8 @@ async fn connection_pipeline(
 
                 //let now = std::time::Instant::now();
 
-                let mut buffer = vec![0_u8; std::mem::size_of::<VideoFrame>() + packet.buffer.len()];
+                let mut buffer =
+                    vec![0_u8; std::mem::size_of::<VideoFrame>() + packet.buffer.len()];
                 let header = VideoFrame {
                     type_: 9, // ALVR_PACKET_TYPE_VIDEO_FRAME
                     packetCounter: packet.header.packet_counter,
@@ -573,7 +563,7 @@ async fn connection_pipeline(
         }
     });
 
-    let tracking_interval = Duration::from_secs_f32(1_f32 / (config_packet.fps * 3_f32)); // Duration::from_secs_f32(1_f32 / 360_f32);// 
+    let tracking_interval = Duration::from_secs_f32(1_f32 / (config_packet.fps * 3_f32)); // Duration::from_secs_f32(1_f32 / 360_f32);//
     let tracking_loop = async move {
         let mut deadline = Instant::now();
         loop {

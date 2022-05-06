@@ -2,14 +2,20 @@ mod connection;
 mod connection_utils;
 
 use alvr_common::{prelude::*, ALVR_VERSION, HEAD_ID, LEFT_HAND_ID, RIGHT_HAND_ID};
-use alvr_sockets::{HeadsetInfoPacket, Input, LegacyInput, LegacyController, TimeSyncPacket, ViewsConfig, MotionData, BatteryPacket};
-use alvr_session::{Fov};
+use alvr_session::Fov;
+use alvr_sockets::{
+    BatteryPacket, HeadsetInfoPacket, Input, LegacyController, LegacyInput, MotionData,
+    TimeSyncPacket, ViewsConfig,
+};
 pub use alxr_engine_sys::*;
 use lazy_static::lazy_static;
 use local_ipaddress;
 use parking_lot::Mutex;
 use std::ffi::CStr;
-use std::{slice, sync::atomic::{AtomicBool, Ordering}};
+use std::{
+    slice,
+    sync::atomic::{AtomicBool, Ordering},
+};
 use tokio::{runtime::Runtime, sync::mpsc, sync::Notify};
 //#[cfg(not(target_os = "android"))]
 use glam::{Quat, Vec2, Vec3};
@@ -19,7 +25,6 @@ use structopt::StructOpt;
 #[structopt(name = "openxr_client", about = "An OpenXR based ALVR client.")]
 pub struct Options {
     // short and long flags (-d, --debug) will be deduced from the field's name
-    
     /// Enable this if server and client are running on the same host.
     #[structopt(/*short,*/ long)]
     pub localhost: bool,
@@ -227,7 +232,7 @@ pub extern "C" fn input_send(data_ptr: *const TrackingInfo) {
         from_tracking_vector3(&vec)
     }
 
-    let data: &TrackingInfo =  unsafe { &*data_ptr };
+    let data: &TrackingInfo = unsafe { &*data_ptr };
     if let Some(sender) = &*INPUT_SENDER.lock() {
         let input = Input {
             target_timestamp: std::time::Duration::from_nanos(data.targetTimestampNs),
@@ -369,7 +374,7 @@ pub extern "C" fn input_send(data_ptr: *const TrackingInfo) {
 }
 
 pub extern "C" fn views_config_send(eye_info_ptr: *const ALXREyeInfo) {
-    let eye_info : &ALXREyeInfo = unsafe { &*eye_info_ptr };
+    let eye_info: &ALXREyeInfo = unsafe { &*eye_info_ptr };
     let fov = &eye_info.eyeFov;
     if let Some(sender) = &*VIEWS_CONFIG_SENDER.lock() {
         sender
@@ -407,7 +412,7 @@ pub extern "C" fn battery_send(device_id: u64, gauge_value: f32, is_plugged: boo
 }
 
 pub extern "C" fn time_sync_send(data_ptr: *const TimeSync) {
-    let data : &TimeSync = unsafe { &*data_ptr };
+    let data: &TimeSync = unsafe { &*data_ptr };
     if let Some(sender) = &*TIME_SYNC_SENDER.lock() {
         let time_sync = TimeSyncPacket {
             mode: data.mode,
@@ -436,7 +441,7 @@ pub extern "C" fn video_error_report_send() {
     }
 }
 
-pub extern "C" fn set_waiting_next_idr(waiting : bool) {
+pub extern "C" fn set_waiting_next_idr(waiting: bool) {
     IDR_PARSED.store(!waiting, Ordering::Relaxed);
 }
 
