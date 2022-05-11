@@ -300,3 +300,29 @@ pub fn build_android_deps(skip_admin_priv: bool) {
 
     get_android_openxr_loaders();
 }
+
+pub fn find_resolved_so_paths(
+    bin_or_so: &std::path::Path,
+    depends_so: &str,
+) -> Vec<std::path::PathBuf> {
+    let cmdline = format!(
+        "ldd {} | cut -d '>' -f 2 | awk \'{{print $1}}\' | grep {}",
+        bin_or_so.display(),
+        depends_so
+    );
+    std::process::Command::new("sh")
+        .args(&["-c", &cmdline])
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .map_or(vec![], |mut child| {
+            let mut result = std::io::BufReader::new(child.stdout.take().unwrap())
+                .lines()
+                .filter(|line| line.is_ok())
+                .map(|line| std::path::PathBuf::from(line.unwrap()).canonicalize()) // canonicalize resolves symlinks
+                .filter(|result| result.is_ok())
+                .map(|pp| pp.unwrap())
+                .collect::<Vec<_>>();
+            result.dedup();
+            result
+        })
+}
