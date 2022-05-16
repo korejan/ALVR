@@ -249,9 +249,8 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
             "ALXR_BUNDLE_FFMPEG_INSTALL_PATH",
             ffmpeg_build_dir.to_str().unwrap(),
         );
-        
-        fn find_shared_lib(dir: &Path, key: &str) -> Option<std::path::PathBuf>
-        {
+
+        fn find_shared_lib(dir: &Path, key: &str) -> Option<std::path::PathBuf> {
             for so_file in walkdir::WalkDir::new(dir)
                 .into_iter()
                 .filter_map(|maybe_entry| maybe_entry.ok())
@@ -267,8 +266,7 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
         }
 
         let lib_dir = alxr_client_build_dir.join("lib").canonicalize().unwrap();
-        if let Some(libavcodec_so) = find_shared_lib(&lib_dir, "libavcodec.so")
-        {
+        if let Some(libavcodec_so) = find_shared_lib(&lib_dir, "libavcodec.so") {
             for solib in ["libx264.so", "libx265.so"] {
                 let src_libs = dependencies::find_resolved_so_paths(&libavcodec_so, solib);
                 if !src_libs.is_empty() {
