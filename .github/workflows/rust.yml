@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [master]
+    branches: [master, alxr-workflows]
   pull_request:
-    branches: [master]
+    branches: [master, alxr-workflows]
 
 env:
   CARGO_TERM_COLOR: always
