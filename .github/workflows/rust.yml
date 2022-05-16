@@ -68,7 +68,7 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: |
-          sudo apt update && sudo apt upgrade -y
+          sudo apt update
           # ALVR/FFMPEG specific depends.
           sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev
           # ALXR specific depends.
