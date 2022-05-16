@@ -236,19 +236,49 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
     if bundle_ffmpeg_enabled {
         assert!(!ffmpeg_version.is_empty(), "ffmpeg-version is empty!");
 
-        let ffmpeg_lib_dir = &alxr_client_build_dir;
+        let ffmpeg_build_dir = &alxr_client_build_dir;
         dependencies::build_ffmpeg_linux_install(
             true,
             ffmpeg_version,
             /*enable_decoders=*/ true,
-            &ffmpeg_lib_dir,
+            &ffmpeg_build_dir,
         );
 
-        assert!(ffmpeg_lib_dir.exists());
+        assert!(ffmpeg_build_dir.exists());
         env::set_var(
             "ALXR_BUNDLE_FFMPEG_INSTALL_PATH",
-            ffmpeg_lib_dir.to_str().unwrap(),
+            ffmpeg_build_dir.to_str().unwrap(),
         );
+        
+        fn find_shared_lib(dir: &Path, key: &str) -> Option<std::path::PathBuf>
+        {
+            for so_file in walkdir::WalkDir::new(dir)
+                .into_iter()
+                .filter_map(|maybe_entry| maybe_entry.ok())
+                .map(|entry| entry.into_path())
+                .filter(|path| afs::is_dynlib_file(&path))
+            {
+                let so_filename = so_file.file_name().unwrap();
+                if so_filename.to_string_lossy().starts_with(&key) {
+                    return Some(so_file.canonicalize().unwrap());
+                }
+            }
+            None
+        }
+
+        let lib_dir = alxr_client_build_dir.join("lib").canonicalize().unwrap();
+        if let Some(libavcodec_so) = find_shared_lib(&lib_dir, "libavcodec.so")
+        {
+            for solib in ["libx264.so", "libx265.so"] {
+                let src_libs = dependencies::find_resolved_so_paths(&libavcodec_so, solib);
+                if !src_libs.is_empty() {
+                    let src_lib = src_libs.first().unwrap();
+                    let dst_lib = lib_dir.join(src_lib.file_name().unwrap());
+                    println!("Copying {src_lib:?} to {dst_lib:?}");
+                    fs::copy(src_lib, dst_lib).unwrap();
+                }
+            }
+        }
     }
 
     if flags.fetch_crates {
