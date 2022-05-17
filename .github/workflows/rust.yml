@@ -140,8 +140,7 @@ jobs:
       # For bindgen to find libclang.dll, we need to give it the path to the Visual Studio package.
       # This is specific to the GitHub windows-2022 runner.
       LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\x64\bin'
-      ANDROID_NDK_ROOT: '${{ github.workspace }}\android-sdk\ndk\24.0.8215888'
-      ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
+      ANDROID_NDK_ROOT: '${{ env.ANDROID_SDK_ROOT }}\ndk\24.0.8215888'
       RUST_BACKTRACE: 1
     steps:
       - uses: actions/checkout@v2
