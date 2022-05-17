@@ -598,7 +598,13 @@ async fn connection_pipeline(
 
     let game_audio_loop: BoxFuture<_> = if let Switch::Enabled(desc) = settings.audio.game_audio {
         #[cfg(target_os = "android")]
-        {
+        if config_packet.game_audio_sample_rate < 8000 {
+            // The server is using a sample rate that won't work and will likely crash us
+            // We can't report errors clearly yet, so skip running audio so people who
+            // update their copy of ALXR don't suddenly start getting crashes.
+            println!("ALVR server chose an invalid audio sample rate. Disabling audio playback.");
+            Box::pin(future::pending())
+        } else {
             let game_audio_receiver = stream_socket.subscribe_to_stream(AUDIO).await?;
             Box::pin(audio::play_audio_loop(
                 config_packet.game_audio_sample_rate,
