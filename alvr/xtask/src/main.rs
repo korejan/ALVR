@@ -37,6 +37,7 @@ SUBCOMMANDS:
     clean               Removes build folder
     kill-oculus         Kill all Oculus processes
     bump-versions       Bump server and client package versions
+    bump-alxr-versions  Bump alxr-client package versions
     clippy              Show warnings for selected clippy lints
     prettier            Format JS and CSS files with prettier; Requires Node.js and NPM.
 
@@ -58,7 +59,7 @@ FLAGS:
     --help              Print this text
 
 ARGS:
-    --version <VERSION> Specify version to set with the bump-versions subcommand
+    --version <VERSION> Specify version to set with the bump-(alxr-)versions subcommand
     --root <PATH>       Installation root. By default no root is set and paths are calculated using
                         relative paths, which requires conforming to FHS on Linux.
 "#;
@@ -926,6 +927,7 @@ fn main() {
                 "clean" => remove_build_dir(),
                 "kill-oculus" => kill_oculus_processes(),
                 "bump-versions" => version::bump_version(version, is_nightly),
+                "bump-alxr-versions" => version::bump_alxr_version(version, is_nightly),
                 "clippy" => clippy(),
                 "prettier" => prettier(),
                 _ => {
