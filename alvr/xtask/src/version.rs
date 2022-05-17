@@ -23,7 +23,7 @@ pub fn split_string(source: &str, start_pattern: &str, end: char) -> (String, St
     )
 }
 
-pub fn version_from_dir<P: AsRef<Path> >(dir: P) -> String {
+pub fn version_from_dir<P: AsRef<Path>>(dir: P) -> String {
     let manifest_path = packages_dir().join(dir).join("Cargo.toml");
     println!("cargo:rerun-if-changed={}", manifest_path.to_string_lossy());
 
@@ -156,12 +156,11 @@ pub fn bump_version(maybe_version: Option<String>, is_nightly: bool) {
 }
 
 pub fn bump_alxr_version(maybe_version: Option<String>, is_nightly: bool) {
-    
     let mut version = maybe_version.unwrap_or_else(alxr_version);
     if is_nightly {
         version = format!("{version}+nightly.{}", date_utc_yyyymmdd());
     }
-    
+
     let base_dir = PathBuf::from("openxr-client");
     for dir_name in [
         "alxr-engine-sys",
@@ -169,13 +168,13 @@ pub fn bump_alxr_version(maybe_version: Option<String>, is_nightly: bool) {
         "alxr-client",
         "alxr-android-client",
         "alxr-android-client/pico-neo",
-        "alxr-android-client/quest"]
-        .into_iter()
-        .map(|d| base_dir.join(&d).to_str().unwrap().to_owned())
+        "alxr-android-client/quest",
+    ]
+    .into_iter()
+    .map(|d| base_dir.join(&d).to_str().unwrap().to_owned())
     {
         bump_cargo_version(&dir_name, &version);
     }
 
     println!("Git tag:\nv{version}");
 }
-
