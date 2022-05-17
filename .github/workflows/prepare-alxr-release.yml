@@ -48,13 +48,13 @@ jobs:
         run: echo "::set-output name=release_ref::$(git rev-parse HEAD)"
 
       - name: Create ALXR Release
-        id: create_release
+        id: create_alxr_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.bump_version.outputs.version_tag }}
-          release_name: ALVR ${{ steps.bump_version.outputs.version_tag }}
+          tag_name: ${{ steps.bump_alxr_version.outputs.version_tag }}
+          release_name: ALXR ${{ steps.bump_alxr_version.outputs.version_tag }}
           draft: true
           prerelease: false
           commitish: ${{ steps.output_ref.outputs.release_ref }}
