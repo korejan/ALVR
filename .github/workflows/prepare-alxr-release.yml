@@ -184,7 +184,7 @@ jobs:
           tar -czvf ./build/alxr-client-ubuntu-22.04-no-nvidia-debug.tar.gz -C ./build/debug/alxr_client_linux .
           # with nvidia/cuda
           cargo xtask build-alxr-client --bundle-ffmpeg --gpl
-          tar -czvf ./build/alxr_client_ubuntu-22.04-debug.tar.gz -C ./build/debug/alxr_client_linux_cuda .
+          tar -czvf ./build/alxr-client-ubuntu-22.04-debug.tar.gz -C ./build/debug/alxr_client_linux_cuda .
       
       - name: Upload  ubuntu-22.04 alxr-release for Linux
         uses: actions/upload-release-asset@v1
