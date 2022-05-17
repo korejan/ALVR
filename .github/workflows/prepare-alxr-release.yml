@@ -16,8 +16,8 @@ jobs:
     runs-on: windows-2022
     outputs:
       release_ref: ${{ steps.output_ref.outputs.release_ref }}
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      release_id: ${{ steps.create_release.outputs.id }}
+      upload_url: ${{ steps.create_alxr_release.outputs.upload_url }}
+      release_id: ${{ steps.create_alxr_release.outputs.id }}
     steps:
       - name: Configure git
         run: git config --global core.autocrlf false

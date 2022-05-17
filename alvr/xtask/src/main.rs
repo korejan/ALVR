@@ -482,7 +482,7 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
 
         let ffmpeg_build_dir = &alxr_client_build_dir;
         dependencies::build_ffmpeg_linux_install(
-            true,
+            /*nvenc_flag=*/ !flags.no_nvidia,
             ffmpeg_version,
             /*enable_decoders=*/ true,
             &ffmpeg_build_dir,
