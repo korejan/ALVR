@@ -51,15 +51,11 @@ package = "com.alvr.alxr_client"
 # The user-friendly name for your app, as displayed in the applications menu.
 label = "alxr_client"
 
-# Internal version number used to determine whether one version is more recent than another. Must be an integer.
-# Defaults to 1
-# See https://developer.android.com/guide/topics/manifest/manifest-element
-#version_code = 2
+# This is automatically set from cargo version, do no define!
+#version_code = 1
 
-# The version number shown to users.
-# Defaults to the cargo package version number
-# See https://developer.android.com/guide/topics/manifest/manifest-element
-#version_name = "2.0"
+# This is automatically set from cargo version, do no define!
+#version_name = "1.0"
 
 install_location = "auto"
 
