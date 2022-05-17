@@ -89,7 +89,7 @@ jobs:
   
   build_alxr_linux_portable:
     # ubuntu-20.04
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -131,6 +131,42 @@ jobs:
         with:
           command: build
           args: -p alxr-client --verbose
+  
+  build_alxr_android:
+    # Windows latest has Rust, Android NDK and LLVM already installed.
+    # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2022-Readme.md
+    runs-on: windows-2022
+    needs: [prepare_release]
+    env:
+      # For bindgen to find libclang.dll, we need to give it the path to the Visual Studio package.
+      # This is specific to the GitHub windows-2022 runner.
+      LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\x64\bin'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-linux-android
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Prepare android deps
+        run: |
+          rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+          cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
+          # Fetch alxr-engine submodule.
+          git submodule update --init --recursive
+      
+      - name: Build alxr-client-quest
+        env:
+          ANDROID_NDK_ROOT: '${{ github.workspace }}\android-sdk\ndk\24.0.8215888'
+          ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
+          RUST_BACKTRACE: 1
+        run: |
+          cargo apk build -p alxr-client-quest
   
   tests:
     runs-on: ubuntu-latest
