@@ -319,6 +319,7 @@ dependencies = [
 name = "alxr-common"
 version = "0.7.0"
 dependencies = [
+ "alvr_audio",
  "alvr_common",
  "alvr_session",
  "alvr_sockets",
@@ -329,6 +330,7 @@ dependencies = [
  "lazy_static",
  "libc",
  "local_ipaddress",
+ "oboe",
  "parking_lot 0.12.0",
  "semver 1.0.9",
  "serde",

@@ -8,7 +8,7 @@ use alvr_session::SessionDesc;
 use alvr_sockets::{
     spawn_cancelable, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, Haptics,
     HeadsetInfoPacket, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
-    ServerHandshakePacket, StreamSocketBuilder, VideoFrameHeaderPacket, HAPTICS, INPUT, VIDEO,
+    ServerHandshakePacket, StreamSocketBuilder, VideoFrameHeaderPacket, AUDIO, HAPTICS, INPUT, VIDEO,
 };
 use futures::future::BoxFuture;
 use glam::Vec2;
@@ -28,8 +28,8 @@ use tokio::{
     time::{self, Instant},
 };
 
-//#[cfg(target_os = "android")]
-//use crate::audio;
+#[cfg(target_os = "android")]
+use crate::audio;
 
 const INITIAL_MESSAGE: &str = "Searching for server...\n(open ALVR on your PC)";
 const NETWORK_UNREACHABLE_MESSAGE: &str = "Cannot connect to the internet";
@@ -596,21 +596,21 @@ async fn connection_pipeline(
         }
     };
 
-    let game_audio_loop: BoxFuture<_> = //if let Switch::Enabled(desc) = settings.audio.game_audio {
-    //     #[cfg(target_os = "android")]
-    //     {
-    //         let game_audio_receiver = stream_socket.subscribe_to_stream().await?;
-    //         Box::pin(audio::play_audio_loop(
-    //             config_packet.game_audio_sample_rate,
-    //             desc.config,
-    //             game_audio_receiver,
-    //         ))
-    //     }
-    //     #[cfg(not(target_os = "android"))]
-    //     Box::pin(future::pending())
-    // } else {
-        Box::pin(future::pending());
-    //};
+    let game_audio_loop: BoxFuture<_> = if let Switch::Enabled(desc) = settings.audio.game_audio {
+        #[cfg(target_os = "android")]
+        {
+            let game_audio_receiver = stream_socket.subscribe_to_stream(AUDIO).await?;
+            Box::pin(audio::play_audio_loop(
+                config_packet.game_audio_sample_rate,
+                desc.config,
+                game_audio_receiver,
+            ))
+        }
+        #[cfg(not(target_os = "android"))]
+        Box::pin(future::pending())
+    } else {
+        Box::pin(future::pending())
+    };
 
     let microphone_loop: BoxFuture<_> = //if let Switch::Enabled(config) = settings.audio.microphone {
     //     #[cfg(target_os = "android")]
