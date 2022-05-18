@@ -397,13 +397,11 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
-      - name: Prepare CUDA toolki
-        uses: Jimver/cuda-toolkit@v0.2.7
-          id: cuda-toolkit
-          with:
-            cuda: '11.7.0'
-      - name: Prepare Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.0
+      - uses: Jimver/cuda-toolkit@v0.2.7
+        id: cuda-toolkit
+        with:
+          cuda: '11.7.0'
+      - uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
           vulkan-query-version: 1.3.204.0
           vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
@@ -461,13 +459,11 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
-      - name: Prepare CUDA toolki
-        uses: Jimver/cuda-toolkit@v0.2.7
-          id: cuda-toolkit
-          with:
-            cuda: '11.7.0'
-      - name: Prepare Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.0
+      - uses: Jimver/cuda-toolkit@v0.2.7
+        id: cuda-toolkit
+        with:
+          cuda: '11.7.0'
+      - uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
           vulkan-query-version: 1.3.204.0
           vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
