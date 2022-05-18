@@ -21,7 +21,7 @@ jobs:
     steps:
       - name: Configure git
         run: git config --global core.autocrlf false
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -64,7 +64,7 @@ jobs:
     needs: [prepare_release]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ needs.prepare_release.outputs.release_ref }}
       - uses: actions-rs/toolchain@v1
@@ -141,7 +141,7 @@ jobs:
     needs: [prepare_release]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ needs.prepare_release.outputs.release_ref }}
       - uses: actions-rs/toolchain@v1
@@ -225,3 +225,120 @@ jobs:
           asset_path: ./build/alxr-client-ubuntu-22.04-no-nvidia-debug.tar.gz
           asset_name: alxr-client-ubuntu-22.04-no-nvidia-debug.tar.gz
           asset_content_type: application/gzip
+
+  build_alxr_linux:
+    runs-on: ubuntu-22.04
+    needs: [prepare_release]
+    env:
+      ANDROID_SDK_ROOT: /opt/android-sdk
+      ANDROID_NDK_ROOT: /opt/android-sdk/ndk/24.0.8215888
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.prepare_release.outputs.release_ref }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+          override: true
+      
+      - name: Build / Install ALXR Android dependencies
+        run: |
+          sudo apt install sdkmanager
+          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" "cmake;3.18.1"
+          yes | sdkmanager --license
+
+          rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+          cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
+          
+          # Fetch alxr-engine submodule.
+          git submodule update --init --recursive
+      
+      # - name: Build & Package alxr-android-generic-release
+      #   run: cargo xtask build-alxr-android --generic --release
+      
+      - name: Build & Package alxr-android-quest-release
+        run: cargo xtask build-alxr-quest --release
+      
+      # - name: Build & Package alxr-android-pico-release
+      #   run: cargo xtask build-alxr-pico --release
+
+      # - name: Build & Package alxr-android-generic-debug
+      #   run: |
+      #     cargo xtask build-alxr-android --generic
+      #     cd ./build/debug/alxr_client_android
+      #     mv alxr-client.apk alxr-client-debug.apk
+      
+      - name: Build & Package alxr-android-quest-debug
+        run: |
+          cargo xtask build-alxr-quest
+          cd ./build/debug/alxr_client_android
+          mv alxr-client-quest.apk alxr-client-quest-debug.apk
+      
+      # - name: Build & Package alxr-android-pico-debug
+      #   run: |
+      #     cargo xtask build-alxr-pico --release
+      #     cd ./build/debug/alxr_client_android
+      #     mv alxr-client-pico.apk alxr-client-pico-debug.apk
+      
+      # - name: Upload alxr-android-generic-release
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+      #     asset_path: ./build/release/alxr_client_android/alxr-client.apk
+      #     asset_name: alxr-client.apk
+      #     asset_content_type: application/vnd.android.package-archive
+      
+      - name: Upload alxr-android-quest-release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/release/alxr_client_android/alxr-client-quest.apk
+          asset_name: alxr-client-quest.apk
+          asset_content_type: application/vnd.android.package-archive
+      
+      # - name: Upload alxr-android-pico-release
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+      #     asset_path: ./build/release/alxr_client_android/alxr-client-pico.apk
+      #     asset_name: alxr-client-pico.apk
+      #     asset_content_type: application/vnd.android.package-archive
+      
+      # - name: Upload alxr-android-generic-debug
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+      #     asset_path: ./build/debug/alxr_client_android/alxr-client-debug.apk
+      #     asset_name: alxr-client-debug.apk
+      #     asset_content_type: application/vnd.android.package-archive
+      
+      - name: Upload alxr-android-quest-debug
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/debug/alxr_client_android/alxr-client-quest-debug.apk
+          asset_name: alxr-client-quest-debug.apk
+          asset_content_type: application/vnd.android.package-archive
+      
+      # - name: Upload alxr-android-pico-debug
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+      #     asset_path: ../build/debug/alxr_client_android/alxr-client-pico-debug.apk
+      #     asset_name: alxr-client-pico-debug.apk
+      #     asset_content_type: application/vnd.android.package-archive
