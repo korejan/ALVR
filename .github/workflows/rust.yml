@@ -156,6 +156,7 @@ jobs:
           java-version: '17'
       - name: Prepare android deps
         run: |
+          sdkmanager --install "ndk;24.0.8215888"
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
           cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
           # Fetch alxr-engine submodule.
