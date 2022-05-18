@@ -226,7 +226,7 @@ jobs:
           asset_name: alxr-client-ubuntu-22.04-no-nvidia-debug.tar.gz
           asset_content_type: application/gzip
 
-  build_alxr_android:
+  build_alxr_android_release:
     runs-on: ubuntu-22.04
     needs: [prepare_release]
     env:
@@ -268,25 +268,7 @@ jobs:
       
       - name: Build & Package alxr-android-pico-release
         run: cargo xtask build-alxr-pico --release
-      
-      - name: Build & Package alxr-android-generic-debug
-        run: |
-          cargo xtask build-alxr-android --generic
-          cd ./build/debug/alxr_client_android
-          mv alxr-client.apk alxr-client-debug.apk
-      
-      - name: Build & Package alxr-android-quest-debug
-        run: |
-          cargo xtask build-alxr-quest
-          cd ./build/debug/alxr_client_android
-          mv alxr-client-quest.apk alxr-client-quest-debug.apk
-      
-      - name: Build & Package alxr-android-pico-debug
-        run: |
-          cargo xtask build-alxr-pico
-          cd ./build/debug/alxr_client_android
-          mv alxr-client-pico.apk alxr-client-pico-debug.apk
-      
+            
       - name: Upload alxr-android-generic-release
         uses: actions/upload-release-asset@v1
         env:
@@ -316,7 +298,59 @@ jobs:
           asset_path: ./build/release/alxr_client_android/alxr-client-pico.apk
           asset_name: alxr-client-pico.apk
           asset_content_type: application/vnd.android.package-archive
+  
+  build_alxr_android_debug:
+    runs-on: ubuntu-22.04
+    needs: [prepare_release]
+    env:
+      ANDROID_SDK_ROOT: /opt/android-sdk
+      ANDROID_NDK_ROOT: /opt/android-sdk/ndk/24.0.8215888
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.prepare_release.outputs.release_ref }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
       
+      - name: Build / Install ALXR Android dependencies
+        run: |
+          sudo apt install sdkmanager
+          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" "cmake;3.18.1"
+          yes | sdkmanager --license
+
+          rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+          cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
+          
+          # Fetch alxr-engine submodule.
+          git submodule update --init --recursive
+            
+      - name: Build & Package alxr-android-generic-debug
+        run: |
+          cargo xtask build-alxr-android --generic
+          cd ./build/debug/alxr_client_android
+          mv alxr-client.apk alxr-client-debug.apk
+      
+      - name: Build & Package alxr-android-quest-debug
+        run: |
+          cargo xtask build-alxr-quest
+          cd ./build/debug/alxr_client_android
+          mv alxr-client-quest.apk alxr-client-quest-debug.apk
+      
+      - name: Build & Package alxr-android-pico-debug
+        run: |
+          cargo xtask build-alxr-pico
+          cd ./build/debug/alxr_client_android
+          mv alxr-client-pico.apk alxr-client-pico-debug.apk
+            
       - name: Upload alxr-android-generic-debug
         uses: actions/upload-release-asset@v1
         env:
@@ -343,6 +377,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ../build/debug/alxr_client_android/alxr-client-pico-debug.apk
+          asset_path: ./build/debug/alxr_client_android/alxr-client-pico-debug.apk
           asset_name: alxr-client-pico-debug.apk
           asset_content_type: application/vnd.android.package-archive
