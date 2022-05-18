@@ -241,7 +241,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
           override: true
       
       - name: Build / Install ALXR Android dependencies
