@@ -156,16 +156,19 @@ jobs:
           sudo apt install sdkmanager
           sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" "cmake;3.18.1"
           yes | sdkmanager --license
-
+          
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
           cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
           # Fetch alxr-engine submodule.
 
           git submodule update --init --recursive
-
-      - name: Build alxr-client-quest
-        run: cargo apk build -p alxr-client-quest --verbose
-  
+      
+      - name: Build alxr-android-generic
+        run: cargo apk build -p alxr-android-client --verbose
+      - name: Build alxr-android-quest
+        run: cargo apk build -p alxr-client-quest --verbose --target-dir=target/quest
+      - name: Build alxr-android-pico
+        run: cargo apk build -p alxr-client-pico --verbose --target-dir=target/pico
   tests:
     runs-on: ubuntu-latest
     steps:
