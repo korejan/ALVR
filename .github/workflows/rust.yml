@@ -133,38 +133,37 @@ jobs:
           args: -p alxr-client --verbose
   
   build_alxr_android:
-    # Windows latest has Rust, Android NDK and LLVM already installed.
-    # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2022-Readme.md
-    runs-on: windows-2022
+    runs-on: ubuntu-22.04
     env:
-      # For bindgen to find libclang.dll, we need to give it the path to the Visual Studio package.
-      # This is specific to the GitHub windows-2022 runner.
-      LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\x64\bin'
-      ANDROID_NDK_ROOT: 'C:\Android\android-sdk\ndk\24.0.8215888'
+      ANDROID_SDK_ROOT: /opt/android-sdk
+      ANDROID_NDK_ROOT: /opt/android-sdk/ndk/24.0.8215888
       RUST_BACKTRACE: 1
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: aarch64-linux-android
+          target: aarch64-linux-android # armv7-linux-androideabi x86_64-linux-android i686-linux-android
           override: true
       - uses: Swatinem/rust-cache@v1
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '11'
+      
       - name: Prepare android deps
         run: |
-          $env:PATH="$env:ANDROID_SDK_ROOT\cmdline-tools\latest\bin;$env:PATH"
-          sdkmanager --install "ndk;24.0.8215888"
+          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" "cmake;3.18.1"
+          yes | sdkmanager --license
+
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
           cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
           # Fetch alxr-engine submodule.
+
           git submodule update --init --recursive
-      
+
       - name: Build alxr-client-quest
-        run: cargo apk build -p alxr-client-quest
+        run: cargo apk build -p alxr-client-quest --verbose
   
   tests:
     runs-on: ubuntu-latest
