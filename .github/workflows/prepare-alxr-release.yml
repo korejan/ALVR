@@ -226,7 +226,7 @@ jobs:
           asset_name: alxr-client-ubuntu-22.04-no-nvidia-debug.tar.gz
           asset_content_type: application/gzip
 
-  build_alxr_linux:
+  build_alxr_android:
     runs-on: ubuntu-22.04
     needs: [prepare_release]
     env:
