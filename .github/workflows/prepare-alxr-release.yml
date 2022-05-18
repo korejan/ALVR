@@ -380,3 +380,146 @@ jobs:
           asset_path: ./build/debug/alxr_client_android/alxr-client-pico-debug.apk
           asset_name: alxr-client-pico-debug.apk
           asset_content_type: application/vnd.android.package-archive
+  
+  build_alxr_win_x64_release:
+    runs-on: windows-2022
+    needs: [prepare_release]
+    env:
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.prepare_release.outputs.release_ref }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+
+      - name: Build and install ALXR dependencies
+        run: |
+          "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+          choco install vulkan-sdk        
+          choco install cuda
+          # Fetch alxr-engine submodule.
+          git submodule update --init --recursive
+      
+      - name: Build & Package ALXR-Release win-x64 (.zip)
+        id: build-release
+        run: |
+          # without nvidia/cuda
+          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia
+          7z a -tzip .\build\alxr-client-win-x64-no-nvidia.zip .\build\release\alxr_client_windows
+
+          # with nvidia/cuda
+          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl
+          7z a -tzip .\build\alxr-client-win-x64.zip .\build\release\alxr_client_windows_cuda
+      
+      - name: Build & Package ALXR-Debug win-x64 (.zip)
+        id: build-debug
+        env:
+          RUST_BACKTRACE: 1
+        run: |
+          # without nvidia/cuda
+          cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia
+          7z a -tzip .\build\alxr-client-win-x64-no-nvidia-debug.zip .\build\debug\alxr_client_windows
+          # with nvidia/cuda
+          cargo xtask build-alxr-client --bundle-ffmpeg --gpl
+          7z a -tzip .\build\alxr-client-win-x64-debug.zip .\build\debug\alxr_client_windows_cuda
+      
+      - name: Upload alxr-release win-x64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alxr-client-win-x64.zip
+          asset_name: alxr-client-win-x64.zip
+          asset_content_type: application/gzip
+      
+      - name: Upload alxr-release-no-nvidia win-x64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alxr-client-win-x64-no-nvidia.zip
+          asset_name: alxr-client-win-x64-no-nvidia.zip
+          asset_content_type: application/gzip
+      
+      - name: Upload alxr-debug win-x64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alxr-client-win-x64-debug.zip
+          asset_name: alxr-client-win-x64-debug.zip
+          asset_content_type: application/gzip
+      
+      - name: Upload alxr-debug-no-nvidia win-x64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alxr-client-win-x64-no-nvidia-debug.zip
+          asset_name: alxr-client-win-x64-no-nvidia-debug.zip
+          asset_content_type: application/gzip
+  
+  build_alxr_win_x64_debug:
+    runs-on: windows-2022
+    needs: [prepare_release]
+    env:
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.prepare_release.outputs.release_ref }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+
+      - name: Build and install ALXR dependencies
+        run: |
+          "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+          choco install vulkan-sdk        
+          choco install cuda
+          # Fetch alxr-engine submodule.
+          git submodule update --init --recursive
+            
+      - name: Build & Package ALXR-Debug win-x64 (.zip)
+        id: build-debug
+        env:
+          RUST_BACKTRACE: 1
+        run: |
+          # without nvidia/cuda
+          cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia
+          7z a -tzip .\build\alxr-client-win-x64-no-nvidia-debug.zip .\build\debug\alxr_client_windows
+          # with nvidia/cuda
+          cargo xtask build-alxr-client --bundle-ffmpeg --gpl
+          7z a -tzip .\build\alxr-client-win-x64-debug.zip .\build\debug\alxr_client_windows_cuda
+      
+      - name: Upload alxr-debug win-x64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alxr-client-win-x64-debug.zip
+          asset_name: alxr-client-win-x64-debug.zip
+          asset_content_type: application/gzip
+      
+      - name: Upload alxr-debug-no-nvidia win-x64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alxr-client-win-x64-no-nvidia-debug.zip
+          asset_name: alxr-client-win-x64-no-nvidia-debug.zip
+          asset_content_type: application/gzip
