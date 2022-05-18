@@ -25,7 +25,8 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      
+      - uses: Swatinem/rust-cache@v1
+
       - name: Bump ALXR version
         id: bump_alxr_version
         env:
@@ -396,12 +397,21 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
-
+      - name: Prepare CUDA toolki
+        uses: Jimver/cuda-toolkit@v0.2.7
+          id: cuda-toolkit
+          with:
+            cuda: '11.7.0'
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
+          vulkan-use-cache: true
+      
       - name: Build and install ALXR dependencies
         run: |
           "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
-          choco install vulkan-sdk        
-          choco install cuda
           # Fetch alxr-engine submodule.
           git submodule update --init --recursive
       
@@ -415,19 +425,7 @@ jobs:
           # with nvidia/cuda
           cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl
           7z a -tzip .\build\alxr-client-win-x64.zip .\build\release\alxr_client_windows_cuda
-      
-      - name: Build & Package ALXR-Debug win-x64 (.zip)
-        id: build-debug
-        env:
-          RUST_BACKTRACE: 1
-        run: |
-          # without nvidia/cuda
-          cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia
-          7z a -tzip .\build\alxr-client-win-x64-no-nvidia-debug.zip .\build\debug\alxr_client_windows
-          # with nvidia/cuda
-          cargo xtask build-alxr-client --bundle-ffmpeg --gpl
-          7z a -tzip .\build\alxr-client-win-x64-debug.zip .\build\debug\alxr_client_windows_cuda
-      
+            
       - name: Upload alxr-release win-x64
         uses: actions/upload-release-asset@v1
         env:
@@ -447,27 +445,7 @@ jobs:
           asset_path: ./build/alxr-client-win-x64-no-nvidia.zip
           asset_name: alxr-client-win-x64-no-nvidia.zip
           asset_content_type: application/gzip
-      
-      - name: Upload alxr-debug win-x64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alxr-client-win-x64-debug.zip
-          asset_name: alxr-client-win-x64-debug.zip
-          asset_content_type: application/gzip
-      
-      - name: Upload alxr-debug-no-nvidia win-x64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alxr-client-win-x64-no-nvidia-debug.zip
-          asset_name: alxr-client-win-x64-no-nvidia-debug.zip
-          asset_content_type: application/gzip
-  
+    
   build_alxr_win_x64_debug:
     runs-on: windows-2022
     needs: [prepare_release]
@@ -483,12 +461,21 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
-
+      - name: Prepare CUDA toolki
+        uses: Jimver/cuda-toolkit@v0.2.7
+          id: cuda-toolkit
+          with:
+            cuda: '11.7.0'
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
+          vulkan-use-cache: true
+      
       - name: Build and install ALXR dependencies
         run: |
           "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
-          choco install vulkan-sdk        
-          choco install cuda
           # Fetch alxr-engine submodule.
           git submodule update --init --recursive
             
