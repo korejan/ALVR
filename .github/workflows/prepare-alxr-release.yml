@@ -212,8 +212,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alxr_client_ubuntu-22.04-debug.tar.gz
-          asset_name: alxr_client_ubuntu-22.04-debug.tar.gz
+          asset_path: ./build/alxr-client-ubuntu-22.04-debug.tar.gz
+          asset_name: alxr-client-ubuntu-22.04-debug.tar.gz
           asset_content_type: application/gzip
       
       - name: Upload  ubuntu-22.04 alxr-debug-no-nvidia for Linux
@@ -283,7 +283,7 @@ jobs:
       
       - name: Build & Package alxr-android-pico-debug
         run: |
-          cargo xtask build-alxr-pico --release
+          cargo xtask build-alxr-pico
           cd ./build/debug/alxr_client_android
           mv alxr-client-pico.apk alxr-client-pico-debug.apk
       
