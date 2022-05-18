@@ -153,6 +153,7 @@ jobs:
       
       - name: Prepare android deps
         run: |
+          sudo apt install sdkmanager
           sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" "cmake;3.18.1"
           yes | sdkmanager --license
 
