@@ -398,17 +398,17 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
-      - uses: Jimver/cuda-toolkit@v0.2.7
-        id: cuda-toolkit
-        with:
-          method: 'network'
-          cuda: '11.7.0'
-          sub-packages: '["nvcc", "visual_studio_integration"]'
       - uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
           vulkan-query-version: 1.3.204.0
           vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
           vulkan-use-cache: true
+      - uses: Jimver/cuda-toolkit@v0.2.7
+        id: cuda-toolkit
+        with:
+          method: 'network'
+          cuda: '11.7.0'
+          # sub-packages: '["nvcc", "visual_studio_integration"]'
       
       - name: Build and install ALXR dependencies
         run: |
@@ -422,13 +422,13 @@ jobs:
           $env:Path="$env:NINJA_HOME;$env:Path"
 
           # without nvidia/cuda
-          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia
+          cargo xtask build-alxr-client --release --no-nvidia
           7z a -tzip .\build\alxr-client-win-x64-no-nvidia.zip .\build\release\alxr_client_windows
 
           # with nvidia/cuda
-          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl
+          cargo xtask build-alxr-client --release
           7z a -tzip .\build\alxr-client-win-x64.zip .\build\release\alxr_client_windows_cuda
-            
+      
       - name: Upload alxr-release win-x64
         uses: actions/upload-release-asset@v1
         env:
@@ -465,17 +465,17 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
-      - uses: Jimver/cuda-toolkit@v0.2.7
-        id: cuda-toolkit
-        with:
-          method: 'network'
-          cuda: '11.7.0'
-          sub-packages: '["nvcc", "visual_studio_integration"]'
       - uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
           vulkan-query-version: 1.3.204.0
           vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
           vulkan-use-cache: true
+      - uses: Jimver/cuda-toolkit@v0.2.7
+        id: cuda-toolkit
+        with:
+          method: 'network'
+          cuda: '11.7.0'
+          # sub-packages: '["nvcc", "visual_studio_integration"]'
       
       - name: Build and install ALXR dependencies
         run: |
@@ -491,10 +491,10 @@ jobs:
           $env:Path="$env:NINJA_HOME;$env:Path"
 
           # without nvidia/cuda
-          cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia
+          cargo xtask build-alxr-client --no-nvidia
           7z a -tzip .\build\alxr-client-win-x64-no-nvidia-debug.zip .\build\debug\alxr_client_windows
           # with nvidia/cuda
-          cargo xtask build-alxr-client --bundle-ffmpeg --gpl
+          cargo xtask build-alxr-client
           7z a -tzip .\build\alxr-client-win-x64-debug.zip .\build\debug\alxr_client_windows_cuda
       
       - name: Upload alxr-debug win-x64
