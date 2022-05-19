@@ -447,7 +447,7 @@ jobs:
       - name: Build & Package ALXR-Release win-x64 (.zip)
         id: build-release
         run: |
-          Path=%NINJA_HOME%;%Path%
+          $env:Path="$env:NINJA_HOME;$env:Path"
 
           # without nvidia/cuda
           cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia
@@ -514,7 +514,7 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: |
-          Path=%NINJA_HOME%;%Path%
+          $env:Path="$env:NINJA_HOME;$env:Path"
 
           # without nvidia/cuda
           cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia
