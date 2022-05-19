@@ -451,7 +451,7 @@ jobs:
     
   build_alxr_win_x64_debug:
     runs-on: windows-2022
-    needs: [prepare_win_x64]
+    needs: [prepare_release]
     env:
       RUST_BACKTRACE: 1
       NINJA_HOME: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja'
