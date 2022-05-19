@@ -60,333 +60,331 @@ jobs:
           prerelease: false
           commitish: ${{ steps.output_ref.outputs.release_ref }}
   
-  build_alxr_linux_portable:
-    runs-on: ubuntu-20.04
-    needs: [prepare_release]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.prepare_release.outputs.release_ref }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+  # build_alxr_linux_portable:
+  #   runs-on: ubuntu-20.04
+  #   needs: [prepare_release]
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ needs.prepare_release.outputs.release_ref }}
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         override: true
 
-      - name: Build and install dependencies
-        env:
-          RUST_BACKTRACE: 1
-        run: |
-          sudo apt update && sudo apt upgrade -y
+  #     - name: Build and install dependencies
+  #       env:
+  #         RUST_BACKTRACE: 1
+  #       run: |
+  #         sudo apt update && sudo apt upgrade -y
 
-          # ALVR/FFMPEG specific depends.
-          sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev
-          # ALXR specific depends.
-          sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
+  #         # ALVR/FFMPEG specific depends.
+  #         sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev
+  #         # ALXR specific depends.
+  #         sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
-          # ubuntu-focal cmake package is too old.
-          wget https://github.com/Kitware/CMake/releases/download/v3.23.1/cmake-3.23.1-linux-x86_64.sh
-          chmod +x cmake-3.23.1-linux-x86_64.sh
-          export PATH=${PWD}/cmake-3.23.1-linux-x86_64/bin:$PATH
+  #         # ubuntu-focal cmake package is too old.
+  #         wget https://github.com/Kitware/CMake/releases/download/v3.23.1/cmake-3.23.1-linux-x86_64.sh
+  #         chmod +x cmake-3.23.1-linux-x86_64.sh
+  #         export PATH=${PWD}/cmake-3.23.1-linux-x86_64/bin:$PATH
 
-          export CC=/usr/bin/gcc-10
-          export CXX=/usr/bin/g++-10
+  #         export CC=/usr/bin/gcc-10
+  #         export CXX=/usr/bin/g++-10
 
-          # Fetch alxr-engine submodule.
-          git submodule update --init --recursive
+  #         # Fetch alxr-engine submodule.
+  #         git submodule update --init --recursive
           
-          echo "$PATH" >> $GITHUB_PATH
+  #         echo "$PATH" >> $GITHUB_PATH
       
-      - name: Build & Package ALXR-Release (.tar.gz)
-        id: build-release
-        env:
-          CC: /usr/bin/gcc-10
-          CXX: /usr/bin/g++-10
-          RUST_BACKTRACE: 1
-        run: |
-          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=n4.4
-          tar -czvf ./build/alxr-client-linux.tar.gz -C ./build/release/alxr_client_linux .
+  #     - name: Build & Package ALXR-Release (.tar.gz)
+  #       id: build-release
+  #       env:
+  #         CC: /usr/bin/gcc-10
+  #         CXX: /usr/bin/g++-10
+  #         RUST_BACKTRACE: 1
+  #       run: |
+  #         cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=n4.4
+  #         tar -czvf ./build/alxr-client-linux.tar.gz -C ./build/release/alxr_client_linux .
       
-      - name: Build & Package ALXR-Debug (.tar.gz)
-        id: build-debug
-        env:
-          CC: /usr/bin/gcc-10
-          CXX: /usr/bin/g++-10
-          RUST_BACKTRACE: 1
-        run: |
-          cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=n4.4
-          tar -czvf ./build/alxr-client-linux-debug.tar.gz -C ./build/debug/alxr_client_linux .
+  #     - name: Build & Package ALXR-Debug (.tar.gz)
+  #       id: build-debug
+  #       env:
+  #         CC: /usr/bin/gcc-10
+  #         CXX: /usr/bin/g++-10
+  #         RUST_BACKTRACE: 1
+  #       run: |
+  #         cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=n4.4
+  #         tar -czvf ./build/alxr-client-linux-debug.tar.gz -C ./build/debug/alxr_client_linux .
       
-      - name: Upload portable alxr-release for Linux
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alxr-client-linux.tar.gz
-          asset_name: alxr-client-linux.tar.gz
-          asset_content_type: application/gzip
+  #     - name: Upload portable alxr-release for Linux
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/alxr-client-linux.tar.gz
+  #         asset_name: alxr-client-linux.tar.gz
+  #         asset_content_type: application/gzip
       
-      - name: Upload portable alxr-debug for Linux
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alxr-client-linux-debug.tar.gz
-          asset_name: alxr-client-linux-debug.tar.gz
-          asset_content_type: application/gzip
+  #     - name: Upload portable alxr-debug for Linux
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/alxr-client-linux-debug.tar.gz
+  #         asset_name: alxr-client-linux-debug.tar.gz
+  #         asset_content_type: application/gzip
 
-  build_alxr_linux:
-    runs-on: ubuntu-22.04
-    needs: [prepare_release]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.prepare_release.outputs.release_ref }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+  # build_alxr_linux:
+  #   runs-on: ubuntu-22.04
+  #   needs: [prepare_release]
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ needs.prepare_release.outputs.release_ref }}
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         override: true
 
-      - name: Build and install ALXR dependencies
-        env:
-          RUST_BACKTRACE: 1
-        run: |
-          sudo apt update
-          # ALVR/FFMPEG specific depends.
-          sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev libffmpeg-nvenc-dev nvidia-cuda-toolkit
-          # ALXR specific depends.
-          sudo apt install git ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
+  #     - name: Build and install ALXR dependencies
+  #       env:
+  #         RUST_BACKTRACE: 1
+  #       run: |
+  #         sudo apt update
+  #         # ALVR/FFMPEG specific depends.
+  #         sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev libffmpeg-nvenc-dev nvidia-cuda-toolkit
+  #         # ALXR specific depends.
+  #         sudo apt install git ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
-          # Fetch alxr-engine submodule.
-          git submodule update --init --recursive
+  #         # Fetch alxr-engine submodule.
+  #         git submodule update --init --recursive
       
-      - name: Build & Package ALXR-Release ubuntu-22.04 (.tar.gz)
-        id: build-release
-        env:
-          RUST_BACKTRACE: 1
-        run: |
-          # without nvidia/cuda
-          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia
-          tar -czvf ./build/alxr-client-ubuntu-22.04-no-nvidia.tar.gz -C ./build/release/alxr_client_linux .
-          # with nvidia/cuda
-          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl
-          tar -czvf ./build/alxr-client-ubuntu-22.04.tar.gz -C ./build/release/alxr_client_linux_cuda .
+  #     - name: Build & Package ALXR-Release ubuntu-22.04 (.tar.gz)
+  #       id: build-release
+  #       env:
+  #         RUST_BACKTRACE: 1
+  #       run: |
+  #         # without nvidia/cuda
+  #         cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia
+  #         tar -czvf ./build/alxr-client-ubuntu-22.04-no-nvidia.tar.gz -C ./build/release/alxr_client_linux .
+  #         # with nvidia/cuda
+  #         cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl
+  #         tar -czvf ./build/alxr-client-ubuntu-22.04.tar.gz -C ./build/release/alxr_client_linux_cuda .
       
-      - name: Build & Package ALXR-Debug ubuntu-22.04 (.tar.gz)
-        id: build-debug
-        env:
-          RUST_BACKTRACE: 1
-        run: |
-          # without nvidia/cuda
-          cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia
-          tar -czvf ./build/alxr-client-ubuntu-22.04-no-nvidia-debug.tar.gz -C ./build/debug/alxr_client_linux .
-          # with nvidia/cuda
-          cargo xtask build-alxr-client --bundle-ffmpeg --gpl
-          tar -czvf ./build/alxr-client-ubuntu-22.04-debug.tar.gz -C ./build/debug/alxr_client_linux_cuda .
+  #     - name: Build & Package ALXR-Debug ubuntu-22.04 (.tar.gz)
+  #       id: build-debug
+  #       env:
+  #         RUST_BACKTRACE: 1
+  #       run: |
+  #         # without nvidia/cuda
+  #         cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia
+  #         tar -czvf ./build/alxr-client-ubuntu-22.04-no-nvidia-debug.tar.gz -C ./build/debug/alxr_client_linux .
+  #         # with nvidia/cuda
+  #         cargo xtask build-alxr-client --bundle-ffmpeg --gpl
+  #         tar -czvf ./build/alxr-client-ubuntu-22.04-debug.tar.gz -C ./build/debug/alxr_client_linux_cuda .
       
-      - name: Upload  ubuntu-22.04 alxr-release for Linux
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alxr-client-ubuntu-22.04.tar.gz
-          asset_name: alxr-client-ubuntu-22.04.tar.gz
-          asset_content_type: application/gzip
+  #     - name: Upload  ubuntu-22.04 alxr-release for Linux
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/alxr-client-ubuntu-22.04.tar.gz
+  #         asset_name: alxr-client-ubuntu-22.04.tar.gz
+  #         asset_content_type: application/gzip
       
-      - name: Upload  ubuntu-22.04 alxr-release-no-nvidia for Linux
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alxr-client-ubuntu-22.04-no-nvidia.tar.gz
-          asset_name: alxr-client-ubuntu-22.04-no-nvidia.tar.gz
-          asset_content_type: application/gzip
+  #     - name: Upload  ubuntu-22.04 alxr-release-no-nvidia for Linux
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/alxr-client-ubuntu-22.04-no-nvidia.tar.gz
+  #         asset_name: alxr-client-ubuntu-22.04-no-nvidia.tar.gz
+  #         asset_content_type: application/gzip
       
-      - name: Upload  ubuntu-22.04 alxr-debug for Linux
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alxr-client-ubuntu-22.04-debug.tar.gz
-          asset_name: alxr-client-ubuntu-22.04-debug.tar.gz
-          asset_content_type: application/gzip
+  #     - name: Upload  ubuntu-22.04 alxr-debug for Linux
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/alxr-client-ubuntu-22.04-debug.tar.gz
+  #         asset_name: alxr-client-ubuntu-22.04-debug.tar.gz
+  #         asset_content_type: application/gzip
       
-      - name: Upload  ubuntu-22.04 alxr-debug-no-nvidia for Linux
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alxr-client-ubuntu-22.04-no-nvidia-debug.tar.gz
-          asset_name: alxr-client-ubuntu-22.04-no-nvidia-debug.tar.gz
-          asset_content_type: application/gzip
+  #     - name: Upload  ubuntu-22.04 alxr-debug-no-nvidia for Linux
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/alxr-client-ubuntu-22.04-no-nvidia-debug.tar.gz
+  #         asset_name: alxr-client-ubuntu-22.04-no-nvidia-debug.tar.gz
+  #         asset_content_type: application/gzip
 
-  build_alxr_android_release:
-    runs-on: ubuntu-22.04
-    needs: [prepare_release]
-    env:
-      ANDROID_SDK_ROOT: /opt/android-sdk
-      ANDROID_NDK_ROOT: /opt/android-sdk/ndk/24.0.8215888
-      RUST_BACKTRACE: 1
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.prepare_release.outputs.release_ref }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - uses: Swatinem/rust-cache@v1
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
+  # build_alxr_android_release:
+  #   runs-on: ubuntu-22.04
+  #   needs: [prepare_release]
+  #   env:
+  #     ANDROID_SDK_ROOT: /opt/android-sdk
+  #     ANDROID_NDK_ROOT: /opt/android-sdk/ndk/24.0.8215888
+  #     RUST_BACKTRACE: 1
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ needs.prepare_release.outputs.release_ref }}
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         override: true
+  #     - uses: Swatinem/rust-cache@v1
+  #     - uses: actions/setup-java@v3
+  #       with:
+  #         distribution: 'temurin'
+  #         java-version: '11'
       
-      - name: Build / Install ALXR Android dependencies
-        run: |
-          sudo apt install sdkmanager
-          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" "cmake;3.18.1"
-          yes | sdkmanager --license
+  #     - name: Build / Install ALXR Android dependencies
+  #       run: |
+  #         sudo apt install sdkmanager
+  #         sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" "cmake;3.18.1"
+  #         yes | sdkmanager --license
 
-          rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
-          cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
+  #         rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+  #         cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
           
-          # Fetch alxr-engine submodule.
-          git submodule update --init --recursive
+  #         # Fetch alxr-engine submodule.
+  #         git submodule update --init --recursive
       
-      - name: Build & Package alxr-android-generic-release
-        run: cargo xtask build-alxr-android --generic --release
+  #     - name: Build & Package alxr-android-generic-release
+  #       run: cargo xtask build-alxr-android --generic --release
       
-      - name: Build & Package alxr-android-quest-release
-        run: cargo xtask build-alxr-quest --release
+  #     - name: Build & Package alxr-android-quest-release
+  #       run: cargo xtask build-alxr-quest --release
       
-      - name: Build & Package alxr-android-pico-release
-        run: cargo xtask build-alxr-pico --release
+  #     - name: Build & Package alxr-android-pico-release
+  #       run: cargo xtask build-alxr-pico --release
             
-      - name: Upload alxr-android-generic-release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/release/alxr_client_android/alxr-client.apk
-          asset_name: alxr-client.apk
-          asset_content_type: application/vnd.android.package-archive
+  #     - name: Upload alxr-android-generic-release
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/release/alxr_client_android/alxr-client.apk
+  #         asset_name: alxr-client.apk
+  #         asset_content_type: application/vnd.android.package-archive
       
-      - name: Upload alxr-android-quest-release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/release/alxr_client_android/alxr-client-quest.apk
-          asset_name: alxr-client-quest.apk
-          asset_content_type: application/vnd.android.package-archive
+  #     - name: Upload alxr-android-quest-release
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/release/alxr_client_android/alxr-client-quest.apk
+  #         asset_name: alxr-client-quest.apk
+  #         asset_content_type: application/vnd.android.package-archive
       
-      - name: Upload alxr-android-pico-release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/release/alxr_client_android/alxr-client-pico.apk
-          asset_name: alxr-client-pico.apk
-          asset_content_type: application/vnd.android.package-archive
+  #     - name: Upload alxr-android-pico-release
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/release/alxr_client_android/alxr-client-pico.apk
+  #         asset_name: alxr-client-pico.apk
+  #         asset_content_type: application/vnd.android.package-archive
   
-  build_alxr_android_debug:
-    runs-on: ubuntu-22.04
-    needs: [prepare_release]
-    env:
-      ANDROID_SDK_ROOT: /opt/android-sdk
-      ANDROID_NDK_ROOT: /opt/android-sdk/ndk/24.0.8215888
-      RUST_BACKTRACE: 1
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.prepare_release.outputs.release_ref }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - uses: Swatinem/rust-cache@v1
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
+  # build_alxr_android_debug:
+  #   runs-on: ubuntu-22.04
+  #   needs: [prepare_release]
+  #   env:
+  #     ANDROID_SDK_ROOT: /opt/android-sdk
+  #     ANDROID_NDK_ROOT: /opt/android-sdk/ndk/24.0.8215888
+  #     RUST_BACKTRACE: 1
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ needs.prepare_release.outputs.release_ref }}
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         override: true
+  #     - uses: Swatinem/rust-cache@v1
+  #     - uses: actions/setup-java@v3
+  #       with:
+  #         distribution: 'temurin'
+  #         java-version: '11'
       
-      - name: Build / Install ALXR Android dependencies
-        run: |
-          sudo apt install sdkmanager
-          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" "cmake;3.18.1"
-          yes | sdkmanager --license
+  #     - name: Build / Install ALXR Android dependencies
+  #       run: |
+  #         sudo apt install sdkmanager
+  #         sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" "cmake;3.18.1"
+  #         yes | sdkmanager --license
 
-          rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
-          cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
+  #         rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+  #         cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
           
-          # Fetch alxr-engine submodule.
-          git submodule update --init --recursive
+  #         # Fetch alxr-engine submodule.
+  #         git submodule update --init --recursive
             
-      - name: Build & Package alxr-android-generic-debug
-        run: |
-          cargo xtask build-alxr-android --generic
-          cd ./build/debug/alxr_client_android
-          mv alxr-client.apk alxr-client-debug.apk
+  #     - name: Build & Package alxr-android-generic-debug
+  #       run: |
+  #         cargo xtask build-alxr-android --generic
+  #         cd ./build/debug/alxr_client_android
+  #         mv alxr-client.apk alxr-client-debug.apk
       
-      - name: Build & Package alxr-android-quest-debug
-        run: |
-          cargo xtask build-alxr-quest
-          cd ./build/debug/alxr_client_android
-          mv alxr-client-quest.apk alxr-client-quest-debug.apk
+  #     - name: Build & Package alxr-android-quest-debug
+  #       run: |
+  #         cargo xtask build-alxr-quest
+  #         cd ./build/debug/alxr_client_android
+  #         mv alxr-client-quest.apk alxr-client-quest-debug.apk
       
-      - name: Build & Package alxr-android-pico-debug
-        run: |
-          cargo xtask build-alxr-pico
-          cd ./build/debug/alxr_client_android
-          mv alxr-client-pico.apk alxr-client-pico-debug.apk
+  #     - name: Build & Package alxr-android-pico-debug
+  #       run: |
+  #         cargo xtask build-alxr-pico
+  #         cd ./build/debug/alxr_client_android
+  #         mv alxr-client-pico.apk alxr-client-pico-debug.apk
             
-      - name: Upload alxr-android-generic-debug
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/debug/alxr_client_android/alxr-client-debug.apk
-          asset_name: alxr-client-debug.apk
-          asset_content_type: application/vnd.android.package-archive
+  #     - name: Upload alxr-android-generic-debug
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/debug/alxr_client_android/alxr-client-debug.apk
+  #         asset_name: alxr-client-debug.apk
+  #         asset_content_type: application/vnd.android.package-archive
       
-      - name: Upload alxr-android-quest-debug
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/debug/alxr_client_android/alxr-client-quest-debug.apk
-          asset_name: alxr-client-quest-debug.apk
-          asset_content_type: application/vnd.android.package-archive
+  #     - name: Upload alxr-android-quest-debug
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/debug/alxr_client_android/alxr-client-quest-debug.apk
+  #         asset_name: alxr-client-quest-debug.apk
+  #         asset_content_type: application/vnd.android.package-archive
       
-      - name: Upload alxr-android-pico-debug
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/debug/alxr_client_android/alxr-client-pico-debug.apk
-          asset_name: alxr-client-pico-debug.apk
-          asset_content_type: application/vnd.android.package-archive
-  
-  build_alxr_win_x64_release:
+  #     - name: Upload alxr-android-pico-debug
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/debug/alxr_client_android/alxr-client-pico-debug.apk
+  #         asset_name: alxr-client-pico-debug.apk
+  #         asset_content_type: application/vnd.android.package-archive
+
+  prepare_win_x64:
     runs-on: windows-2022
     needs: [prepare_release]
-    env:
-      RUST_BACKTRACE: 1
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -401,21 +399,56 @@ jobs:
         id: cuda-toolkit
         with:
           cuda: '11.7.0'
+          sub-packages: '["nvcc", "visual_studio_integration"]'
+          method: 'network'
       - uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
           vulkan-query-version: 1.3.204.0
           vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
           vulkan-use-cache: true
-      
       - name: Build and install ALXR dependencies
         run: |
-          "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           # Fetch alxr-engine submodule.
           git submodule update --init --recursive
+  
+  build_alxr_win_x64_release:
+    runs-on: windows-2022
+    needs: [prepare_win_x64]
+    env:
+      RUST_BACKTRACE: 1
+      NINJA_HOME: "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja"
+    steps:
+      # - name: Checkout code
+      #   uses: actions/checkout@v3
+      #   with:
+      #     ref: ${{ needs.prepare_release.outputs.release_ref }}
+      # - uses: actions-rs/toolchain@v1
+      #   with:
+      #     toolchain: stable
+      #     override: true
+      # - uses: Swatinem/rust-cache@v1
+      # - uses: Jimver/cuda-toolkit@v0.2.7
+      #   id: cuda-toolkit
+      #   with:
+      #     cuda: '11.7.0'
+      # - uses: humbletim/setup-vulkan-sdk@v1.2.0
+      #   with:
+      #     vulkan-query-version: 1.3.204.0
+      #     vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
+      #     vulkan-use-cache: true
+      
+      # - name: Build and install ALXR dependencies
+      #   run: |
+      #     "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+      #     # Fetch alxr-engine submodule.
+      #     git submodule update --init --recursive
       
       - name: Build & Package ALXR-Release win-x64 (.zip)
         id: build-release
         run: |
+          Path=%NINJA_HOME%;%Path%
+
           # without nvidia/cuda
           cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia
           7z a -tzip .\build\alxr-client-win-x64-no-nvidia.zip .\build\release\alxr_client_windows
@@ -446,40 +479,43 @@ jobs:
     
   build_alxr_win_x64_debug:
     runs-on: windows-2022
-    needs: [prepare_release]
+    needs: [prepare_win_x64]
     env:
       RUST_BACKTRACE: 1
+      NINJA_HOME: "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja"
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.prepare_release.outputs.release_ref }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - uses: Swatinem/rust-cache@v1
-      - uses: Jimver/cuda-toolkit@v0.2.7
-        id: cuda-toolkit
-        with:
-          cuda: '11.7.0'
-      - uses: humbletim/setup-vulkan-sdk@v1.2.0
-        with:
-          vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
-          vulkan-use-cache: true
+      # - name: Checkout code
+      #   uses: actions/checkout@v3
+      #   with:
+      #     ref: ${{ needs.prepare_release.outputs.release_ref }}
+      # - uses: actions-rs/toolchain@v1
+      #   with:
+      #     toolchain: stable
+      #     override: true
+      # - uses: Swatinem/rust-cache@v1
+      # - uses: Jimver/cuda-toolkit@v0.2.7
+      #   id: cuda-toolkit
+      #   with:
+      #     cuda: '11.7.0'
+      # - uses: humbletim/setup-vulkan-sdk@v1.2.0
+      #   with:
+      #     vulkan-query-version: 1.3.204.0
+      #     vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
+      #     vulkan-use-cache: true
       
-      - name: Build and install ALXR dependencies
-        run: |
-          "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
-          # Fetch alxr-engine submodule.
-          git submodule update --init --recursive
-            
+      # - name: Build and install ALXR dependencies
+      #   run: |
+      #     "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+      #     # Fetch alxr-engine submodule.
+      #     git submodule update --init --recursive
+      
       - name: Build & Package ALXR-Debug win-x64 (.zip)
         id: build-debug
         env:
           RUST_BACKTRACE: 1
         run: |
+          Path=%NINJA_HOME%;%Path%
+          
           # without nvidia/cuda
           cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia
           7z a -tzip .\build\alxr-client-win-x64-no-nvidia-debug.zip .\build\debug\alxr_client_windows
