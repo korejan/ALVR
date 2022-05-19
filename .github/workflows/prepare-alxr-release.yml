@@ -463,7 +463,7 @@ jobs:
       - uses: Swatinem/rust-cache@v1
       - uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
-          vulkan-query-version: 1.3.204.0
+          vulkan-query-version: latest
           vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
           vulkan-use-cache: true
       - uses: Jimver/cuda-toolkit@v0.2.7
@@ -530,7 +530,7 @@ jobs:
       - uses: Swatinem/rust-cache@v1
       - uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
-          vulkan-query-version: 1.3.204.0
+          vulkan-query-version: latest
           vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
           vulkan-use-cache: true
       - uses: Jimver/cuda-toolkit@v0.2.7

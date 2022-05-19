@@ -54,10 +54,46 @@ jobs:
           command: build
           args: -p alvr_xtask -p alvr_launcher -p alvr_server -p alvr_vulkan-layer -p vrcompositor-wrapper --verbose
   
+  build_alxr_linux_win_x64:
+    runs-on: windows-2022
+    env:
+      RUST_BACKTRACE: 1
+      NINJA_HOME: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja'
+    steps:
+        uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      - uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: latest
+          vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
+          vulkan-use-cache: true
+      - uses: Jimver/cuda-toolkit@v0.2.7
+        id: cuda-toolkit
+        with:
+          method: 'network'
+          cuda: '11.7.0'
+          # sub-packages: '["nvcc", "visual_studio_integration"]'
+      
+      - name: Build and install ALXR dependencies
+        run: |
+          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          # Fetch alxr-engine submodule.
+          git submodule update --init --recursive
+      
+      - name: Build crates
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: -p alxr-client --verbose --features cuda-interop
+  
   build_alxr_linux:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -91,7 +127,7 @@ jobs:
     # ubuntu-20.04
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -168,6 +204,7 @@ jobs:
         run: cargo apk build -p alxr-client-quest --verbose --target-dir=target/quest
       - name: Build alxr-android-pico
         run: cargo apk build -p alxr-client-pico --verbose --target-dir=target/pico
+  
   tests:
     runs-on: ubuntu-latest
     steps:
@@ -198,7 +235,7 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
-
+  
   clippy:
     runs-on: windows-2019
     env:
