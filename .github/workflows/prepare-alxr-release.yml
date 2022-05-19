@@ -381,10 +381,13 @@ jobs:
   #         asset_path: ./build/debug/alxr_client_android/alxr-client-pico-debug.apk
   #         asset_name: alxr-client-pico-debug.apk
   #         asset_content_type: application/vnd.android.package-archive
-
-  prepare_win_x64:
+    
+  build_alxr_win_x64_release:
     runs-on: windows-2022
     needs: [prepare_release]
+    env:
+      RUST_BACKTRACE: 1
+      NINJA_HOME: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja'
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -398,51 +401,20 @@ jobs:
       - uses: Jimver/cuda-toolkit@v0.2.7
         id: cuda-toolkit
         with:
+          method: 'network'
           cuda: '11.7.0'
           sub-packages: '["nvcc", "visual_studio_integration"]'
-          method: 'network'
       - uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
           vulkan-query-version: 1.3.204.0
           vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
           vulkan-use-cache: true
+      
       - name: Build and install ALXR dependencies
         run: |
-          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
           # Fetch alxr-engine submodule.
           git submodule update --init --recursive
-  
-  build_alxr_win_x64_release:
-    runs-on: windows-2022
-    needs: [prepare_win_x64]
-    env:
-      RUST_BACKTRACE: 1
-      NINJA_HOME: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja'
-    steps:
-      # - name: Checkout code
-      #   uses: actions/checkout@v3
-      #   with:
-      #     ref: ${{ needs.prepare_release.outputs.release_ref }}
-      # - uses: actions-rs/toolchain@v1
-      #   with:
-      #     toolchain: stable
-      #     override: true
-      # - uses: Swatinem/rust-cache@v1
-      # - uses: Jimver/cuda-toolkit@v0.2.7
-      #   id: cuda-toolkit
-      #   with:
-      #     cuda: '11.7.0'
-      # - uses: humbletim/setup-vulkan-sdk@v1.2.0
-      #   with:
-      #     vulkan-query-version: 1.3.204.0
-      #     vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
-      #     vulkan-use-cache: true
-      
-      # - name: Build and install ALXR dependencies
-      #   run: |
-      #     "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
-      #     # Fetch alxr-engine submodule.
-      #     git submodule update --init --recursive
       
       - name: Build & Package ALXR-Release win-x64 (.zip)
         id: build-release
@@ -484,30 +456,32 @@ jobs:
       RUST_BACKTRACE: 1
       NINJA_HOME: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja'
     steps:
-      # - name: Checkout code
-      #   uses: actions/checkout@v3
-      #   with:
-      #     ref: ${{ needs.prepare_release.outputs.release_ref }}
-      # - uses: actions-rs/toolchain@v1
-      #   with:
-      #     toolchain: stable
-      #     override: true
-      # - uses: Swatinem/rust-cache@v1
-      # - uses: Jimver/cuda-toolkit@v0.2.7
-      #   id: cuda-toolkit
-      #   with:
-      #     cuda: '11.7.0'
-      # - uses: humbletim/setup-vulkan-sdk@v1.2.0
-      #   with:
-      #     vulkan-query-version: 1.3.204.0
-      #     vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
-      #     vulkan-use-cache: true
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.prepare_release.outputs.release_ref }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      - uses: Jimver/cuda-toolkit@v0.2.7
+        id: cuda-toolkit
+        with:
+          method: 'network'
+          cuda: '11.7.0'
+          sub-packages: '["nvcc", "visual_studio_integration"]'
+      - uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
+          vulkan-use-cache: true
       
-      # - name: Build and install ALXR dependencies
-      #   run: |
-      #     "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-      #     # Fetch alxr-engine submodule.
-      #     git submodule update --init --recursive
+      - name: Build and install ALXR dependencies
+        run: |
+          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          # Fetch alxr-engine submodule.
+          git submodule update --init --recursive
       
       - name: Build & Package ALXR-Debug win-x64 (.zip)
         id: build-debug
