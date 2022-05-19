@@ -417,7 +417,7 @@ jobs:
     needs: [prepare_win_x64]
     env:
       RUST_BACKTRACE: 1
-      NINJA_HOME: "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja"
+      NINJA_HOME: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja'
     steps:
       # - name: Checkout code
       #   uses: actions/checkout@v3
@@ -482,7 +482,7 @@ jobs:
     needs: [prepare_win_x64]
     env:
       RUST_BACKTRACE: 1
-      NINJA_HOME: "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja"
+      NINJA_HOME: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja'
     steps:
       # - name: Checkout code
       #   uses: actions/checkout@v3
@@ -515,7 +515,7 @@ jobs:
           RUST_BACKTRACE: 1
         run: |
           Path=%NINJA_HOME%;%Path%
-          
+
           # without nvidia/cuda
           cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia
           7z a -tzip .\build\alxr-client-win-x64-no-nvidia-debug.zip .\build\debug\alxr_client_windows
