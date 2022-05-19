@@ -78,17 +78,15 @@ jobs:
           cuda: '11.7.0'
           # sub-packages: '["nvcc", "visual_studio_integration"]'
       
-      - name: Build and install ALXR dependencies
+      - name: Install Depends & Build
         run: |
           "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          $env:Path="$env:NINJA_HOME;$env:Path"
+
           # Fetch alxr-engine submodule.
           git submodule update --init --recursive
-      
-      - name: Build crates
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: -p alxr-client --verbose --features cuda-interop
+
+          cargo build -p alxr-client --verbose --features cuda-interop
   
   build_alxr_linux:
     runs-on: ubuntu-22.04
