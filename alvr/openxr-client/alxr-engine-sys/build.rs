@@ -113,6 +113,14 @@ fn get_product_flavour() -> &'static str {
     GRADLE_FLAVOR_NAMES[0]
 }
 
+fn define_windows_store(config: &mut Config) -> &mut Config {
+    config
+        .env("CMAKE_SYSTEM_NAME", "WindowsStore")
+        .define("CMAKE_SYSTEM_NAME", "WindowsStore")
+        .env("CMAKE_SYSTEM_VERSION", "10.0")
+        .define("CMAKE_SYSTEM_VERSION", "10.0")
+}
+
 const BUILD_CUDA_INTEROP_FEATURE: &'static str = "CARGO_FEATURE_CUDA_INTEROP";
 const CMAKE_GEN_ENV_VAR: &'static str = "ALXR_CMAKE_GEN";
 
@@ -205,13 +213,23 @@ fn main() {
                 }
             })
             .unwrap_or(String::from(default_generator));
-        assert!(!cmake_generator.is_empty());
-        Config::new("cpp/ALVR-OpenXR-Engine")
-            .generator(cmake_generator)
+
+        let mut config = Config::new("cpp/ALVR-OpenXR-Engine");
+        if target_triple.vendor != target_lexicon::Vendor::Uwp {
+            assert!(!cmake_generator.is_empty());
+            config.generator(cmake_generator);
+        } else {
+            // Using Ninja to build UWP/WinStore apps fails to build.
+            // This should not be neccessary if the enviroment is
+            // setup correctly (i.e. using vcvarsall.bat) for building UWP/WinStore apps,
+            // and VS's fork of cmake.
+            define_windows_store(&mut config);
+        }
+        config
             .always_configure(true)
             .define(CMAKE_PREFIX_PATH_VAR, &pkg_config_path)
-            //.define("Python_ROOT_DIR", "C:/Program Files/Python39")
             .define("BUILD_CUDA_INTEROP", build_cuda)
+            .define("BUILD_ALL_EXTENSIONS", "ON")
             .define("BUILD_API_LAYERS", "OFF")
             .define("BUILD_TESTS", "OFF")
             .define("BUILD_CONFORMANCE_TESTS", "OFF")

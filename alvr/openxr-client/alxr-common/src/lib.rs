@@ -72,7 +72,7 @@ impl Options {
     pub fn from_system_properties() -> Self {
         let mut new_options = Options {
             localhost: false,
-            verbose: false,
+            verbose: cfg!(debug_assertions),
             graphics_api: Some(ALXRGraphicsApi::Auto),
             decoder_type: None,
             decoder_thread_count: 0,
@@ -96,6 +96,20 @@ impl Options {
     }
 }
 
+#[cfg(target_vendor = "uwp")]
+impl Options {
+    pub fn from_system_properties() -> Self {
+        let mut new_options = Options {
+            localhost: false,
+            verbose: cfg!(debug_assertions),
+            graphics_api: Some(ALXRGraphicsApi::D3D12),
+            decoder_type: Some(ALXRDecoderType::D311VA),
+            decoder_thread_count: 0,
+        };
+        new_options
+    }
+}
+
 lazy_static! {
     pub static ref RUNTIME: Mutex<Option<Runtime>> = Mutex::new(None);
     static ref IDR_REQUEST_NOTIFIER: Notify = Notify::new();
@@ -112,42 +126,19 @@ lazy_static! {
     pub static ref ON_PAUSE_NOTIFIER: Notify = Notify::new();
 }
 
-#[cfg(not(target_os = "android"))]
+#[cfg(all(not(target_os = "android"), not(target_vendor = "uwp")))]
 lazy_static! {
     pub static ref APP_CONFIG: Options = Options::from_args();
 }
-#[cfg(target_os = "android")]
+
+#[cfg(any(target_os = "android", target_vendor = "uwp"))]
 lazy_static! {
     pub static ref APP_CONFIG: Options = Options::from_system_properties();
 }
 
 pub fn init_connections(sys_properties: &ALXRSystemProperties) {
     alvr_common::show_err(|| -> StrResult {
-        //println!("init_connections\n");
-
-        // // struct OnResumeResult {
-        // //     DeviceType deviceType;
-        // //     int recommendedEyeWidth;
-        // //     int recommendedEyeHeight;
-        // //     float *refreshRates;
-        // //     int refreshRatesCount;
-        // // };
-
-        // let java_vm = trace_err!(env.get_java_vm())?;
-        // let activity_ref = trace_err!(env.new_global_ref(jactivity))?;
-        // let nal_class_ref = trace_err!(env.new_global_ref(nal_class))?;
-
-        //let result = onResumeNative(*jscreen_surface as _, dark_mode == 1);
-
-        // let device_name = if result.deviceType == DeviceType_OCULUS_GO {
-        //     "Oculus Go"
-        // } else if result.deviceType == DeviceType_OCULUS_QUEST {
-        //     "Oculus Quest"
-        // } else if result.deviceType == DeviceType_OCULUS_QUEST_2 {
-        //     "Oculus Quest 2"
-        // } else {
-        //     "Unknown device"
-        // };
+        println!("Init-connections started.");
 
         let system_name = unsafe { CStr::from_ptr(sys_properties.systemName.as_ptr()) };
         let device_name: &str = system_name.to_str().unwrap_or("UnknownHMD");
@@ -178,24 +169,13 @@ pub fn init_connections(sys_properties: &ALXRSystemProperties) {
         } else {
             local_ipaddress::get().unwrap_or(alvr_sockets::LOCAL_IP.to_string())
         };
-        let private_identity = alvr_sockets::create_identity(Some(ip_addr)).unwrap(); /*PrivateIdentity {
-                                                                                          hostname: //trace_err!(env.get_string(jhostname))?.into(),
-                                                                                          certificate_pem: //trace_err!(env.get_string(jcertificate_pem))?.into(),
-                                                                                          key_pem: //trace_err!(env.get_string(jprivate_key))?.into(),
-                                                                                      };*/
+        let private_identity = alvr_sockets::create_identity(Some(ip_addr)).unwrap();
 
         let runtime = trace_err!(Runtime::new())?;
 
         runtime.spawn(async move {
-            let connection_loop = connection::connection_lifecycle_loop(
-                headset_info,
-                device_name,
-                private_identity,
-                // Arc::new(java_vm),
-                // Arc::new(activity_ref),
-                // Arc::new(nal_class_ref),
-            );
-
+            let connection_loop =
+                connection::connection_lifecycle_loop(headset_info, device_name, private_identity);
             tokio::select! {
                 _ = connection_loop => (),
                 _ = ON_PAUSE_NOTIFIER.notified() => ()
@@ -203,6 +183,8 @@ pub fn init_connections(sys_properties: &ALXRSystemProperties) {
         });
 
         *RUNTIME.lock() = Some(runtime);
+
+        println!("Init-connections Finished");
 
         Ok(())
     }());

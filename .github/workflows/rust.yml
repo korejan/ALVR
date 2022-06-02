@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [master, alxr-workflows]
+    branches: [master, alxr-workflows, alxr-uwp-workflows]
   pull_request:
-    branches: [master, alxr-workflows]
+    branches: [master, alxr-workflows, alxr-uwp-workflows]
 
 env:
   CARGO_TERM_COLOR: always
@@ -54,10 +54,67 @@ jobs:
           command: build
           args: -p alvr_xtask -p alvr_launcher -p alvr_server -p alvr_vulkan-layer -p vrcompositor-wrapper --verbose
   
+  build_alxr_win_x64:
+    runs-on: windows-2022
+    env:
+      RUST_BACKTRACE: 1
+      NINJA_HOME: 'C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      - uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: latest
+          vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
+          vulkan-use-cache: true
+      - uses: Jimver/cuda-toolkit@v0.2.7
+        id: cuda-toolkit
+        with:
+          method: 'network'
+          cuda: '11.7.0'
+          # sub-packages: '["nvcc", "visual_studio_integration"]'
+      
+      - name: Install Depends & Build
+        run: |
+          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          $env:Path="$env:NINJA_HOME;$env:Path"
+
+          # Fetch alxr-engine submodule.
+          git submodule update --init --recursive
+
+          cargo build -p alxr-client --verbose --features cuda-interop
+  
+  build_alxr_uwp_arm64:
+    runs-on: windows-2022
+    env:
+      RUST_BACKTRACE: 1
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1      
+      - name: Install ALXR Tools/Dependencies
+        run: |
+          # Fetch alxr-engine submodule.
+          git submodule update --init --recursive
+          Start-Process -FilePath .\alvr\openxr-client\alxr-client\uwp\install_uwp_toolchain.bat -Wait -NoNewWindow
+          rustup toolchain install nightly
+          rustup component add rust-src --toolchain nightly-x86_64-pc-windows-msvc
+          rustup update
+      - name: Build Debug UWP aarch64/arm64
+        run: |
+          cargo +nightly build -Z build-std=std,panic_abort -p alxr-client-uwp --target aarch64-uwp-windows-msvc --verbose
+  
   build_alxr_linux:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -89,9 +146,9 @@ jobs:
   
   build_alxr_linux_portable:
     # ubuntu-20.04
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -132,6 +189,49 @@ jobs:
           command: build
           args: -p alxr-client --verbose
   
+  build_alxr_android:
+    runs-on: ubuntu-22.04
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/24.0.8215888
+      RUST_BACKTRACE: 1
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+      
+      - name: Prepare android deps
+        run: |
+          sudo apt install sdkmanager
+          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" # "cmake;3.18.1"
+          yes | sdkmanager --license
+
+          rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+          cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
+          
+          # Fetch alxr-engine submodule.          
+          git submodule update --init --recursive          
+      
+      - name: Build alxr-android-generic
+        run: |
+          unset ANDROID_HOME
+          cargo apk build -p alxr-android-client --verbose
+      - name: Build alxr-android-quest
+        run: |
+          unset ANDROID_HOME
+          cargo apk build -p alxr-client-quest --verbose --target-dir=target/quest
+      - name: Build alxr-android-pico
+        run: |
+          unset ANDROID_HOME
+          cargo apk build -p alxr-client-pico --verbose --target-dir=target/pico
+  
   tests:
     runs-on: ubuntu-latest
     steps:
@@ -162,7 +262,7 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
-
+  
   clippy:
     runs-on: windows-2019
     env:

@@ -316,6 +316,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "alxr-client-uwp"
+version = "1.7.0"
+dependencies = [
+ "alxr-common",
+ "toml",
+ "windows-sys",
+]
+
+[[package]]
 name = "alxr-common"
 version = "0.7.0"
 dependencies = [

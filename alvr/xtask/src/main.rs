@@ -12,7 +12,7 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::io::BufReader;
 use std::process::Stdio;
-use std::{env, fs, path::Path, time::Instant};
+use std::{env, fmt, fs, io::Write, path::Path, time::Instant, vec};
 
 const HELP_STR: &str = r#"
 cargo xtask
@@ -27,6 +27,10 @@ SUBCOMMANDS:
     build-server        Build server driver, then copy binaries to build folder
     build-client        Build client, then copy binaries to build folder
     build-alxr-client   Build OpenXR based client (non-android platforms only), then copy binaries to build folder
+    build-alxr-uwp      Build OpenXR based client for Windows UWP/Store (.msixbundle - self-signed app-bundle with x64+arm64)
+    build-alxr-uwp-x64  Build OpenXR based client for Windows UWP/Store (x64 .msix app-package), then copy binaries to build folder
+    build-alxr-uwp-arm64 Build OpenXR based client for Windows UWP/Store (arm64 .msix app-package), then copy binaries to build folder
+    build-alxr-app-bundle Build UWP app-bundle (.msixbundle) from `build-alxr-uwp` builds.
     build-alxr-appimage Build OpenXR based client AppImage for linux only.
     build-alxr-android  Build OpenXR based client (android platforms only), then copy binaries to build folder
     build-alxr-quest    Build OpenXR based client for Oculus Quest (same as `build-alxr-android --oculus-quest`), then copy binaries to build folder
@@ -55,7 +59,7 @@ FLAGS:
     --bundle-ffmpeg     Bundle ffmpeg libraries. Only used for build-server subcommand on Linux
     --no-nvidia         Additional flag to use with `build-server` or `build-alxr-client`. Disables nVidia/CUDA support.
     --gpl               Enables usage of GPL libs like ffmpeg on Windows, allowing software encoding.
-    --ffmpeg-version    Bundle ffmpeg libraries. Only used for build-alxr-client subcommand on Linux
+    --ffmpeg-version    Bundle ffmpeg libraries. Only used for build-alxr-client subcommand on Linux          
     --help              Print this text
 
 ARGS:
@@ -67,20 +71,6 @@ ARGS:
 pub fn remove_build_dir() {
     let build_dir = afs::build_dir();
     fs::remove_dir_all(&build_dir).ok();
-}
-
-fn build_copy_ffmpeg(lib_dir: &Path, nvenc_flag: bool) -> std::path::PathBuf {
-    let ffmpeg_path = dependencies::build_ffmpeg_linux(nvenc_flag);
-    fs::create_dir_all(lib_dir.clone()).unwrap();
-    for lib in walkdir::WalkDir::new(&ffmpeg_path)
-        .into_iter()
-        .filter_map(|maybe_entry| maybe_entry.ok())
-        .map(|entry| entry.into_path())
-        .filter(|path| path.file_name().unwrap().to_string_lossy().contains(".so."))
-    {
-        fs::copy(lib.clone(), lib_dir.join(lib.file_name().unwrap())).unwrap();
-    }
-    ffmpeg_path
 }
 
 pub fn build_server(
@@ -366,6 +356,7 @@ type PathSet = HashSet<Utf8PathBuf>;
 fn find_linked_native_paths(
     crate_path: &Path,
     build_flags: &str,
+    nightly: bool,
 ) -> Result<PathSet, Box<dyn Error>> {
     // let manifest_file = crate_path.join("Cargo.toml");
     // let metadata = MetadataCommand::new()
@@ -376,6 +367,9 @@ fn find_linked_native_paths(
     //     None => return Err("cargo out-dir must be run from within a crate".into()),
     // };
     let mut args = vec!["check", "--message-format=json", "--quiet"];
+    if nightly {
+        args.insert(0, "+nightly");
+    }
     args.extend(build_flags.split_ascii_whitespace());
 
     let mut command = std::process::Command::new("cargo")
@@ -482,7 +476,7 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
 
         let ffmpeg_build_dir = &alxr_client_build_dir;
         dependencies::build_ffmpeg_linux_install(
-            true,
+            /*nvenc_flag=*/ !flags.no_nvidia,
             ffmpeg_version,
             /*enable_decoders=*/ true,
             &ffmpeg_build_dir,
@@ -563,7 +557,7 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
         return false;
     }
     println!("Searching for linked native dependencies, please wait this may take some time.");
-    let linked_paths = find_linked_native_paths(&alxr_client_dir, &build_flags).unwrap();
+    let linked_paths = find_linked_native_paths(&alxr_client_dir, &build_flags, false).unwrap();
     for linked_path in linked_paths.iter() {
         for linked_depend_file in walkdir::WalkDir::new(linked_path)
             .into_iter()
@@ -595,7 +589,191 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
     .unwrap();
 }
 
-fn setup_cargo_appimage() {
+pub enum UWPArch {
+    X86_64,
+    Aarch64,
+}
+impl fmt::Display for UWPArch {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let x = match self {
+            UWPArch::X86_64 => "x86_64",
+            UWPArch::Aarch64 => "aarch64",
+        };
+        write!(f, "{x}")
+    }
+}
+fn batch_arch_str(arch: UWPArch) -> &'static str {
+    match arch {
+        UWPArch::X86_64 => "x64",
+        UWPArch::Aarch64 => "arm64",
+    }
+}
+
+pub fn build_alxr_uwp(root: Option<String>, arch: UWPArch, flags: AlxBuildFlags) {
+    if let Some(root) = root {
+        env::set_var("ALVR_ROOT_DIR", root);
+    }
+
+    let build_flags = flags.make_build_string();
+    let target_dir = afs::target_dir();
+    let build_type = if flags.is_release { "release" } else { "debug" };
+    let target_type = format!("{arch}-uwp-windows-msvc");
+    let artifacts_dir = target_dir.join(&target_type).join(build_type);
+
+    let alxr_client_build_dir = afs::alxr_uwp_build_dir(build_type);
+    //fs::remove_dir_all(&alxr_client_build_dir).ok();
+    fs::create_dir_all(&alxr_client_build_dir).unwrap();
+
+    if flags.fetch_crates {
+        command::run("cargo update").unwrap();
+    }
+
+    let alxr_client_dir = afs::workspace_dir().join("alvr/openxr-client/alxr-client/uwp");
+    let batch_arch = batch_arch_str(arch);
+    command::run_in(
+        &alxr_client_dir,
+        &format!("cargo_build_uwp.bat {batch_arch} {build_flags}"),
+    )
+    .unwrap();
+
+    let file_mapping = "FinalFileMapping.ini";
+    {
+        let file_mapping = artifacts_dir.join("FinalFileMapping.ini");
+        std::fs::copy(artifacts_dir.join("FileMapping.ini"), &file_mapping).unwrap();
+        let mut file = fs::OpenOptions::new()
+            .append(true)
+            .open(artifacts_dir.join(&file_mapping))
+            .unwrap();
+
+        fn is_linked_depends_file(path: &Path) -> bool {
+            if afs::is_dynlib_file(&path) {
+                return true;
+            }
+            if cfg!(target_os = "windows") {
+                if let Some(ext) = path.extension() {
+                    if ext.to_str().unwrap().eq("pdb") {
+                        return true;
+                    }
+                }
+            }
+            if let Some(ext) = path.extension() {
+                if ext.to_str().unwrap().eq("json") {
+                    return true;
+                }
+            }
+            return false;
+        }
+        println!("Searching for linked native dependencies, please wait this may take some time.");
+        let find_flags =
+            format!("-Z build-std=std,panic_abort --target {target_type} {build_flags}");
+        let linked_paths = find_linked_native_paths(&alxr_client_dir, &find_flags, true).unwrap();
+        for linked_path in linked_paths.iter() {
+            for linked_depend_file in walkdir::WalkDir::new(linked_path)
+                .into_iter()
+                .filter_map(|maybe_entry| maybe_entry.ok())
+                .map(|entry| entry.into_path())
+                .filter(|entry| is_linked_depends_file(&entry))
+            {
+                let fp = linked_depend_file.to_string_lossy();
+                let fname = linked_depend_file.file_name().unwrap().to_str().unwrap();
+                let line = format!("\n\"{fp}\" \"{fname}\"");
+                file.write_all(line.as_bytes()).unwrap();
+            }
+        }
+        file.sync_all().unwrap();
+    }
+
+    let alxr_version = command::crate_version(&alxr_client_dir) + ".0";
+    assert_ne!(alxr_version, "0.0.0.0");
+
+    assert!(artifacts_dir.join("FinalFileMapping.ini").exists());
+    let pack_script_path = alxr_client_dir.join("build_app_package.bat");
+    assert!(pack_script_path.exists());
+    let pack_script = pack_script_path.to_string_lossy();
+    command::run_in(
+        &artifacts_dir,
+        &format!("{pack_script} {batch_arch} {alxr_version} {file_mapping}"),
+    )
+    .unwrap();
+
+    let packed_fname = format!("alxr-client-uwp_{alxr_version}_{batch_arch}.msix");
+    let src_packed_file = artifacts_dir.join(&packed_fname);
+    assert!(src_packed_file.exists());
+    let dst_packed_file = alxr_client_build_dir.join(&packed_fname);
+    fs::copy(&src_packed_file, &dst_packed_file).unwrap();
+}
+
+pub fn build_alxr_app_bundle(is_release: bool) {
+    let build_type = if is_release { "release" } else { "debug" };
+    let alxr_client_build_dir = afs::alxr_uwp_build_dir(build_type).canonicalize().unwrap();
+    if !alxr_client_build_dir.exists() {
+        eprintln!("uwp build directory does not exist, please run `cargo xtask build-alxr-uwp(-(x64|arm64)` first.");
+        return;
+    }
+
+    let alxr_client_dir = afs::workspace_dir().join("alvr/openxr-client/alxr-client/uwp");
+    let alxr_version = command::crate_version(&alxr_client_dir) + ".0";
+    assert_ne!(alxr_version, "0.0.0.0");
+
+    let alxr_client_build_dir = alxr_client_build_dir.to_str().unwrap();
+    let alxr_client_build_dir = std::path::PathBuf::from(
+        alxr_client_build_dir
+            .strip_prefix(r#"\\?\"#)
+            .unwrap_or(&alxr_client_build_dir),
+    );
+
+    let pack_map_fname = "PackMap.txt";
+    let pack_map_path = alxr_client_build_dir.join(&pack_map_fname);
+    let mut archs: Vec<&str> = Vec::new();
+    let mut files: Vec<std::path::PathBuf> = Vec::new();
+    for arch in [UWPArch::X86_64, UWPArch::Aarch64].map(|x| batch_arch_str(x)) {
+        let pack_fname = format!("alxr-client-uwp_{alxr_version}_{arch}.msix");
+        let pack_path = alxr_client_build_dir.join(&pack_fname);
+        if pack_path.exists() {
+            archs.push(arch);
+            files.push(pack_path);
+        }
+    }
+
+    if files.is_empty() {
+        eprintln!(
+            "No .msix files found, please run `cargo xtask build-alxr-uwp(-(x64|arm64)` first."
+        );
+        return;
+    }
+
+    {
+        let mut pack_map_file = fs::File::create(&pack_map_path).unwrap();
+        writeln!(pack_map_file, "[Files]").unwrap();
+        for pack_path in files {
+            let pack_fname = pack_path.file_name().unwrap();
+            writeln!(pack_map_file, "{pack_path:?} {pack_fname:?}").unwrap();
+        }
+        pack_map_file.sync_all().unwrap();
+    }
+    assert!(pack_map_path.exists());
+
+    let cert = "alxr_client_TemporaryKey.pfx";
+    // copy exported code signing cert
+    fs::copy(
+        alxr_client_dir.join(&cert),
+        alxr_client_build_dir.join(&cert),
+    )
+    .unwrap();
+
+    let mut archs = archs.join("_");
+    if !is_release {
+        archs = archs + "_debug";
+    }
+    let bundle_script_path = alxr_client_dir.join("build_app_bundle.bat");
+    let bundle_cmd = format!(
+        "{} {archs} {alxr_version} {pack_map_fname} {cert}",
+        bundle_script_path.to_string_lossy()
+    );
+    command::run_in(&alxr_client_build_dir, &bundle_cmd).unwrap();
+}
+
+fn _setup_cargo_appimage() {
     let ait_dir = afs::deps_dir().join("linux/appimagetool");
 
     fs::remove_dir_all(&ait_dir).ok();
@@ -634,7 +812,7 @@ fn setup_cargo_appimage() {
     command::run("cargo install cargo-appimage").unwrap();
 }
 
-pub fn build_alxr_app_image(root: Option<String>, _ffmpeg_version: &str, flags: AlxBuildFlags) {
+pub fn build_alxr_app_image(_root: Option<String>, _ffmpeg_version: &str, _flags: AlxBuildFlags) {
     println!("Not Implemented!");
     // setup_cargo_appimage();
 
@@ -858,6 +1036,44 @@ fn main() {
                         ..Default::default()
                     },
                 ),
+                "build-alxr-uwp-x64" => build_alxr_uwp(
+                    root,
+                    UWPArch::X86_64,
+                    AlxBuildFlags {
+                        is_release: is_release,
+                        reproducible: reproducible,
+                        no_nvidia: true,
+                        bundle_ffmpeg: false,
+                        fetch_crates: fetch,
+                        ..Default::default()
+                    },
+                ),
+                "build-alxr-uwp-arm64" => build_alxr_uwp(
+                    root,
+                    UWPArch::Aarch64,
+                    AlxBuildFlags {
+                        is_release: is_release,
+                        reproducible: reproducible,
+                        no_nvidia: true,
+                        bundle_ffmpeg: false,
+                        fetch_crates: fetch,
+                        ..Default::default()
+                    },
+                ),
+                "build-alxr-uwp" => {
+                    let build_flags = AlxBuildFlags {
+                        is_release: is_release,
+                        reproducible: reproducible,
+                        no_nvidia: true,
+                        bundle_ffmpeg: false,
+                        fetch_crates: fetch,
+                        ..Default::default()
+                    };
+                    build_alxr_uwp(root.to_owned(), UWPArch::Aarch64, build_flags);
+                    build_alxr_uwp(root, UWPArch::X86_64, build_flags);
+                    build_alxr_app_bundle(build_flags.is_release);
+                }
+                "build-alxr-app-bundle" => build_alxr_app_bundle(is_release),
                 "build-alxr-appimage" => build_alxr_app_image(
                     root,
                     &ffmpeg_version,

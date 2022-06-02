@@ -38,13 +38,22 @@ pub fn create_identity(hostname: Option<String>) -> StrResult<PrivateIdentity> {
         rand::thread_rng().gen_range(0..10),
     ));
 
+    #[cfg(target_os = "android")]
     let certificate = trace_err!(rcgen::generate_simple_self_signed([hostname.clone()]))?;
 
-    Ok(PrivateIdentity {
+    #[cfg(not(target_os = "android"))]
+    return Ok(PrivateIdentity {
+        hostname,
+        certificate_pem: String::new(),
+        key_pem: String::new(),
+    });
+
+    #[cfg(target_os = "android")]
+    return Ok(PrivateIdentity {
         hostname,
         certificate_pem: trace_err!(certificate.serialize_pem())?,
         key_pem: certificate.serialize_private_key_pem(),
-    })
+    });
 }
 
 mod util {

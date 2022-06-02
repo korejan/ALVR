@@ -97,6 +97,11 @@ pub fn alxr_client_build_dir<P: AsRef<Path>>(prefix: P, cuda_enabled: bool) -> P
     build_dir().join(prefix).join(alxr_client_dir)
 }
 
+pub fn alxr_uwp_build_dir<P: AsRef<Path>>(prefix: P) -> PathBuf {
+    let alxr_client_dir = format!("alxr_client_uwp");
+    build_dir().join(prefix).join(alxr_client_dir)
+}
+
 pub fn installer_path() -> PathBuf {
     env::temp_dir().join(exec_fname("alvr_installer"))
 }

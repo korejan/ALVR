@@ -17,6 +17,7 @@ members = [
     "alvr/openxr-client/alxr-engine-sys",
     "alvr/openxr-client/alxr-common",
     "alvr/openxr-client/alxr-client",
+    "alvr/openxr-client/alxr-client/uwp",
     "alvr/openxr-client/alxr-android-client",
     "alvr/openxr-client/alxr-android-client/quest",
     "alvr/openxr-client/alxr-android-client/pico-neo",
