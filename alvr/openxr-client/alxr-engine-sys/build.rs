@@ -229,6 +229,7 @@ fn main() {
             .always_configure(true)
             .define(CMAKE_PREFIX_PATH_VAR, &pkg_config_path)
             .define("BUILD_CUDA_INTEROP", build_cuda)
+            .define("BUILD_ALL_EXTENSIONS", "ON")
             .define("BUILD_API_LAYERS", "OFF")
             .define("BUILD_TESTS", "OFF")
             .define("BUILD_CONFORMANCE_TESTS", "OFF")
