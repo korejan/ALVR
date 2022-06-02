@@ -5,12 +5,14 @@ use crate::{
 };
 use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
 use alvr_session::SessionDesc;
+#[cfg(target_os = "android")]
+use alvr_sockets::AUDIO;
 use alvr_sockets::{
     spawn_cancelable, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, Haptics,
     HeadsetInfoPacket, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
-    ServerHandshakePacket, StreamSocketBuilder, VideoFrameHeaderPacket, AUDIO, HAPTICS, INPUT,
-    VIDEO,
+    ServerHandshakePacket, StreamSocketBuilder, VideoFrameHeaderPacket, HAPTICS, INPUT, VIDEO,
 };
+
 use futures::future::BoxFuture;
 use glam::Vec2;
 use serde_json as json;
@@ -597,7 +599,7 @@ async fn connection_pipeline(
         }
     };
 
-    let game_audio_loop: BoxFuture<_> = if let Switch::Enabled(desc) = settings.audio.game_audio {
+    let game_audio_loop: BoxFuture<_> = if let Switch::Enabled(_desc) = settings.audio.game_audio {
         #[cfg(target_os = "android")]
         if config_packet.game_audio_sample_rate < 8000 {
             // The server is using a sample rate that won't work and will likely crash us
@@ -609,7 +611,7 @@ async fn connection_pipeline(
             let game_audio_receiver = stream_socket.subscribe_to_stream(AUDIO).await?;
             Box::pin(audio::play_audio_loop(
                 config_packet.game_audio_sample_rate,
-                desc.config,
+                _desc.config,
                 game_audio_receiver,
             ))
         }

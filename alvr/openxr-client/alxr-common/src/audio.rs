@@ -1,6 +1,7 @@
+#![cfg(target_os = "android")]
 use alvr_common::prelude::*;
 use alvr_session::AudioConfig;
-use alvr_sockets::{StreamReceiver, StreamSender, AUDIO};
+use alvr_sockets::{StreamReceiver, StreamSender};
 use oboe::{
     AudioInputCallback, AudioInputStreamSafe, AudioOutputCallback, AudioOutputStreamSafe,
     AudioStream, AudioStreamBuilder, DataCallbackResult, InputPreset, Mono, PerformanceMode,
@@ -39,6 +40,7 @@ impl AudioInputCallback for RecorderCallback {
     }
 }
 
+#[allow(dead_code)]
 pub async fn record_audio_loop(sample_rate: u32, mut sender: StreamSender<()>) -> StrResult {
     let (_shutdown_notifier, shutdown_receiver) = smpsc::channel::<()>();
     let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();

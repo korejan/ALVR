@@ -17,7 +17,6 @@ bundled-ffmpeg = ["alxr-engine-sys/bundled-ffmpeg"]
 [dependencies]
 alxr-engine-sys = { path = "../alxr-engine-sys" }
 alvr_common = { path = "../../common" }
-alvr_audio = { path = "../../audio" }
 alvr_session = { path = "../../session" }
 alvr_sockets = { path = "../../sockets" }
 settings-schema = { path = "../../settings-schema", features = ["rename_camel_case"] }
@@ -38,5 +37,6 @@ structopt = "0.3"
 glam = { version = "0.20", features = ["serde"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
+alvr_audio = { path = "../../audio" }
 libc = "0.2"
 oboe = "0.4" # Note: cannot use feature "java-interface" to query audio info
