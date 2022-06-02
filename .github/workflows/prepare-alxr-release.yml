@@ -294,8 +294,8 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [prepare_release]
     env:
-      ANDROID_SDK_ROOT: /opt/android-sdk
-      ANDROID_NDK_ROOT: /opt/android-sdk/ndk/24.0.8215888
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/24.0.8215888
       RUST_BACKTRACE: 1
     steps:
       - name: Checkout code
@@ -315,7 +315,7 @@ jobs:
       - name: Build / Install ALXR Android dependencies
         run: |
           sudo apt install sdkmanager
-          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" "cmake;3.18.1"
+          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" # "cmake;3.18.1"
           yes | sdkmanager --license
 
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
@@ -325,13 +325,19 @@ jobs:
           git submodule update --init --recursive
       
       - name: Build & Package alxr-android-generic-release
-        run: cargo xtask build-alxr-android --generic --release
+        run: |
+          unset ANDROID_HOME
+          cargo xtask build-alxr-android --generic --release
       
       - name: Build & Package alxr-android-quest-release
-        run: cargo xtask build-alxr-quest --release
+        run: |
+          unset ANDROID_HOME
+          cargo xtask build-alxr-quest --release
       
       - name: Build & Package alxr-android-pico-release
-        run: cargo xtask build-alxr-pico --release
+        run: |
+          unset ANDROID_HOME
+          cargo xtask build-alxr-pico --release
       
       - name: Upload alxr-android-generic-release
         uses: actions/upload-release-asset@v1
@@ -367,8 +373,8 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [prepare_release]
     env:
-      ANDROID_SDK_ROOT: /opt/android-sdk
-      ANDROID_NDK_ROOT: /opt/android-sdk/ndk/24.0.8215888
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/24.0.8215888
       RUST_BACKTRACE: 1
     steps:
       - name: Checkout code
@@ -388,9 +394,9 @@ jobs:
       - name: Build / Install ALXR Android dependencies
         run: |
           sudo apt install sdkmanager
-          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" "cmake;3.18.1"
+          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;24.0.8215888" # "cmake;3.18.1"
           yes | sdkmanager --license
-
+          
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
           cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
           
@@ -399,18 +405,21 @@ jobs:
       
       - name: Build & Package alxr-android-generic-debug
         run: |
+          unset ANDROID_HOME
           cargo xtask build-alxr-android --generic
           cd ./build/debug/alxr_client_android
           mv alxr-client.apk alxr-client-debug.apk
       
       - name: Build & Package alxr-android-quest-debug
         run: |
+          unset ANDROID_HOME
           cargo xtask build-alxr-quest
           cd ./build/debug/alxr_client_android
           mv alxr-client-quest.apk alxr-client-quest-debug.apk
       
       - name: Build & Package alxr-android-pico-debug
         run: |
+          unset ANDROID_HOME
           cargo xtask build-alxr-pico
           cd ./build/debug/alxr_client_android
           mv alxr-client-pico.apk alxr-client-pico-debug.apk
@@ -579,3 +588,125 @@ jobs:
           asset_path: ./build/alxr-client-win-x64-no-nvidia-debug.zip
           asset_name: alxr-client-win-x64-no-nvidia-debug.zip
           asset_content_type: application/zip
+
+  build_uwp_app_bundle_debug:
+    runs-on: windows-2022
+    needs: [prepare_release]
+    env:
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.prepare_release.outputs.release_ref }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      
+      - name: Install ALXR Tools/Dependencies
+        run: |
+          # Fetch alxr-engine submodule.
+          git submodule update --init --recursive
+          Start-Process -FilePath .\alvr\openxr-client\alxr-client\uwp\install_uwp_toolchain.bat -Wait -NoNewWindow
+          rustup toolchain install nightly
+          rustup component add rust-src --toolchain nightly-x86_64-pc-windows-msvc
+          rustup update
+            
+      - name: Build & Package UWP Arm64 Debug (.msix)
+        run: cargo xtask build-alxr-uwp-arm64
+      
+      - name: Build & Package UWP x64 Debug (.msix)
+        run: cargo xtask build-alxr-uwp-x64
+      
+      - name: Build Debug UWP App-bundle (.msixbundle)
+        id: app_bundle_debug
+        run: |
+          cargo xtask build-alxr-app-bundle
+          
+          $ALXR_MSIX_BUNDLE_PATH=(cmd /C dir /S /B .\build\debug\alxr_client_uwp\alxr-client-uwp_*.msixbundle)
+          $ALXR_MSIX_BUNDLE_FILE=(cmd /C dir /B .\build\debug\alxr_client_uwp\alxr-client-uwp_*.msixbundle)
+
+          echo "::set-output name=alxr_msixbundle_path::$ALXR_MSIX_BUNDLE_PATH"
+          echo "::set-output name=alxr_msixbundle_file::$ALXR_MSIX_BUNDLE_FILE"
+      
+      - name: Upload Debug UWP App-bundle (.msixbundle)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ${{ steps.app_bundle_debug.outputs.alxr_msixbundle_path }}
+          asset_name: ${{ steps.app_bundle_debug.outputs.alxr_msixbundle_file }}
+          asset_content_type: application/zip
+
+  build_uwp_app_bundle_release:
+    runs-on: windows-2022
+    needs: [prepare_release]
+    env:
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.prepare_release.outputs.release_ref }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      
+      - name: Install ALXR Tools/Dependencies
+        run: |
+          # Fetch alxr-engine submodule.
+          git submodule update --init --recursive
+          Start-Process -FilePath .\alvr\openxr-client\alxr-client\uwp\install_uwp_toolchain.bat -Wait -NoNewWindow
+          rustup toolchain install nightly
+          rustup component add rust-src --toolchain nightly-x86_64-pc-windows-msvc
+          rustup update
+      
+      - name: Build & Package UWP Arm64 Release (.msix)
+        run: cargo xtask build-alxr-uwp-arm64 --release
+      
+      - name: Build & Package UWP x64 Release (.msix)
+        run: cargo xtask build-alxr-uwp-x64 --release
+      
+      - name: Build Release UWP App-bundle (.msixbundle)
+        id: app_bundle_release
+        run: |
+          cargo xtask build-alxr-app-bundle --release
+          
+          $ALXR_MSIX_BUNDLE_PATH=(cmd /C dir /S /B .\build\release\alxr_client_uwp\alxr-client-uwp_*.msixbundle)
+          $ALXR_MSIX_BUNDLE_FILE=(cmd /C dir /B .\build\release\alxr_client_uwp\alxr-client-uwp_*.msixbundle)
+
+          echo "::set-output name=alxr_msixbundle_path::$ALXR_MSIX_BUNDLE_PATH"
+          echo "::set-output name=alxr_msixbundle_file::$ALXR_MSIX_BUNDLE_FILE"
+      
+      - name: Upload Release UWP App-bundle (.msixbundle)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ${{ steps.app_bundle_release.outputs.alxr_msixbundle_path }}
+          asset_name: ${{ steps.app_bundle_release.outputs.alxr_msixbundle_file }}
+          asset_content_type: application/zip
+  
+  upload_uwp_cert:
+    runs-on: ubuntu-22.04
+    needs: [build_uwp_app_bundle_debug, build_uwp_app_bundle_release]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.prepare_release.outputs.release_ref }}
+      - name: Upload UWP Cert
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./alvr/openxr-client/alxr-client/uwp/alxr_client_TemporaryKey.pfx
+          asset_name: alxr_client_TemporaryKey.pfx
+          asset_content_type: application/octet-stream

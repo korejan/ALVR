@@ -1,3 +1,5 @@
+#![cfg_attr(target_vendor = "uwp", windows_subsystem = "windows")]
+
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, battery_send,
     init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
@@ -8,15 +10,22 @@ use std::{thread, time};
 
 const SLEEP_TIME: time::Duration = time::Duration::from_millis(250);
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_vendor = "uwp", target_os = "windows"))]
 const DEFAULT_DECODER_TYPE: ALXRDecoderType = ALXRDecoderType::D311VA;
-#[cfg(not(target_os = "windows"))]
+
+#[cfg(not(any(target_vendor = "uwp", target_os = "windows")))]
 const DEFAULT_DECODER_TYPE: ALXRDecoderType = ALXRDecoderType::VAAPI;
+
+#[cfg(target_vendor = "uwp")]
+const DEFAULT_GRAPHICS_API: ALXRGraphicsApi = ALXRGraphicsApi::D3D12;
+
+#[cfg(not(target_vendor = "uwp"))]
+const DEFAULT_GRAPHICS_API: ALXRGraphicsApi = ALXRGraphicsApi::Auto;
 
 #[cfg(not(target_os = "android"))]
 fn main() {
     println!("{:?}", *APP_CONFIG);
-    let selected_api = APP_CONFIG.graphics_api.unwrap_or(ALXRGraphicsApi::Auto);
+    let selected_api = APP_CONFIG.graphics_api.unwrap_or(DEFAULT_GRAPHICS_API);
     let selected_decoder = APP_CONFIG.decoder_type.unwrap_or(DEFAULT_DECODER_TYPE);
     unsafe {
         loop {

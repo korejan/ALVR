@@ -123,5 +123,13 @@ pub fn bump_alxr_version(maybe_version: Option<String>, is_nightly: bool) {
         bump_cargo_version(&dir_name, &version);
     }
 
+    // +1 major version for alxr-client-uwp (maybe starting from 1 isn't neccessary for store apps?)
+    if let Some((major, minor_rev)) = version.split_once('.') {
+        let next_major = (major.parse::<u32>().unwrap() + 1).to_string();
+        let uwp_version = format!("{next_major}.{minor_rev}");
+        let alxr_uwp_dir = base_dir.join("alxr-client/uwp");
+        bump_cargo_version(alxr_uwp_dir.to_str().unwrap(), &uwp_version);
+    }
+
     println!("Git tag:\nv{version}");
 }

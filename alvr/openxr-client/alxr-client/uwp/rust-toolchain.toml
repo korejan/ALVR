@@ -1,0 +1,6 @@
+[toolchain]
+# +nightly is required to enable the build-std feature. The following specifies that the
+# latest version be used. It can be pinned here to a specific version, e.g.
+# "nightly-2021-08-12".
+channel = "nightly"
+components = ["rust-src"]

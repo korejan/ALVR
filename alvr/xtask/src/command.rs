@@ -62,3 +62,25 @@ pub fn copy_recursive(sh: &Shell, source_dir: &Path, dest_dir: &Path) -> Result<
 
     Ok(())
 }
+
+pub fn crate_version<P: AsRef<Path>>(crate_path: P) -> String {
+    let result = Command::new(format!("cargo"))
+        .args(["pkgid", "--quiet"])
+        .current_dir(crate_path)
+        .output()
+        .unwrap()
+        .stdout;
+    let version_str = std::str::from_utf8(&result).unwrap().trim().to_string();
+    if let Some((_, v)) = version_str.rsplit_once('#') {
+        let mut x = v.trim().to_string();
+        if let Some((_, xx)) = x.rsplit_once('@') {
+            x = xx.trim().to_string();
+        }
+        if let Some((_, xx)) = x.rsplit_once(':') {
+            x = xx.trim().to_string();
+        }
+        x
+    } else {
+        String::from("0.0.0")
+    }
+}

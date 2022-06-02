@@ -1,0 +1,16 @@
+[unstable]
+build-std = ["std", "panic_abort"]
+
+# build-std requires that the --target be set (but it doesn't get picked up running
+# "cargo build"). The following sets the default target so it doesn't have to be
+# specified on the command line. This is for convenience only, and can be overriden on the
+# command line, or changed here as desired.
+[build]
+# target = "i686-uwp-windows-msvc"
+target = "x86_64-uwp-windows-msvc"
+# target = "thumbv7a-uwp-windows-msvc"
+# target = "aarch64-uwp-windows-msvc"
+rustflags = ["-C", "link-args=-lOneCore.lib -lWindowsApp.lib"]
+
+[profile.release]
+debug = true
