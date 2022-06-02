@@ -1,6 +1,9 @@
 mod connection;
 mod connection_utils;
 
+#[cfg(target_os = "android")]
+mod audio;
+
 use alvr_common::{prelude::*, ALVR_VERSION, HEAD_ID, LEFT_HAND_ID, RIGHT_HAND_ID};
 use alvr_session::Fov;
 use alvr_sockets::{

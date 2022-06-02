@@ -5,11 +5,14 @@ use crate::{
 };
 use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
 use alvr_session::SessionDesc;
+#[cfg(target_os = "android")]
+use alvr_sockets::AUDIO;
 use alvr_sockets::{
     spawn_cancelable, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, Haptics,
     HeadsetInfoPacket, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
     ServerHandshakePacket, StreamSocketBuilder, VideoFrameHeaderPacket, HAPTICS, INPUT, VIDEO,
 };
+
 use futures::future::BoxFuture;
 use glam::Vec2;
 use serde_json as json;
@@ -28,8 +31,8 @@ use tokio::{
     time::{self, Instant},
 };
 
-//#[cfg(target_os = "android")]
-//use crate::audio;
+#[cfg(target_os = "android")]
+use crate::audio;
 
 const INITIAL_MESSAGE: &str = "Searching for server...\n(open ALVR on your PC)";
 const NETWORK_UNREACHABLE_MESSAGE: &str = "Cannot connect to the internet";
@@ -596,21 +599,27 @@ async fn connection_pipeline(
         }
     };
 
-    let game_audio_loop: BoxFuture<_> = //if let Switch::Enabled(desc) = settings.audio.game_audio {
-    //     #[cfg(target_os = "android")]
-    //     {
-    //         let game_audio_receiver = stream_socket.subscribe_to_stream().await?;
-    //         Box::pin(audio::play_audio_loop(
-    //             config_packet.game_audio_sample_rate,
-    //             desc.config,
-    //             game_audio_receiver,
-    //         ))
-    //     }
-    //     #[cfg(not(target_os = "android"))]
-    //     Box::pin(future::pending())
-    // } else {
-        Box::pin(future::pending());
-    //};
+    let game_audio_loop: BoxFuture<_> = if let Switch::Enabled(_desc) = settings.audio.game_audio {
+        #[cfg(target_os = "android")]
+        if config_packet.game_audio_sample_rate < 8000 {
+            // The server is using a sample rate that won't work and will likely crash us
+            // We can't report errors clearly yet, so skip running audio so people who
+            // update their copy of ALXR don't suddenly start getting crashes.
+            println!("ALVR server chose an invalid audio sample rate. Disabling audio playback.");
+            Box::pin(future::pending())
+        } else {
+            let game_audio_receiver = stream_socket.subscribe_to_stream(AUDIO).await?;
+            Box::pin(audio::play_audio_loop(
+                config_packet.game_audio_sample_rate,
+                _desc.config,
+                game_audio_receiver,
+            ))
+        }
+        #[cfg(not(target_os = "android"))]
+        Box::pin(future::pending())
+    } else {
+        Box::pin(future::pending())
+    };
 
     let microphone_loop: BoxFuture<_> = //if let Switch::Enabled(config) = settings.audio.microphone {
     //     #[cfg(target_os = "android")]
