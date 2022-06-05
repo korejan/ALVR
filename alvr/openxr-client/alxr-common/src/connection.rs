@@ -621,20 +621,21 @@ async fn connection_pipeline(
         Box::pin(future::pending())
     };
 
-    let microphone_loop: BoxFuture<_> = //if let Switch::Enabled(config) = settings.audio.microphone {
-    //     #[cfg(target_os = "android")]
-    //     {
-    //         let microphone_sender = stream_socket.request_stream().await?;
-    //         Box::pin(audio::record_audio_loop(
-    //             config.sample_rate,
-    //             microphone_sender,
-    //         ))
-    //     }
-    //     #[cfg(not(target_os = "android"))]
-    //     Box::pin(future::pending())
-    // } else {
-        Box::pin(future::pending());
-    //};
+    let microphone_loop: BoxFuture<_> = if let Switch::Enabled(_config) = settings.audio.microphone
+    {
+        #[cfg(target_os = "android")]
+        {
+            let microphone_sender = stream_socket.request_stream(AUDIO).await?;
+            Box::pin(audio::record_audio_loop(
+                _config.sample_rate,
+                microphone_sender,
+            ))
+        }
+        #[cfg(not(target_os = "android"))]
+        Box::pin(future::pending())
+    } else {
+        Box::pin(future::pending())
+    };
 
     let keepalive_sender_loop = {
         let control_sender = Arc::clone(&control_sender);

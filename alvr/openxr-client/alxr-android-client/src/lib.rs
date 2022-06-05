@@ -1,9 +1,12 @@
+mod permissions;
+
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, battery_send,
     init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
     time_sync_send, video_error_report_send, views_config_send, ALXRDecoderType, ALXRGraphicsApi,
     ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
 };
+use permissions::check_android_permissions;
 
 use ndk::looper::*;
 use ndk_context;
@@ -99,30 +102,19 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
         let native_activity = ctx.context();
         let vm_ptr = ctx.vm();
 
-        //let _libVkLayer_khronos_validation = libloading::Library::new("VkLayer_khronos_validation");
-        //let _libcpp = libloading::Library::new("libc++_shared.so")?;
         let _lib = libloading::Library::new("libopenxr_loader.so")?;
-        //let _lib2 = libloading::Library::new("libXrApiLayer_core_validation.so")?;
-
-        // in-order: # avutil, avresample, avcodec, avformat
-        // avutil, avresample, avcodec, avformat
-        // let _lib2 = libloading::Library::new("libavutil.so")?;
-        // let _lib2 = libloading::Library::new("libswresample.so")?;
-        // let _lib3 = libloading::Library::new("libavcodec.so")?;
-        // let _lib4 = libloading::Library::new("libavformat.so")?;
-        // let _lib4 = libloading::Library::new("libavfilter.so")?;
-        // let _lib5 = libloading::Library::new("libswscale.so")?;
 
         let vm = jni::JavaVM::from_raw(vm_ptr.cast())?;
         let _env = vm.attach_current_thread()?;
 
+        check_android_permissions(native_activity as jni::sys::jobject, &vm)?;
+
         let ctx = ALXRRustCtx {
             graphicsApi: APP_CONFIG.graphics_api.unwrap_or(ALXRGraphicsApi::Auto),
             decoderType: ALXRDecoderType::NVDEC, // Not used on android.
-            //decoderThreadCount: APP_CONFIG.decoder_thread_count,
             verbose: APP_CONFIG.verbose,
             applicationVM: vm_ptr as *mut std::ffi::c_void,
-            applicationActivity: native_activity, //(*native_activity.ptr().as_ptr()).clazz as *mut std::ffi::c_void,
+            applicationActivity: native_activity,
             inputSend: Some(input_send),
             viewsConfigSend: Some(views_config_send),
             pathStringToHash: Some(path_string_to_hash),
@@ -163,8 +155,6 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
 
         shutdown();
         alxr_destroy();
-
-        vm.detach_current_thread();
     }
     Ok(())
 }

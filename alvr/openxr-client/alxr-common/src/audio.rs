@@ -40,7 +40,6 @@ impl AudioInputCallback for RecorderCallback {
     }
 }
 
-#[allow(dead_code)]
 pub async fn record_audio_loop(sample_rate: u32, mut sender: StreamSender<()>) -> StrResult {
     let (_shutdown_notifier, shutdown_receiver) = smpsc::channel::<()>();
     let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
