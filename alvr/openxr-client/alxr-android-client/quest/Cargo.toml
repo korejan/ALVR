@@ -1,6 +1,6 @@
 [package]
 name = "alxr-client-quest"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 description = "An OpenXR based ALVR client for Oculus Quest 1/2"
