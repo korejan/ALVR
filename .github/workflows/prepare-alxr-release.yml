@@ -644,6 +644,9 @@ jobs:
   build_uwp_app_bundle_release:
     runs-on: windows-2022
     needs: [prepare_release]
+    outputs:
+      upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+      release_ref: ${{ needs.prepare_release.outputs.release_ref }}
     env:
       RUST_BACKTRACE: 1
     steps:
@@ -700,13 +703,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          ref: ${{ needs.prepare_release.outputs.release_ref }}
+          ref: ${{ needs.build_uwp_app_bundle_release.outputs.release_ref }}
       - name: Upload UWP Cert
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          upload_url: ${{ needs.build_uwp_app_bundle_release.outputs.upload_url }}
           asset_path: ./alvr/openxr-client/alxr-client/uwp/alxr_client_TemporaryKey.pfx
           asset_name: alxr_client_TemporaryKey.pfx
           asset_content_type: application/octet-stream
