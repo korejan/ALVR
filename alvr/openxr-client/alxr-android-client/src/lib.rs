@@ -1,8 +1,8 @@
 mod permissions;
 
 use alxr_common::{
-    alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, battery_send,
-    init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
+    alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, alxr_on_pause, alxr_on_resume,
+    battery_send, init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
     time_sync_send, video_error_report_send, views_config_send, ALXRDecoderType, ALXRGraphicsApi,
     ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
 };
@@ -45,8 +45,16 @@ impl AppData {
             //         println!("NativeWindow: width: {0}, height: {1}", width, height);
             //     }
             // },
-            ndk_glue::Event::Pause => self.resumed = false,
-            ndk_glue::Event::Resume => self.resumed = true,
+            ndk_glue::Event::Pause => {
+                println!("alxr-client: received on_pause event.");
+                self.resumed = false;
+                unsafe { alxr_on_pause() };
+            },
+            ndk_glue::Event::Resume => {
+                println!("alxr-client: received on_resume event.");
+                unsafe { alxr_on_resume() };
+                self.resumed = true;
+            },
             ndk_glue::Event::Destroy => self.destroy_requested = true,
             _ => (),
         }
