@@ -80,7 +80,7 @@ impl Options {
             graphics_api: Some(ALXRGraphicsApi::Auto),
             decoder_type: None,
             decoder_thread_count: 0,
-            no_linearize_srgb: false
+            no_linearize_srgb: false,
         };
         // unsafe {
         //     let mut value = [0 as libc::c_char; libc::PROP_VALUE_MAX as usize];
@@ -110,7 +110,7 @@ impl Options {
             graphics_api: Some(ALXRGraphicsApi::D3D12),
             decoder_type: Some(ALXRDecoderType::D311VA),
             decoder_thread_count: 0,
-            no_linearize_srgb: false
+            no_linearize_srgb: false,
         };
         new_options
     }

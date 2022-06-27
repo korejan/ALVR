@@ -132,7 +132,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             batterySend: Some(battery_send),
             setWaitingNextIDR: Some(set_waiting_next_idr),
             requestIDR: Some(request_idr),
-            disableLinearizeSrgb: APP_CONFIG.no_linearize_srgb
+            disableLinearizeSrgb: APP_CONFIG.no_linearize_srgb,
         };
         let mut sys_properties = ALXRSystemProperties::new();
         if !alxr_init(&ctx, &mut sys_properties) {
