@@ -25,10 +25,10 @@ use glam::{Quat, Vec2, Vec3};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "openxr_client", about = "An OpenXR based ALVR client.")]
+#[structopt(name = "alxr-client", about = "An OpenXR based ALVR client.")]
 pub struct Options {
     // short and long flags (-d, --debug) will be deduced from the field's name
-    /// Enable this if server and client are running on the same host.
+    /// Enable this if the server and client are running on the same host-os.
     #[structopt(/*short,*/ long)]
     pub localhost: bool,
 
@@ -41,6 +41,10 @@ pub struct Options {
     /// Number of threads to use for CPU based decoding.
     #[structopt(long, default_value = "1")]
     pub decoder_thread_count: u32,
+
+    /// Disables sRGB linerization, use this if the output in your headset looks to "dark".
+    #[structopt(long)]
+    pub no_linearize_srgb: bool,
 
     /// Output verbose log information.
     #[structopt(short, long)]
@@ -76,6 +80,7 @@ impl Options {
             graphics_api: Some(ALXRGraphicsApi::Auto),
             decoder_type: None,
             decoder_thread_count: 0,
+            no_linearize_srgb: false
         };
         // unsafe {
         //     let mut value = [0 as libc::c_char; libc::PROP_VALUE_MAX as usize];
@@ -105,6 +110,7 @@ impl Options {
             graphics_api: Some(ALXRGraphicsApi::D3D12),
             decoder_type: Some(ALXRDecoderType::D311VA),
             decoder_thread_count: 0,
+            no_linearize_srgb: false
         };
         new_options
     }

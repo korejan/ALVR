@@ -41,6 +41,7 @@ fn main() {
                 graphicsApi: selected_api,
                 decoderType: selected_decoder,
                 verbose: APP_CONFIG.verbose,
+                disableLinearizeSrgb: APP_CONFIG.no_linearize_srgb
             };
             let mut sys_properties = ALXRSystemProperties::new();
             if !alxr_init(&ctx, &mut sys_properties) {
