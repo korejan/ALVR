@@ -82,21 +82,32 @@ impl Options {
             decoder_thread_count: 0,
             no_linearize_srgb: false,
         };
-        // unsafe {
-        //     let mut value = [0 as libc::c_char; libc::PROP_VALUE_MAX as usize];
-        //     let property_name = b"debug.alxr.graphicsPlugin\0";
-        //     if libc::__system_property_get(property_name.as_ptr(), value.as_mut_ptr()) != 0 {
-        //         let val_str = CStr::from_bytes_with_nul(&value).unwrap();
-        //         new_options.graphics_api = Some(From::from(val_str.to_str().unwrap_or("auto")));
-        //     }
-        //     let property_name = b"debug.alxr.verbose\0";
-        //     if libc::__system_property_get(property_name.as_ptr(), value.as_mut_ptr()) != 0 {
-        //         let val_str = CStr::from_bytes_with_nul(&value).unwrap();
-        //         new_options.verbose =
-        //             std::str::FromStr::from_str(val_str.to_str().unwrap_or("false"))
-        //                 .unwrap_or(false);
-        //     }
-        // }
+        unsafe {
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            let mut value = [0 as u8; libc::PROP_VALUE_MAX as usize];
+
+            #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+            let mut value = [0 as libc::c_char; libc::PROP_VALUE_MAX as usize];
+
+            let property_name = b"debug.alxr.graphicsPlugin\0";
+            if libc::__system_property_get(property_name.as_ptr() as _, value.as_mut_ptr() as _)
+                != 0
+            {
+                if let Ok(val_str) = std::str::from_utf8(&value) {
+                    new_options.graphics_api = Some(From::from(val_str));
+                }
+            }
+
+            let property_name = b"debug.alxr.verbose\0";
+            if libc::__system_property_get(property_name.as_ptr() as _, value.as_mut_ptr() as _)
+                != 0
+            {
+                if let Ok(val_str) = std::str::from_utf8(&value) {
+                    new_options.verbose =
+                        std::str::FromStr::from_str(val_str).unwrap_or(new_options.verbose);
+                }
+            }
+        }
         new_options
     }
 }
