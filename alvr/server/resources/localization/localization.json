@@ -1,0 +1,19 @@
+[
+  {
+    "language_tag": "en_US",
+    "pico_controller": "Pico Controller",
+    "pico_hmd": "Pico HMD",
+    "/input/a": "A Button",
+    "/input/b": "B Button",
+    "/input/x": "X Button",
+    "/input/y": "Y Button",
+    "/input/joystick": "Joystick",
+    "/input/remote_dpad/down": "Dpad Down",
+    "/input/remote_dpad/up": "Dpad Up",
+    "/input/remote_dpad/left": "Dpad Left",
+    "/input/remote_dpad/right": "Dpad Right",
+    "/input/remote_dpad/enter": "Dpad Click",
+    "/input/remote_back": "Remote Back",
+    "/input/tap": "Headset Tap"
+  }
+]

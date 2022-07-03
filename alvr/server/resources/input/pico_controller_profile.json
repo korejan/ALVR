@@ -1,0 +1,132 @@
+{
+  "jsonid": "input_profile",
+  "controller_type": "pico_controller",
+  "device_class": "TrackedDeviceClass_Controller",
+  "resource_root": "alvr_server",
+  "driver_name": "alvr_server",
+  "legacy_binding": "{alvr_server}/input/legacy_bindings_pico_controller.json",
+  "input_bindingui_mode": "controller_handed",
+  "should_show_binding_errors": true,
+  "compatibility_mode_controller_type": "oculus_touch",
+  "input_bindingui_left": {
+    "image": "{alvr_server}/icons/pico_neo3/controller_left.svg"
+  },
+  "input_bindingui_right": {
+    "image": "{alvr_server}/icons/pico_neo3/controller_right.svg"
+  },
+  "input_source": {
+    "/input/joystick": {
+      "type": "joystick",
+      "binding_image_point": [ 280, 200 ],
+      "click": true,
+      "touch": true,
+      "order": 2
+    },
+    "/input/trigger": {
+      "type": "trigger",
+      "binding_image_point": [ 122, 200 ],
+      "value": true,
+      "touch": true,
+      "order": 1
+    },
+    "/input/grip": {
+      "type": "trigger",
+      "binding_image_point": [ 195, 390 ],
+      "value": true,
+      "touch": true,
+      "order": 3
+    },
+    "/input/a": {
+      "type": "button",
+      "side": "right",
+      "binding_image_point": [ 240, 240 ],
+      "click": true,
+      "touch": true,
+      "order": 4
+    },
+    "/input/b": {
+      "type": "button",
+      "side": "right",
+      "binding_image_point": [ 210, 210 ],
+      "click": true,
+      "touch": true,
+      "order": 5
+    },
+    "/input/x": {
+      "type": "button",
+      "side": "left",
+      "binding_image_point": [ 240, 240 ],
+      "click": true,
+      "touch": true,
+      "order": 4
+    },
+    "/input/y": {
+      "type": "button",
+      "side": "left",
+      "binding_image_point": [ 210, 210 ],
+      "click": true,
+      "touch": true,
+      "order": 5
+    },
+    "input/application_menu": {
+      "type": "button",
+      "side": "left",
+      "binding_image_point": [ 270, 250 ],
+      "click": true,
+      "touch": true,
+      "order": 0
+    },
+    "/input/system": {
+      "type": "button",
+      "side": "left",
+      "binding_image_point": [ 280, 300 ],
+      "click": true,
+      "touch": true,
+      "order": 0
+    },
+    "/input/skeleton/right": {
+      "type": "skeleton",
+      "side": "right",
+      "skeleton": "/skeleton/hand/right",
+      "binding_image_point": [ 200, 550 ]
+    },
+    "/input/skeleton/left": {
+      "type": "skeleton",
+      "side": "left",
+      "skeleton": "/skeleton/hand/left",
+      "binding_image_point": [ 200, 550 ]
+    },
+    "/output/haptic": {
+      "type": "vibration",
+      "binding_image_point": [ 192, 139 ]
+    },
+    "/pose/raw": {
+      "type": "pose",
+      "binding_image_point": [ 214, 216 ]
+    },
+    "/pose/base": {
+      "type": "pose",
+      "binding_image_point": [ 211, 250 ]
+    },
+    "/pose/handgrip": {
+      "type": "pose",
+      "binding_image_point": [ 284, 346 ]
+    },
+    "/pose/tip": {
+      "type": "pose",
+      "binding_image_point": [ 214, 216 ]
+    },
+    "/pose/openxr_aim": {
+      "type": "pose",
+      "binding_image_point": [ 214, 216 ]
+    }
+  },
+  "default_bindings": [
+    {
+      "app_key": "openvr.component.vrcompositor",
+      "binding_url": "vrcompositor_bindings_pico.json"
+    }
+  ]
+
+
+}

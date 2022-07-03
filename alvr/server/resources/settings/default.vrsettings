@@ -1,0 +1,5 @@
+{
+   "pico_controller" : {
+      "enableShake" : true
+   }
+}

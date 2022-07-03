@@ -1,0 +1,330 @@
+{
+  "action_manifest_version": 0,
+  "alias_info": {},
+  "app_key": "openvr.component.vrcompositor",
+  "bindings": {
+    "/actions/dualanalog": {
+      "sources": [
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/dualanalog/in/leftclick"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/left/input/trigger"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/dualanalog/in/leftclick"
+            },
+            "position": {
+              "output": "/actions/dualanalog/in/leftvalue"
+            },
+            "touch": {
+              "output": "/actions/dualanalog/in/lefttouch"
+            }
+          },
+          "mode": "joystick",
+          "path": "/user/hand/left/input/joystick"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/dualanalog/in/modeswitch1"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/left/input/grip"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/dualanalog/in/rightclick"
+            },
+            "position": {
+              "output": "/actions/dualanalog/in/rightvalue"
+            },
+            "touch": {
+              "output": "/actions/dualanalog/in/righttouch"
+            }
+          },
+          "mode": "joystick",
+          "path": "/user/hand/right/input/joystick"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/dualanalog/in/modeswitch2"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/right/input/grip"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/dualanalog/in/rightclick"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/right/input/trigger"
+        }
+      ]
+    },
+    "/actions/lasermouse": {
+      "haptics": [
+        {
+          "output": "/actions/lasermouse/out/haptic",
+          "path": "/user/hand/left/output/haptic"
+        },
+        {
+          "output": "/actions/lasermouse/out/haptic",
+          "path": "/user/hand/right/output/haptic"
+        }
+      ],
+      "poses": [
+        {
+          "output": "/actions/lasermouse/in/Pointer",
+          "path": "/user/hand/left/pose/tip"
+        },
+        {
+          "output": "/actions/lasermouse/in/Pointer",
+          "path": "/user/hand/right/pose/tip"
+        }
+      ],
+      "sources": [
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/lasermouse/in/leftclick"
+            }
+          },
+          "mode": "button",
+          "parameters": {
+            "click_activate_threshold": "0.65",
+            "click_deactivate_threshold": "0.6"
+          },
+          "path": "/user/hand/left/input/trigger"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/lasermouse/in/LockMousePosition"
+            }
+          },
+          "mode": "button",
+          "parameters": {
+            "click_activate_threshold": "0.1",
+            "click_deactivate_threshold": "0.05",
+            "haptic_amplitude": "0"
+          },
+          "path": "/user/hand/left/input/trigger"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/lasermouse/in/leftclick"
+            }
+          },
+          "mode": "button",
+          "parameters": {
+            "click_activate_threshold": "0.65",
+            "click_deactivate_threshold": "0.6"
+          },
+          "path": "/user/hand/right/input/trigger"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/lasermouse/in/LockMousePosition"
+            }
+          },
+          "mode": "button",
+          "parameters": {
+            "click_activate_threshold": "0.1",
+            "click_deactivate_threshold": "0.05",
+            "haptic_amplitude": "0"
+          },
+          "path": "/user/hand/right/input/trigger"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/lasermouse/in/rightclick"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/left/input/x"
+        },
+        {
+          "inputs": {},
+          "mode": "none",
+          "path": "/user/hand/right/input/x"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/lasermouse/in/home"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/left/input/y"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/lasermouse/in/rightclick"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/right/input/a"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/lasermouse/in/home"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/right/input/b"
+        },
+        {
+          "inputs": {
+            "position": {
+              "output": "/actions/lasermouse/in/trackpadvalue"
+            },
+            "touch": {
+              "output": "/actions/lasermouse/in/trackpadtouch"
+            }
+          },
+          "mode": "joystick",
+          "path": "/user/hand/left/input/joystick"
+        }
+      ]
+    },
+    "/actions/lasermouse_secondary": {
+      "sources": [
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/lasermouse_secondary/in/switchlaserhand"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/left/input/trigger"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/lasermouse_secondary/in/switchlaserhand"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/right/input/trigger"
+        },
+        {
+          "inputs": {},
+          "mode": "none",
+          "path": "/user/hand/right/input/joystick"
+        }
+      ]
+    },
+    "/actions/scroll_discrete": {
+      "sources": [
+        {
+          "inputs": {
+            "scroll": {
+              "output": "/actions/scroll_discrete/in/scroll"
+            }
+          },
+          "mode": "scroll",
+          "path": "/user/hand/left/input/joystick"
+        },
+        {
+          "inputs": {
+            "scroll": {
+              "output": "/actions/scroll_discrete/in/scroll"
+            }
+          },
+          "mode": "scroll",
+          "path": "/user/hand/right/input/joystick"
+        }
+      ]
+    },
+    "/actions/scroll_smooth": {
+      "sources": [
+        {
+          "inputs": {
+            "scroll": {
+              "output": "/actions/scroll_smooth/in/scroll"
+            }
+          },
+          "mode": "scroll",
+          "parameters": {
+            "scroll_mode": "smooth"
+          },
+          "path": "/user/hand/left/input/joystick"
+        },
+        {
+          "inputs": {
+            "scroll": {
+              "output": "/actions/scroll_smooth/in/scroll"
+            }
+          },
+          "mode": "scroll",
+          "parameters": {
+            "scroll_mode": "smooth"
+          },
+          "path": "/user/hand/right/input/joystick"
+        }
+      ]
+    },
+    "/actions/system": {
+      "chords": [
+        {
+          "inputs": [
+            [ "/user/hand/left/input/system", "held" ],
+            [ "/user/hand/left/input/trigger", "click" ]
+          ],
+          "output": "/actions/system/in/TakeScreenshot"
+        }
+      ],
+      "sources": [
+        {
+          "inputs": {
+            "long": {
+              "output": "/actions/system/in/showpowermenu"
+            },
+            "single": {
+              "output": "/actions/system/in/toggledashboard"
+            }
+          },
+          "mode": "complex_button",
+          "path": "/user/hand/left/input/system"
+        },
+        {
+          "inputs": {},
+          "mode": "none",
+          "path": "/user/hand/right/input/system"
+        },
+        {
+          "inputs": {},
+          "mode": "button",
+          "parameters": {
+            "haptic_amplitude": "0"
+          },
+          "path": "/user/hand/left/input/trigger"
+        }
+      ]
+    }
+  },
+  "category": "steamvr_input",
+  "controller_type": "pico_controller",
+  "description": "",
+  "name": "Default VR Dashboard bindings for Pico Controller",
+  "options": {},
+  "simulated_actions": []
+}
+

@@ -1,0 +1,12 @@
+{
+    "trackingSystemName": "pico",
+    "manufacturerName": "pico",
+    "modelNumber": "Pico Neo 3",
+    "renderModelNameLeft": "{alvr_server}pico_neo3_leftcontroller",
+    "renderModelNameRight": "{alvr_server}pico_neo3_rightcontroller",
+    "serialNumber": "1WMGH000XX0000_Controller",
+    "ctrlTypeLeft": "pico_controller",
+	"ctrlTypeRight": "pico_controller",
+    "registeredDeviceType": "pico/1WMGH000XX0000_Controller",
+    "inputProfilePath": "{alvr_server}/input/pico_controller_profile.json"
+}
