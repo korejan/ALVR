@@ -1,0 +1,88 @@
+{
+  "jsonid": "input_profile",
+  "controller_type": "holographic_controller",
+  "should_show_binding_errors": true,
+  "resource_root": "alvr_server",
+  "driver_name": "alvr_server",
+  "legacy_binding": "{alvr_server}/input/mixedreality_legacy_bindings.json",
+  "device_class": "TrackedDeviceClass_Controller",
+  "input_bindingui_mode": "controller_handed",
+  "input_bindingui_left": {
+    "image": "{alvr_server}/icons/wmr/motion_controller.svg"
+  },
+  "input_bindingui_right": {
+    "transform": "scale(-1,1)",
+    "image": "{alvr_server}/icons/wmr/motion_controller.svg"
+  },
+  "input_source": {
+    "/input/trackpad": {
+      "type": "trackpad",
+      "binding_image_point": [ 76, 61 ],
+      "touch": true,
+      "click": true,
+      "order": 2
+    },
+    "/input/trigger": {
+      "type": "trigger",
+      "binding_image_point": [ 68, 45 ],
+      "value": true,
+      "order": 1
+    },
+    "/input/grip": {
+      "type": "button",
+      "binding_image_point": [ 58, 94 ],
+      "click": true,
+      "order": 3
+    },
+    "/input/application_menu": {
+      "type": "button",
+      "binding_image_point": [ 65, 76 ],
+      "click": true,
+      "order": 4
+    },
+    "/input/joystick": {
+      "type": "joystick",
+      "binding_image_point": [ 53, 70 ],
+      "click": true,
+      "order": 6
+    },
+    "/pose/raw": {
+      "type": "pose",
+      "binding_image_point": [ 70, 30 ]
+    },
+    "/pose/base": {
+      "type": "pose",
+      "binding_image_point": [ 85, 150 ]
+    },
+    "/pose/handgrip": {
+      "type": "pose",
+      "binding_image_point": [ 85, 104 ]
+    },
+    "/pose/tip": {
+      "type": "pose",
+      "binding_image_point": [ 55, 57 ]
+    },
+    "/input/skeleton/left": {
+      "type": "skeleton",
+      "skeleton": "/skeleton/hand/left",
+      "side": "left",
+      "binding_image_point": [ 85, 150 ]
+    },
+    "/input/skeleton/right": {
+      "type": "skeleton",
+      "skeleton": "/skeleton/hand/right",
+      "side": "right",
+      "binding_image_point": [ 85, 150 ]
+    },
+    "/output/haptic": {
+      "type": "vibration",
+      "binding_image_point": [ 72, 110 ]
+    }
+  },
+  "default_bindings": [
+    {
+      "app_key": "steam.app.1499120",
+      "binding_url": "steam.app.1499120_holographic_controller.json"
+    }
+  ]
+}

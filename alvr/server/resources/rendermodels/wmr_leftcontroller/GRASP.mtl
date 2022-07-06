@@ -1,0 +1,9 @@
+newmtl material_0
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+illum 1
+Ns 0.000000
+map_Kd baked_mesh0.png
+map_Ke texture_1.png
+bump texture_2.png

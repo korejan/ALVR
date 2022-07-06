@@ -1,0 +1,12 @@
+{
+    "trackingSystemName": "holographic",
+    "manufacturerName": "WindowsMR: 0x045E",
+    "modelNumber": "WindowsMR: 0x045E/0x065B/0",
+    "renderModelNameLeft": "{alvr_server}wmr_leftcontroller",
+    "renderModelNameRight": "{alvr_server}wmr_rigthcontroller",
+    "serialNumber": "MRSOURCE",
+    "ctrlTypeLeft": "holographic_controller",
+	"ctrlTypeRight": "holographic_controller",
+    "registeredDeviceType": "holographic/WMR Controller",
+    "inputProfilePath": "{alvr_server}/input/mixedreality_controller_profile.json"
+}
