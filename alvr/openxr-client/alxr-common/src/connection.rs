@@ -333,6 +333,7 @@ async fn connection_pipeline(
             },
             decoderConfig: crate::ALXRDecoderConfig {
                 codecType: settings.video.codec as crate::ALXRCodecType,
+                enableFEC: settings.connection.enable_fec,
                 realtimePriority: settings.video.client_request_realtime_decoder,
                 cpuThreadCount: APP_CONFIG.decoder_thread_count,
             },
