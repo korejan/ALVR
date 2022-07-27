@@ -93,7 +93,9 @@ pub fn poll_all_ms(block: bool) -> Option<ndk_glue::Event> {
                 let input_queue = input_queue.as_ref().expect("Input queue not attached!");
                 assert!(input_queue.has_events());
                 while let Some(event) = input_queue.get_event().unwrap() {
-                    if let Ok(Some(event)) = std::panic::catch_unwind(||input_queue.pre_dispatch(event)) {
+                    if let Ok(Some(event)) =
+                        std::panic::catch_unwind(|| input_queue.pre_dispatch(event))
+                    {
                         input_queue.finish_event(event, false);
                     }
                 }
