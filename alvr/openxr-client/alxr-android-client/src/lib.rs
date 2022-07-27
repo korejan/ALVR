@@ -89,11 +89,12 @@ pub fn poll_all_ms(block: bool) -> Option<ndk_glue::Event> {
         Ok(Poll::Event { ident, .. }) => match ident {
             ndk_glue::NDK_GLUE_LOOPER_EVENT_PIPE_IDENT => ndk_glue::poll_events(),
             ndk_glue::NDK_GLUE_LOOPER_INPUT_QUEUE_IDENT => {
-                if let Some(input_queue) = ndk_glue::input_queue().as_ref() {
-                    while let Some(event) = input_queue.get_event() {
-                        if let Some(event) = input_queue.pre_dispatch(event) {
-                            input_queue.finish_event(event, false);
-                        }
+                let input_queue = ndk_glue::input_queue();
+                let input_queue = input_queue.as_ref().expect("Input queue not attached!");
+                assert!(input_queue.has_events());
+                while let Some(event) = input_queue.get_event().unwrap() {
+                    if let Ok(Some(event)) = std::panic::catch_unwind(||input_queue.pre_dispatch(event)) {
+                        input_queue.finish_event(event, false);
                     }
                 }
                 None

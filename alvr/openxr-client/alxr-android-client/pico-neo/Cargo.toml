@@ -13,8 +13,8 @@ path = "../src/lib.rs"
 [dependencies]
 alxr-common = { path = "../../alxr-common", features = ["pico-neo-flavor"] }
 jni = "0.19"
-ndk = "0.6"
-ndk-glue = "0.6"
+ndk = "0.7"
+ndk-glue = "0.7"
 ndk-context = "0.1"
 libloading = "0.7"
 
@@ -36,7 +36,7 @@ apk_name = "alxr-client-pico"
 # Folder containing extra shared libraries intended to be dynamically loaded at runtime.
 # Files matching `libs_folder/${android_abi}/*.so` are added to the apk
 # according to the specified build_targets.
-runtime_libs = "../runtime-libs"
+#runtime_libs = "../runtime-libs"
 
 #
 # The following value can be customized on a per bin/example basis. See multiple_targets example
@@ -73,6 +73,13 @@ install_location = "auto"
 #     android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen
 # Defaults to false.
 fullscreen = true
+
+# Defaults to `$HOME/.android/debug.keystore` for the `dev` profile. Will ONLY generate a new
+# debug.keystore if this file does NOT exist.
+# A keystore path is always required on the `release` profile.
+[package.metadata.android.signing.release]
+path = "../debug.keystore"
+keystore_password = "android"
 
 # See https://developer.android.com/guide/topics/manifest/uses-sdk-element
 #
@@ -236,8 +243,8 @@ resizeableActivity = "false"
 name = "pvr.app.type"
 value = "vr"
 
-#[[package.metadata.android.application.activity.intent_filter]] -- old version of cargo-apk/manifest.rs
-[[package.metadata.android.application.activity.intent_filters]]
+#[[package.metadata.android.application.activity.intent_filters]] -- old version of cargo-apk/manifest.rs
+[[package.metadata.android.application.activity.intent_filter]]
 actions = ["android.intent.action.MAIN"]
 categories = ["android.intent.category.LAUNCHER"]
 

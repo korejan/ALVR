@@ -16,8 +16,8 @@ crate-type = ["cdylib"]
 [dependencies]
 alxr-common = { path = "../alxr-common" }
 jni = "0.19"
-ndk = "0.6" #{ path = "../ndk", features = ["trace"] }
-ndk-glue = "0.6" #{ path = "../ndk-glue", features = ["logger"] }
+ndk = "0.7" #{ path = "../ndk", features = ["trace"] }
+ndk-glue = "0.7" #{ path = "../ndk-glue", features = ["logger"] }
 ndk-context = "0.1"
 libloading = "0.7"
 
@@ -84,6 +84,13 @@ fullscreen = true
 # Set the minimum required OpenGL ES version.
 # Defaults to [3, 1]
 #opengles_version = [3, 2]
+
+# Defaults to `$HOME/.android/debug.keystore` for the `dev` profile. Will ONLY generate a new
+# debug.keystore if this file does NOT exist.
+# A keystore path is always required on the `release` profile.
+[package.metadata.android.signing.release]
+path = "debug.keystore"
+keystore_password = "android"
 
 # See https://developer.android.com/guide/topics/manifest/uses-sdk-element
 #
@@ -343,8 +350,8 @@ value = "HIGH"
 #name = "android.app.lib_name"
 #value = "alxr_client"
 
-#[[package.metadata.android.application.activity.intent_filter]] -- old version of cargo-apk/manifest.rs
-[[package.metadata.android.application.activity.intent_filters]]
+#[[package.metadata.android.application.activity.intent_filters]] -- old version of cargo-apk/manifest.rs
+[[package.metadata.android.application.activity.intent_filter]]
 actions = ["android.intent.action.MAIN"]
 categories = ["com.oculus.intent.category.VR", "android.intent.category.LAUNCHER"]
 

@@ -5,7 +5,7 @@ plugins {
 
 android {
     compileSdk 32
-    ndkVersion '24.0.8215888' //'23.1.7779620'
+    ndkVersion '25.0.8775105' //'24.0.8215888' //'23.1.7779620'
 
     defaultConfig {
         //applicationId "com.alvr.alxr_client"
@@ -38,7 +38,7 @@ android {
     externalNativeBuild {
         cmake {
             path file('../../cpp/ALVR-OpenXR-Engine/CMakeLists.txt')
-            version '3.18.1'
+            version '3.22.1' //'3.18.1'
         }
     }
 
