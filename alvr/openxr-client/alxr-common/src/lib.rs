@@ -107,6 +107,16 @@ impl Options {
                         std::str::FromStr::from_str(val_str).unwrap_or(new_options.verbose);
                 }
             }
+
+            let property_name = b"debug.alxr.no_linearize_srgb\0";
+            if libc::__system_property_get(property_name.as_ptr() as _, value.as_mut_ptr() as _)
+                != 0
+            {
+                if let Ok(val_str) = std::str::from_utf8(&value) {
+                    new_options.no_linearize_srgb = std::str::FromStr::from_str(val_str)
+                        .unwrap_or(new_options.no_linearize_srgb);
+                }
+            }
         }
         new_options
     }
