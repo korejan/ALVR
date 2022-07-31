@@ -85,9 +85,9 @@ jobs:
           sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
           # ubuntu-focal cmake package is too old.
-          wget https://github.com/Kitware/CMake/releases/download/v3.23.1/cmake-3.23.1-linux-x86_64.sh
-          chmod +x cmake-3.23.1-linux-x86_64.sh
-          export PATH=${PWD}/cmake-3.23.1-linux-x86_64/bin:$PATH
+          wget https://github.com/Kitware/CMake/releases/download/v3.23.3/cmake-3.23.3-linux-x86_64.sh
+          chmod +x cmake-3.23.3-linux-x86_64.sh
+          export PATH=${PWD}/cmake-3.23.3-linux-x86_64/bin:$PATH
 
           export CC=/usr/bin/gcc-10
           export CXX=/usr/bin/g++-10
@@ -142,9 +142,9 @@ jobs:
           sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
           # ubuntu-focal cmake package is too old.
-          wget https://github.com/Kitware/CMake/releases/download/v3.23.1/cmake-3.23.1-linux-x86_64.sh
-          chmod +x cmake-3.23.1-linux-x86_64.sh
-          export PATH=${PWD}/cmake-3.23.1-linux-x86_64/bin:$PATH
+          wget https://github.com/Kitware/CMake/releases/download/v3.23.3/cmake-3.23.3-linux-x86_64.sh
+          chmod +x cmake-3.23.3-linux-x86_64.sh
+          export PATH=${PWD}/cmake-3.23.3-linux-x86_64/bin:$PATH
 
           export CC=/usr/bin/gcc-10
           export CXX=/usr/bin/g++-10
