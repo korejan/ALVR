@@ -315,7 +315,7 @@ jobs:
       - name: Build / Install ALXR Android dependencies
         run: |
           sudo apt install sdkmanager
-          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;25.0.8775105" "cmake;3.22.1"
+          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;25.0.8775105" # "cmake;3.22.1"
           yes | sdkmanager --license
 
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
@@ -394,7 +394,7 @@ jobs:
       - name: Build / Install ALXR Android dependencies
         run: |
           sudo apt install sdkmanager
-          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;25.0.8775105" "cmake;3.22.1"
+          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;25.0.8775105" # "cmake;3.22.1"
           yes | sdkmanager --license
           
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
