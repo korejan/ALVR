@@ -131,14 +131,18 @@ fn find_linked_native_paths(
     // let package = match metadata.root_package() {
     //     Some(p) => p,
     //     None => return Err("cargo out-dir must be run from within a crate".into()),
-    // };
+    // };    
+    let mut cmd = "cargo";
     let mut args = vec!["check", "--message-format=json", "--quiet"];
     if nightly {
-        args.insert(0, "+nightly");
+        cmd = "rustup";
+        let mut args1 = vec!["run", "nightly", "cargo"];
+        args1.append(&mut args);
+        args = args1;
     }
     args.extend(build_flags.split_ascii_whitespace());
-
-    let mut command = std::process::Command::new("cargo")
+    
+    let mut command = std::process::Command::new(&cmd)
         .current_dir(crate_path)
         .args(&args)
         .stdout(Stdio::piped())
