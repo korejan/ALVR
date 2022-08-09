@@ -36,7 +36,7 @@ apk_name = "alxr-client-quest"
 # Folder containing extra shared libraries intended to be dynamically loaded at runtime.
 # Files matching `libs_folder/${android_abi}/*.so` are added to the apk
 # according to the specified build_targets.
-#runtime_libs = "../runtime-libs"
+#runtime_libs = "runtime-libs"
 
 #
 # The following value can be customized on a per bin/example basis. See multiple_targets example
@@ -169,9 +169,9 @@ required = true
 # name = "com.oculus.experimental.enabled"
 # required = true
 
-# [[package.metadata.android.uses_feature]]
-# name = "com.oculus.feature.PASSTHROUGH"
-# required = true
+[[package.metadata.android.uses_feature]]
+name = "com.oculus.feature.PASSTHROUGH"
+required = true
 
 # <uses-feature android:name="android.software.vr.mode" android:required="false"/>
 # <uses-feature android:name="android.hardware.vr.high_performance" android:required="false"/>
