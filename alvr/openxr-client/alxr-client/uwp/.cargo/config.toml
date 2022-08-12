@@ -12,5 +12,8 @@ target = "x86_64-uwp-windows-msvc"
 # target = "aarch64-uwp-windows-msvc"
 rustflags = ["-C", "link-args=-lOneCore.lib -lWindowsApp.lib"]
 
+[target.'cfg(target_vendor = "uwp")']
+rustflags = ["-C", "link-args=-lOneCore.lib -lWindowsApp.lib"]
+
 [profile.release]
 debug = true
