@@ -40,3 +40,4 @@ glam = { version = "0.20", features = ["serde"] }
 alvr_audio = { path = "../../audio" }
 libc = "0.2"
 oboe = "0.4" # Note: cannot use feature "java-interface" to query audio info
+android_system_properties = "0.1"

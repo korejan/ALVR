@@ -197,6 +197,12 @@ required = true
 name = "wave.feature.handtracking"
 required = true
 
+# # https://hub.vive.com/storage/docs/en-us/Sdk_WvrHand.html
+# # "...To use hand and controller simultaneously, require wave.feature.simultaneous_interaction"
+# [[package.metadata.android.uses_feature]]
+# name = "wave.feature.simultaneous_interaction"
+# required = true
+
 # See https://developer.android.com/guide/topics/manifest/uses-permission-element
 #
 # Note: there can be multiple .uses_permission entries.

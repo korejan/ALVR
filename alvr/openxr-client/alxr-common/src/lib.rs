@@ -24,6 +24,9 @@ use tokio::{runtime::Runtime, sync::mpsc, sync::Notify};
 use glam::{Quat, Vec2, Vec3};
 use structopt::StructOpt;
 
+#[cfg(target_os = "android")]
+use android_system_properties::AndroidSystemProperties;
+
 #[derive(Debug, StructOpt)]
 #[structopt(name = "alxr-client", about = "An OpenXR based ALVR client.")]
 pub struct Options {
@@ -82,42 +85,38 @@ impl Options {
             decoder_thread_count: 0,
             no_linearize_srgb: false,
         };
-        unsafe {
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            let mut value = [0 as u8; libc::PROP_VALUE_MAX as usize];
 
-            #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-            let mut value = [0 as libc::c_char; libc::PROP_VALUE_MAX as usize];
+        let sys_properties = AndroidSystemProperties::new();
 
-            let property_name = b"debug.alxr.graphicsPlugin\0";
-            if libc::__system_property_get(property_name.as_ptr() as _, value.as_mut_ptr() as _)
-                != 0
-            {
-                if let Ok(val_str) = std::str::from_utf8(&value) {
-                    new_options.graphics_api = Some(From::from(val_str));
-                }
-            }
-
-            let property_name = b"debug.alxr.verbose\0";
-            if libc::__system_property_get(property_name.as_ptr() as _, value.as_mut_ptr() as _)
-                != 0
-            {
-                if let Ok(val_str) = std::str::from_utf8(&value) {
-                    new_options.verbose =
-                        std::str::FromStr::from_str(val_str).unwrap_or(new_options.verbose);
-                }
-            }
-
-            let property_name = b"debug.alxr.no_linearize_srgb\0";
-            if libc::__system_property_get(property_name.as_ptr() as _, value.as_mut_ptr() as _)
-                != 0
-            {
-                if let Ok(val_str) = std::str::from_utf8(&value) {
-                    new_options.no_linearize_srgb = std::str::FromStr::from_str(val_str)
-                        .unwrap_or(new_options.no_linearize_srgb);
-                }
-            }
+        let property_name = "debug.alxr.graphicsPlugin";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.graphics_api = Some(From::from(value.as_str()));
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {:?}",
+                new_options.graphics_api
+            );
         }
+
+        let property_name = "debug.alxr.verbose";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.verbose =
+                std::str::FromStr::from_str(value.as_str()).unwrap_or(new_options.verbose);
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
+                new_options.verbose
+            );
+        }
+
+        let property_name = "debug.alxr.no_linearize_srgb";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.no_linearize_srgb = std::str::FromStr::from_str(value.as_str())
+                .unwrap_or(new_options.no_linearize_srgb);
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
+                new_options.verbose
+            );
+        }
+
         new_options
     }
 }
@@ -125,7 +124,7 @@ impl Options {
 #[cfg(target_vendor = "uwp")]
 impl Options {
     pub fn from_system_properties() -> Self {
-        let mut new_options = Options {
+        let new_options = Options {
             localhost: false,
             verbose: cfg!(debug_assertions),
             graphics_api: Some(ALXRGraphicsApi::D3D12),
