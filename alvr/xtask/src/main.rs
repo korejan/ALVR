@@ -123,6 +123,7 @@ fn find_linked_native_paths(
     crate_path: &Path,
     build_flags: &str,
     nightly: bool,
+    env_var: Option<(&str, &str)>,
 ) -> Result<PathSet, Box<dyn Error>> {
     // let manifest_file = crate_path.join("Cargo.toml");
     // let metadata = MetadataCommand::new()
@@ -142,13 +143,18 @@ fn find_linked_native_paths(
     }
     args.extend(build_flags.split_ascii_whitespace());
 
-    let mut command = std::process::Command::new(&cmd)
+    let mut command = std::process::Command::new(&cmd);
+    if let Some((key, val)) = env_var {
+        command.env(key, val);
+    }
+    let mut command = command
         .current_dir(crate_path)
         .args(&args)
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .spawn()
         .unwrap();
+
     let reader = BufReader::new(command.stdout.take().unwrap());
     let mut linked_path_set = PathSet::new();
     for message in Message::parse_stream(reader) {
@@ -326,8 +332,10 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
         }
         return false;
     }
+
     println!("Searching for linked native dependencies, please wait this may take some time.");
-    let linked_paths = find_linked_native_paths(&alxr_client_dir, &build_flags, false).unwrap();
+    let linked_paths =
+        find_linked_native_paths(&alxr_client_dir, &build_flags, false, None).unwrap();
     for linked_path in linked_paths.iter() {
         for linked_depend_file in walkdir::WalkDir::new(linked_path)
             .into_iter()
@@ -359,6 +367,7 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
     .unwrap();
 }
 
+#[derive(Clone, Copy)]
 pub enum UWPArch {
     X86_64,
     Aarch64,
@@ -433,10 +442,21 @@ pub fn build_alxr_uwp(root: Option<String>, arch: UWPArch, flags: AlxBuildFlags)
             }
             return false;
         }
-        println!("Searching for linked native dependencies, please wait this may take some time.");
+
+        // This is a workaround to bug since rustc 1.65.0-nightly,
+        // UWP runtime DLLs need to be in the system path for find_linked_native_paths work correctly.
+        // refer to https://github.com/rust-lang/rust/issues/100400#issuecomment-1212109010
+        let uwp_runtime_dir = alxr_client_dir.join("uwp-runtime");
+        let uwp_runtime_dir = uwp_runtime_dir.to_str().unwrap();
+        let uwp_rt_var_path = match arch {
+            UWPArch::X86_64 => Some(("PATH", uwp_runtime_dir)),
+            _ => None,
+        };
         let find_flags =
             format!("-Z build-std=std,panic_abort --target {target_type} {build_flags}");
-        let linked_paths = find_linked_native_paths(&alxr_client_dir, &find_flags, true).unwrap();
+        println!("Searching for linked native dependencies, please wait this may take some time.");
+        let linked_paths =
+            find_linked_native_paths(&alxr_client_dir, &find_flags, true, uwp_rt_var_path).unwrap();
         for linked_path in linked_paths.iter() {
             for linked_depend_file in walkdir::WalkDir::new(linked_path)
                 .into_iter()

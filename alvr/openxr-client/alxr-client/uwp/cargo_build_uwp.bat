@@ -28,7 +28,8 @@ if exist !VCVarsAllBat! (
     if !arch! == x64 (
         @REM This is a workaround to bug since rustc 1.65.0-nightly
         @REM refer to https://github.com/rust-lang/rust/issues/100400#issuecomment-1212109010
-        set UwpRuntimePath=C:\Program Files\WindowsApps\Microsoft.VCLibs.140.00_14.0.30704.0_x64__8wekyb3d8bbwe
+        @REM set UwpRuntimePath=C:\Program Files\WindowsApps\Microsoft.VCLibs.140.00_14.0.30704.0_x64__8wekyb3d8bbwe
+        set UwpRuntimePath=!cd!\uwp-runtime
         set PATH=!UwpRuntimePath!;!PATH!
         set LINK=OneCore.lib WindowsApp.lib
     )

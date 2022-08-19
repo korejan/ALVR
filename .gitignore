@@ -69,3 +69,6 @@ alvr/client/android/.settings/org.eclipse.buildship.core.prefs
 alvr/openxr-client/android/.idea/gradle.xml
 alvr/openxr-client/android/.project
 alvr/openxr-client/android/.settings/org.eclipse.buildship.core.prefs
+
+# don't ignore these DLLs & related files in this directory, temporary workaround!!
+!alvr/openxr-client/alxr-client/uwp/uwp-runtime/**
