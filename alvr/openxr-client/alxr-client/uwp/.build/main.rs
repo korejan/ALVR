@@ -53,7 +53,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut file_mapping_out = cargo_config.target_dir;
     file_mapping_out.push("FileMapping.ini");
     fs::write(&file_mapping_out, &file_mapping)?;
-    
+
     println!("cargo:rustc-link-arg=/EXPORT:NvOptimusEnablement");
     println!("cargo:rustc-link-arg=/EXPORT:AmdPowerXpressRequestHighPerformance");
 

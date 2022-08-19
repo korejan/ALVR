@@ -12,7 +12,7 @@ use std::{thread, time};
 #[cfg(target_os = "windows")]
 #[allow(non_upper_case_globals)]
 #[no_mangle]
-pub static mut NvOptimusEnablement: i32 = 1; 
+pub static mut NvOptimusEnablement: i32 = 1;
 
 // https://gpuopen.com/learn/amdpowerxpressrequesthighperformance/
 #[cfg(target_os = "windows")]
