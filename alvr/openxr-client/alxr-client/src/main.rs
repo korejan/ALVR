@@ -8,6 +8,18 @@ use alxr_common::{
 };
 use std::{thread, time};
 
+// http://developer.download.nvidia.com/devzone/devcenter/gamegraphics/files/OptimusRenderingPolicies.pdf
+#[cfg(target_os = "windows")]
+#[allow(non_upper_case_globals)]
+#[no_mangle]
+pub static mut NvOptimusEnablement: i32 = 1; 
+
+// https://gpuopen.com/learn/amdpowerxpressrequesthighperformance/
+#[cfg(target_os = "windows")]
+#[allow(non_upper_case_globals)]
+#[no_mangle]
+pub static mut AmdPowerXpressRequestHighPerformance: i32 = 1;
+
 const SLEEP_TIME: time::Duration = time::Duration::from_millis(250);
 
 #[cfg(any(target_vendor = "uwp", target_os = "windows"))]
