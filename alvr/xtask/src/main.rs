@@ -324,6 +324,11 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
                     return true;
                 }
             }
+            if let Some(ext) = path.extension() {
+                if ext.to_str().unwrap().eq("cso") {
+                    return true;
+                }
+            }
         }
         if let Some(ext) = path.extension() {
             if ext.to_str().unwrap().eq("json") {
@@ -431,6 +436,11 @@ pub fn build_alxr_uwp(root: Option<String>, arch: UWPArch, flags: AlxBuildFlags)
             if cfg!(target_os = "windows") {
                 if let Some(ext) = path.extension() {
                     if ext.to_str().unwrap().eq("pdb") {
+                        return true;
+                    }
+                }
+                if let Some(ext) = path.extension() {
+                    if ext.to_str().unwrap().eq("cso") {
                         return true;
                     }
                 }

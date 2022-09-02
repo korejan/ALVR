@@ -276,6 +276,32 @@ fn main() {
             "cargo:rustc-link-search=native={0}",
             alxr_engine_bin_dir.to_string_lossy()
         );
+
+        if cfg!(target_os = "windows") {
+            let mut run_exe_dir = out_dir.clone();
+            run_exe_dir.pop();
+            run_exe_dir.pop();
+            run_exe_dir.pop();
+
+            fn is_cso_file(path: &std::path::Path) -> bool {
+                if let Some(ext) = path.extension() {
+                    if ext.to_str().unwrap().eq("cso") {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            for cso_file in walkdir::WalkDir::new(&alxr_engine_bin_dir)
+                .into_iter()
+                .filter_map(|maybe_entry| maybe_entry.ok())
+                .map(|entry| entry.into_path())
+                .filter(|entry| is_cso_file(&entry))
+            {
+                let relative_csof = cso_file.strip_prefix(&alxr_engine_bin_dir).unwrap();
+                let dst_file = run_exe_dir.join(relative_csof);
+                std::fs::copy(&cso_file, &dst_file).unwrap();
+            }
+        }
     };
 
     // println!("cargo:rustc-link-lib=dylib={0}", "VkLayer_khronos_validation");
