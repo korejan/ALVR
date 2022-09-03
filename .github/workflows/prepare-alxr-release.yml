@@ -85,9 +85,9 @@ jobs:
           sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
           # ubuntu-focal cmake package is too old.
-          wget https://github.com/Kitware/CMake/releases/download/v3.23.3/cmake-3.23.3-linux-x86_64.sh
-          chmod +x cmake-3.23.3-linux-x86_64.sh
-          export PATH=${PWD}/cmake-3.23.3-linux-x86_64/bin:$PATH
+          wget https://github.com/Kitware/CMake/releases/download/v3.24.1/cmake-3.24.1-linux-x86_64.sh
+          chmod +x cmake-3.24.1-linux-x86_64.sh
+          export PATH=${PWD}/cmake-3.24.1-linux-x86_64/bin:$PATH
 
           export CC=/usr/bin/gcc-10
           export CXX=/usr/bin/g++-10
@@ -142,9 +142,9 @@ jobs:
           sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
           # ubuntu-focal cmake package is too old.
-          wget https://github.com/Kitware/CMake/releases/download/v3.23.3/cmake-3.23.3-linux-x86_64.sh
-          chmod +x cmake-3.23.3-linux-x86_64.sh
-          export PATH=${PWD}/cmake-3.23.3-linux-x86_64/bin:$PATH
+          wget https://github.com/Kitware/CMake/releases/download/v3.24.1/cmake-3.24.1-linux-x86_64.sh
+          chmod +x cmake-3.24.1-linux-x86_64.sh
+          export PATH=${PWD}/cmake-3.24.1-linux-x86_64/bin:$PATH
 
           export CC=/usr/bin/gcc-10
           export CXX=/usr/bin/g++-10
@@ -295,7 +295,7 @@ jobs:
     needs: [prepare_release]
     env:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/24.0.8215888
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/25.1.8937393
       RUST_BACKTRACE: 1
     steps:
       - name: Checkout code
@@ -315,7 +315,7 @@ jobs:
       - name: Build / Install ALXR Android dependencies
         run: |
           sudo apt install sdkmanager
-          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;25.0.8775105" # "cmake;3.22.1"
+          sudo sdkmanager "platforms;android-29" "platforms;android-33" "platform-tools" "build-tools;30.0.3" "ndk;25.1.8937393" # "cmake;3.22.1"
           yes | sdkmanager --license
 
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
@@ -374,7 +374,7 @@ jobs:
     needs: [prepare_release]
     env:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/24.0.8215888
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/25.1.8937393
       RUST_BACKTRACE: 1
     steps:
       - name: Checkout code
@@ -394,7 +394,7 @@ jobs:
       - name: Build / Install ALXR Android dependencies
         run: |
           sudo apt install sdkmanager
-          sudo sdkmanager "platforms;android-29" "platforms;android-32" "platform-tools" "build-tools;30.0.3" "ndk;25.0.8775105" # "cmake;3.22.1"
+          sudo sdkmanager "platforms;android-29" "platforms;android-33" "platform-tools" "build-tools;30.0.3" "ndk;25.1.8937393" # "cmake;3.22.1"
           yes | sdkmanager --license
           
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
@@ -475,7 +475,7 @@ jobs:
           vulkan-query-version: latest
           vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
           vulkan-use-cache: true
-      - uses: Jimver/cuda-toolkit@v0.2.7
+      - uses: Jimver/cuda-toolkit@v0.2.8
         id: cuda-toolkit
         with:
           method: 'network'
@@ -542,7 +542,7 @@ jobs:
           vulkan-query-version: latest
           vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
           vulkan-use-cache: true
-      - uses: Jimver/cuda-toolkit@v0.2.7
+      - uses: Jimver/cuda-toolkit@v0.2.8
         id: cuda-toolkit
         with:
           method: 'network'
