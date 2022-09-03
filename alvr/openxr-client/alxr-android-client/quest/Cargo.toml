@@ -94,7 +94,7 @@ keystore_password = "android"
 # Defaults to a `min_sdk_version` of 23 and `target_sdk_version` is based on the ndk's default platform.
 [package.metadata.android.sdk]
 target_sdk_version = 29
-compile_sdk = 32
+compile_sdk = 33
 min_sdk_version = 28#24 # for offical low-latency medicodec mode to be enabled, min sdk must be >= 30.
 #max_sdk_version = 30
 
