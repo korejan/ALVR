@@ -299,6 +299,7 @@ fn main() {
             {
                 let relative_csof = cso_file.strip_prefix(&alxr_engine_bin_dir).unwrap();
                 let dst_file = run_exe_dir.join(relative_csof);
+                std::fs::create_dir_all(dst_file.parent().unwrap()).unwrap();
                 std::fs::copy(&cso_file, &dst_file).unwrap();
             }
         }

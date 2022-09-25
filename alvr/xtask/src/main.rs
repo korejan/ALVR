@@ -474,8 +474,9 @@ pub fn build_alxr_uwp(root: Option<String>, arch: UWPArch, flags: AlxBuildFlags)
                 .map(|entry| entry.into_path())
                 .filter(|entry| is_linked_depends_file(&entry))
             {
+                let relative_path = linked_depend_file.strip_prefix(&linked_path).unwrap();
+                let fname = relative_path.to_str().unwrap();//linked_depend_file.file_name().unwrap().to_str().unwrap();
                 let fp = linked_depend_file.to_string_lossy();
-                let fname = linked_depend_file.file_name().unwrap().to_str().unwrap();
                 let line = format!("\n\"{fp}\" \"{fname}\"");
                 file.write_all(line.as_bytes()).unwrap();
             }
