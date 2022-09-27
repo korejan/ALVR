@@ -84,10 +84,17 @@ jobs:
           # ALXR specific depends.
           sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
-          # ubuntu-focal cmake package is too old.
-          wget https://github.com/Kitware/CMake/releases/download/v3.24.1/cmake-3.24.1-linux-x86_64.sh
-          chmod +x cmake-3.24.1-linux-x86_64.sh
-          export PATH=${PWD}/cmake-3.24.1-linux-x86_64/bin:$PATH
+          # ubuntu-focal cmake package is too old...
+          CMAKE_FILE=cmake-3.24.2-linux-x86_64.sh
+          wget https://github.com/Kitware/CMake/releases/download/v3.24.2/${CMAKE_FILE}
+          chmod +x ${CMAKE_FILE}
+          ./${CMAKE_FILE} --skip-license --include-subdir
+          export PATH=${PWD}/cmake-3.24.2-linux-x86_64:$PATH
+          
+          # ubuntu-focal glslang package is too old...
+          wget https://github.com/KhronosGroup/glslang/releases/download/master-tot/glslang-master-linux-Release.zip
+          unzip glslang-master-linux-Release.zip -d glslang
+          export PATH=${PWD}/glslang/bin:$PATH
 
           export CC=/usr/bin/gcc-10
           export CXX=/usr/bin/g++-10
@@ -141,10 +148,17 @@ jobs:
           # ALXR specific depends.
           sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
-          # ubuntu-focal cmake package is too old.
-          wget https://github.com/Kitware/CMake/releases/download/v3.24.1/cmake-3.24.1-linux-x86_64.sh
-          chmod +x cmake-3.24.1-linux-x86_64.sh
-          export PATH=${PWD}/cmake-3.24.1-linux-x86_64/bin:$PATH
+          # ubuntu-focal cmake package is too old...
+          CMAKE_FILE=cmake-3.24.2-linux-x86_64.sh
+          wget https://github.com/Kitware/CMake/releases/download/v3.24.2/${CMAKE_FILE}
+          chmod +x ${CMAKE_FILE}
+          ./${CMAKE_FILE} --skip-license --include-subdir
+          export PATH=${PWD}/cmake-3.24.2-linux-x86_64:$PATH
+          
+          # ubuntu-focal glslang package is too old...
+          wget https://github.com/KhronosGroup/glslang/releases/download/master-tot/glslang-master-linux-Release.zip
+          unzip glslang-master-linux-Release.zip -d glslang
+          export PATH=${PWD}/glslang/bin:$PATH
 
           export CC=/usr/bin/gcc-10
           export CXX=/usr/bin/g++-10
