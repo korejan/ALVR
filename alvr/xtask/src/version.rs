@@ -104,6 +104,7 @@ pub fn bump_version(maybe_version: Option<String>, is_nightly: bool) {
 
 pub fn bump_alxr_version(maybe_version: Option<String>, is_nightly: bool) {
     let mut version = maybe_version.unwrap_or_else(alxr_version);
+    let uwp_cargo_version = version.clone();
     if is_nightly {
         version = format!("{version}+nightly.{}", date_utc_yyyymmdd());
     }
@@ -124,7 +125,7 @@ pub fn bump_alxr_version(maybe_version: Option<String>, is_nightly: bool) {
     }
 
     // +1 major version for alxr-client-uwp (maybe starting from 1 isn't neccessary for store apps?)
-    if let Some((major, minor_rev)) = version.split_once('.') {
+    if let Some((major, minor_rev)) = uwp_cargo_version.split_once('.') {
         let next_major = (major.parse::<u32>().unwrap() + 1).to_string();
         let uwp_version = format!("{next_major}.{minor_rev}");
         let alxr_uwp_dir = base_dir.join("alxr-client/uwp");

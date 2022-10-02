@@ -166,6 +166,9 @@ name = "android.permission.WRITE_EXTERNAL_STORAGE"
 [[package.metadata.android.uses_permission]]
 name = "android.permission.READ_EXTERNAL_STORAGE"
 
+[[package.metadata.android.uses_permission]]
+name = "android.permission.WRITE_SETTINGS"
+
 # [[package.metadata.android.uses_permission]]
 # name = "org.khronos.openxr.permission.OPENXR"
 # [[package.metadata.android.uses_permission]]
@@ -242,6 +245,18 @@ resizeableActivity = "false"
 [[package.metadata.android.application.meta_data]]
 name = "pvr.app.type"
 value = "vr"
+
+[[package.metadata.android.application.meta_data]]
+name = "rendering_mode"
+value = "1" # 0 Multipass, 1 Multview
+
+[[package.metadata.android.application.meta_data]]
+name = "display_rate"
+value = "120"
+
+[[package.metadata.android.application.meta_data]]
+name = "handtracking"
+value = "1"
 
 #[[package.metadata.android.application.activity.intent_filters]] -- old version of cargo-apk/manifest.rs
 [[package.metadata.android.application.activity.intent_filter]]
