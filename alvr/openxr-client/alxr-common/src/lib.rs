@@ -395,14 +395,14 @@ pub extern "C" fn views_config_send(eye_info_ptr: *const ALXREyeInfo) {
                     Fov {
                         left: fov[0].left,
                         right: fov[0].right,
-                        top: fov[0].top,
-                        bottom: fov[0].bottom,
+                        top: -fov[0].bottom,
+                        bottom: -fov[0].top,
                     },
                     Fov {
                         left: fov[1].left,
                         right: fov[1].right,
-                        top: fov[1].top,
-                        bottom: fov[1].bottom,
+                        top: -fov[1].bottom,
+                        bottom: -fov[1].top,
                     },
                 ],
             })
