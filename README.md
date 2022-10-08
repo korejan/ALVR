@@ -4,7 +4,8 @@
 
 [![badge-discord][]][link-discord] [![badge-matrix][]][link-matrix] [![badge-opencollective][]][link-opencollective]
 
-***For documentation on ALXR please check [here](https://github.com/korejan/ALVR/wiki/ALXR-Client)***
+### **For documentation on ALXR please check [here](https://github.com/korejan/ALVR/wiki/ALXR-Client)**
+### **Nightly builds of ALXR can be found [here](https://github.com/korejan/ALXR-nightly/releases)**
 
 Stream VR games from your PC to your headset via Wi-Fi.  
 ALVR uses technologies like [Asynchronous Timewarp](https://developer.oculus.com/documentation/native/android/mobile-timewarp-overview) and [Fixed Foveated Rendering](https://developer.oculus.com/documentation/native/android/mobile-ffr) for a smoother experience.  
