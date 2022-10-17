@@ -165,9 +165,9 @@ required = true
 
 # <uses-feature android:name="com.oculus.experimental.enabled" android:required="true" />
 # <uses-feature android:name="com.oculus.feature.PASSTHROUGH" android:required="true" />
-# [[package.metadata.android.uses_feature]]
-# name = "com.oculus.experimental.enabled"
-# required = true
+[[package.metadata.android.uses_feature]]
+name = "com.oculus.experimental.enabled"
+required = true
 
 [[package.metadata.android.uses_feature]]
 name = "com.oculus.feature.PASSTHROUGH"
