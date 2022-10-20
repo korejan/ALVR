@@ -517,7 +517,7 @@ pub struct HeadsetDesc {
     pub extra_latency_mode: bool,
 }
 
-#[derive(SettingsSchema, Serialize, Deserialize)]
+#[derive(SettingsSchema, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase", tag = "type", content = "content")]
 pub enum SocketProtocol {
     Udp,
@@ -532,14 +532,22 @@ pub enum SocketProtocol {
     Tcp,
 }
 
-#[derive(SettingsSchema, Serialize, Deserialize)]
+#[derive(SettingsSchema, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DiscoveryConfig {
     #[schema(advanced)]
     pub auto_trust_clients: bool,
 }
 
-#[derive(SettingsSchema, Serialize, Deserialize)]
+#[derive(SettingsSchema, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase", tag = "type", content = "content")]
+pub enum SocketBufferSize {
+    Default,
+    Maximum,
+    Custom(u32),
+}
+
+#[derive(SettingsSchema, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionDesc {
     pub client_discovery: Switch<DiscoveryConfig>,
@@ -548,6 +556,18 @@ pub struct ConnectionDesc {
     pub web_server_port: u16,
 
     pub stream_protocol: SocketProtocol,
+
+    #[schema(advanced)]
+    pub server_send_buffer_bytes: SocketBufferSize,
+
+    #[schema(advanced)]
+    pub server_recv_buffer_bytes: SocketBufferSize,
+
+    #[schema(advanced)]
+    pub client_send_buffer_bytes: SocketBufferSize,
+
+    #[schema(advanced)]
+    pub client_recv_buffer_bytes: SocketBufferSize,
 
     #[schema(advanced)]
     pub stream_port: u16,
@@ -855,6 +875,22 @@ pub fn session_settings_default() -> SettingsDefault {
                 ThrottledUdp: SocketProtocolThrottledUdpDefault {
                     bitrate_multiplier: 1.5,
                 },
+            },
+            server_send_buffer_bytes: SocketBufferSizeDefault {
+                Custom: 100000,
+                variant: SocketBufferSizeDefaultVariant::Maximum,
+            },
+            server_recv_buffer_bytes: SocketBufferSizeDefault {
+                Custom: 100000,
+                variant: SocketBufferSizeDefaultVariant::Maximum,
+            },
+            client_send_buffer_bytes: SocketBufferSizeDefault {
+                Custom: 100000,
+                variant: SocketBufferSizeDefaultVariant::Maximum,
+            },
+            client_recv_buffer_bytes: SocketBufferSizeDefault {
+                Custom: 100000,
+                variant: SocketBufferSizeDefaultVariant::Maximum,
             },
             stream_port: 9944,
             aggressive_keyframe_resend: false,

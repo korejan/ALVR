@@ -117,6 +117,13 @@ macro_rules! fmt_e {
 }
 
 #[macro_export]
+macro_rules! err {
+    () => {
+        |e| format!("At {}:{}: {e}", file!(), line!())
+    };
+}
+
+#[macro_export]
 macro_rules! trace_str {
     () => {
         format!("At {}:{}", file!(), line!())

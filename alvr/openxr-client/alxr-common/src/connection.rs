@@ -4,7 +4,7 @@ use crate::{
     INPUT_SENDER, TIME_SYNC_SENDER, VIDEO_ERROR_REPORT_SENDER, VIEWS_CONFIG_SENDER,
 };
 use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
-use alvr_session::SessionDesc;
+use alvr_session::{SessionDesc};
 #[cfg(target_os = "android")]
 use alvr_sockets::AUDIO;
 use alvr_sockets::{
@@ -217,6 +217,8 @@ async fn connection_pipeline(
     let stream_socket_builder = StreamSocketBuilder::listen_for_server(
         settings.connection.stream_port,
         settings.connection.stream_protocol,
+        settings.connection.client_send_buffer_bytes,
+        settings.connection.client_recv_buffer_bytes,
     )
     .await?;
 
