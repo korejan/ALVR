@@ -40,9 +40,10 @@ fn android_has_permission<'a>(
         .i()?;
 
     let ls_perm = android_permission_name(&jni_env, perm_name)?;
+    let activity_obj = unsafe { jni::objects::JObject::from_raw(activity) };
     let int_result = jni_env
         .call_method(
-            activity,
+            activity_obj,
             "checkSelfPermission",
             "(Ljava/lang/String;)I",
             &[ls_perm],
@@ -82,11 +83,13 @@ fn android_request_permissions<'a>(
         )?;
     }
 
+    let activity_obj = unsafe { jni::objects::JObject::from_raw(activity) };
+    let perm_array_obj = unsafe { jni::objects::JObject::from_raw(perm_array) };
     jni_env.call_method(
-        activity,
+        activity_obj,
         "requestPermissions",
         "([Ljava/lang/String;I)V",
-        &[perm_array.into(), 0.into()],
+        &[perm_array_obj.into(), 0.into()],
     )?;
     return Ok(());
 }
