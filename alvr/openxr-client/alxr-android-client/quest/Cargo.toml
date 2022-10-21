@@ -173,6 +173,16 @@ required = true
 name = "com.oculus.feature.PASSTHROUGH"
 required = true
 
+# <uses-feature android:name="oculus.software.eye_tracking" android:required="true" />
+# [[package.metadata.android.uses_feature]]
+# name = "oculus.software.eye_tracking"
+# required = true
+
+# <uses-feature android:name="oculus.software.face_tracking" android:required="true" />
+# [[package.metadata.android.uses_feature]]
+# name = "oculus.software.face_tracking"
+# required = true
+
 # <uses-feature android:name="android.software.vr.mode" android:required="false"/>
 # <uses-feature android:name="android.hardware.vr.high_performance" android:required="false"/>
 # [[package.metadata.android.uses_feature]]
@@ -221,6 +231,13 @@ name = "android.permission.READ_EXTERNAL_STORAGE"
 
 [[package.metadata.android.uses_permission]]
 name = "com.oculus.permission.HAND_TRACKING"
+
+# <uses-permission android:name="com.oculus.permission.EYE_TRACKING" />
+# [[package.metadata.android.uses_permission]]
+# name = "com.oculus.permission.EYE_TRACKING"
+# <uses-permission android:name="com.oculus.permission.FACE_TRACKING" />
+# [[package.metadata.android.uses_permission]]
+# name = "com.oculus.permission.FACE_TRACKING"
 
 # [[package.metadata.android.uses_permission]]
 # name = "org.khronos.openxr.permission.OPENXR"
