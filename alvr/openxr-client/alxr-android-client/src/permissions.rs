@@ -39,7 +39,17 @@ fn android_has_permission<'a>(
         .get_static_field(class_package_manager, "PERMISSION_GRANTED", "I")?
         .i()?;
 
-    let ls_perm = android_permission_name(&jni_env, perm_name)?;
+    let maybe_custom_perm_name = if perm_name.contains('.') {
+        Some(jni_env.new_string(&perm_name)?)
+    } else {
+        Option::None
+    };
+
+    let ls_perm = if maybe_custom_perm_name.is_none() {
+        android_permission_name(&jni_env, perm_name)?
+    } else {
+        maybe_custom_perm_name.unwrap().into()
+    };
     let activity_obj = unsafe { jni::objects::JObject::from_raw(activity) };
     let int_result = jni_env
         .call_method(
@@ -76,11 +86,20 @@ fn android_request_permissions<'a>(
     )?;
     for idx in 0..permission_names.len() {
         let perm_name = &permission_names[idx];
-        jni_env.set_object_array_element(
-            perm_array,
-            idx as i32,
-            android_permission_name(&jni_env, &perm_name)?.l()?,
-        )?;
+
+        let maybe_custom_perm_name = if perm_name.contains('.') {
+            Some(jni_env.new_string(&perm_name)?)
+        } else {
+            Option::None
+        };
+
+        let jperm_name = if maybe_custom_perm_name.is_none() {
+            android_permission_name(&jni_env, perm_name)?
+        } else {
+            maybe_custom_perm_name.unwrap().into()
+        };
+
+        jni_env.set_object_array_element(perm_array, idx as i32, jperm_name.l()?)?;
     }
 
     let activity_obj = unsafe { jni::objects::JObject::from_raw(activity) };
@@ -100,7 +119,12 @@ pub fn check_android_permissions<'a>(
 ) -> jni::errors::Result<()> {
     let env = jvm.attach_current_thread()?;
     let mut permission_names = vec![];
-    for perm_name in ["RECORD_AUDIO", "READ_EXTERNAL_STORAGE"] {
+    for perm_name in [
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "com.oculus.permission.EYE_TRACKING",
+        "com.oculus.permission.FACE_TRACKING",
+    ] {
         if !android_has_permission(activity, &env, &perm_name)? {
             permission_names.push(perm_name);
         }
