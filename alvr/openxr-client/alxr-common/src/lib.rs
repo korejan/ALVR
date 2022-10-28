@@ -59,10 +59,9 @@ pub struct Options {
     pub no_alvr_server: bool,
 
     // short and long flags (-d, --debug) will be deduced from the field's name
-    /// Disables all OpenXR Suggested bindings for all interaction profiles. This means disabling all inputs. 
+    /// Disables all OpenXR Suggested bindings for all interaction profiles. This means disabling all inputs.
     #[structopt(/*short,*/ long)]
     pub no_bindings: bool,
-
     // /// Set speed
     // // we don't want to name it "speed", need to look smart
     // #[structopt(short = "v", long = "velocity", default_value = "42")]
@@ -145,7 +144,7 @@ impl Options {
             decoder_thread_count: 0,
             no_linearize_srgb: false,
             no_alvr_server: false,
-            no_bindings: false
+            no_bindings: false,
         };
         new_options
     }

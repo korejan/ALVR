@@ -234,7 +234,10 @@ fn main() {
             .define("BUILD_API_LAYERS", "OFF")
             .define("BUILD_TESTS", "OFF")
             .define("BUILD_CONFORMANCE_TESTS", "OFF")
-            .define("USE_OCULUS_OXR_EXT_HEADERS", cmake_option_from_feature(&ENABLE_OCULUS_EXT_HEADERS_FEATURE))
+            .define(
+                "USE_OCULUS_OXR_EXT_HEADERS",
+                cmake_option_from_feature(&ENABLE_OCULUS_EXT_HEADERS_FEATURE),
+            )
             .build()
     };
 

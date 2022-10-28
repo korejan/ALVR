@@ -136,7 +136,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             setWaitingNextIDR: Some(set_waiting_next_idr),
             requestIDR: Some(request_idr),
             disableLinearizeSrgb: APP_CONFIG.no_linearize_srgb,
-            noSuggestedBindings: APP_CONFIG.no_bindings
+            noSuggestedBindings: APP_CONFIG.no_bindings,
         };
         let mut sys_properties = ALXRSystemProperties::new();
         if !alxr_init(&ctx, &mut sys_properties) {
