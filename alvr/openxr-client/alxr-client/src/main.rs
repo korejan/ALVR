@@ -54,12 +54,15 @@ fn main() {
                 decoderType: selected_decoder,
                 verbose: APP_CONFIG.verbose,
                 disableLinearizeSrgb: APP_CONFIG.no_linearize_srgb,
+                noSuggestedBindings: APP_CONFIG.no_bindings
             };
             let mut sys_properties = ALXRSystemProperties::new();
             if !alxr_init(&ctx, &mut sys_properties) {
                 break;
             }
-            init_connections(&sys_properties);
+            if !APP_CONFIG.no_alvr_server {
+                init_connections(&sys_properties);
+            }
 
             let mut request_restart = false;
             loop {

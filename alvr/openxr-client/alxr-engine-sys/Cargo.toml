@@ -13,6 +13,7 @@ pico-neo-flavor = []
 # These features are only for non-android builds.
 cuda-interop = []
 bundled-ffmpeg = []
+oculus-ext-headers = []
 
 [build-dependencies]
 cmake = "0.1"

@@ -122,6 +122,7 @@ fn define_windows_store(config: &mut Config) -> &mut Config {
 }
 
 const BUILD_CUDA_INTEROP_FEATURE: &'static str = "CARGO_FEATURE_CUDA_INTEROP";
+const ENABLE_OCULUS_EXT_HEADERS_FEATURE: &'static str = "CARGO_FEATURE_OCULUS_EXT_HEADERS";
 const CMAKE_GEN_ENV_VAR: &'static str = "ALXR_CMAKE_GEN";
 
 const ENV_VAR_MONITOR_LIST: [&'static str; 2] = [CMAKE_GEN_ENV_VAR, BUNDLE_FFMPEG_INSTALL_DIR_VAR]; //, CMAKE_PREFIX_PATH_VAR];
@@ -233,6 +234,7 @@ fn main() {
             .define("BUILD_API_LAYERS", "OFF")
             .define("BUILD_TESTS", "OFF")
             .define("BUILD_CONFORMANCE_TESTS", "OFF")
+            .define("USE_OCULUS_OXR_EXT_HEADERS", cmake_option_from_feature(&ENABLE_OCULUS_EXT_HEADERS_FEATURE))
             .build()
     };
 

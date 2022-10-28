@@ -9,6 +9,7 @@ description = "An OpenXR based ALVR client for non-android platorms"
 [features]
 cuda-interop = ["alxr-common/cuda-interop"]
 bundled-ffmpeg = ["alxr-common/bundled-ffmpeg"]
+oculus-ext-headers = ["alxr-common/oculus-ext-headers"]
 
 [dependencies]
 alxr-common = { path = "../alxr-common" }
