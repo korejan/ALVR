@@ -137,6 +137,8 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             requestIDR: Some(request_idr),
             disableLinearizeSrgb: APP_CONFIG.no_linearize_srgb,
             noSuggestedBindings: APP_CONFIG.no_bindings,
+            noServerFramerateLock: APP_CONFIG.no_server_framerate_lock,
+            noFrameSkip: APP_CONFIG.no_frameskip,
         };
         let mut sys_properties = ALXRSystemProperties::new();
         if !alxr_init(&ctx, &mut sys_properties) {

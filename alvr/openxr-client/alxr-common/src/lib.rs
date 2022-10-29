@@ -58,10 +58,17 @@ pub struct Options {
     #[structopt(/*short,*/ long)]
     pub no_alvr_server: bool,
 
-    // short and long flags (-d, --debug) will be deduced from the field's name
     /// Disables all OpenXR Suggested bindings for all interaction profiles. This means disabling all inputs.
     #[structopt(/*short,*/ long)]
     pub no_bindings: bool,
+
+    /// Disables locking/typing the client's frame-rate to the server frame-rate
+    #[structopt(/*short,*/ long)]
+    pub no_server_framerate_lock: bool,
+
+    /// Disables skipping frames, disabling may increase idle times.
+    #[structopt(/*short,*/ long)]
+    pub no_frameskip: bool,
     // /// Set speed
     // // we don't want to name it "speed", need to look smart
     // #[structopt(short = "v", long = "velocity", default_value = "42")]
@@ -96,6 +103,8 @@ impl Options {
             no_linearize_srgb: false,
             no_alvr_server: false,
             no_bindings: false,
+            no_server_framerate_lock: false,
+            no_frameskip: false,
         };
 
         let sys_properties = AndroidSystemProperties::new();
@@ -125,7 +134,27 @@ impl Options {
                 .unwrap_or(new_options.no_linearize_srgb);
             println!(
                 "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
-                new_options.verbose
+                new_options.no_linearize_srgb
+            );
+        }
+
+        let property_name = "debug.alxr.no_server_framerate_lock";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.no_server_framerate_lock = std::str::FromStr::from_str(value.as_str())
+                .unwrap_or(new_options.no_server_framerate_lock);
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
+                new_options.no_server_framerate_lock
+            );
+        }
+
+        let property_name = "debug.alxr.no_frameskip";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.no_frameskip =
+                std::str::FromStr::from_str(value.as_str()).unwrap_or(new_options.no_frameskip);
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
+                new_options.no_frameskip
             );
         }
 
@@ -145,6 +174,8 @@ impl Options {
             no_linearize_srgb: false,
             no_alvr_server: false,
             no_bindings: false,
+            no_server_framerate_lock: false,
+            no_frameskip: false,
         };
         new_options
     }
