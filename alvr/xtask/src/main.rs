@@ -59,7 +59,8 @@ FLAGS:
     --bundle-ffmpeg     Bundle ffmpeg libraries. Only used for build-server subcommand on Linux
     --no-nvidia         Additional flag to use with `build-server` or `build-alxr-client`. Disables nVidia/CUDA support.
     --gpl               Enables usage of GPL libs like ffmpeg on Windows, allowing software encoding.
-    --ffmpeg-version    Bundle ffmpeg libraries. Only used for build-alxr-client subcommand on Linux          
+    --ffmpeg-version    Bundle ffmpeg libraries. Only used for build-alxr-client subcommand on Linux
+    --oculus-ext        Enables using Oculus OpenXR extensions (headers), Used only for build-alxr-client subcommand
     --help              Print this text
 
 ARGS:
@@ -416,6 +417,7 @@ pub struct AlxBuildFlags {
     no_nvidia: bool,
     bundle_ffmpeg: bool,
     fetch_crates: bool,
+    oculus_ext: bool,
 }
 
 impl Default for AlxBuildFlags {
@@ -426,6 +428,7 @@ impl Default for AlxBuildFlags {
             no_nvidia: true,
             bundle_ffmpeg: true,
             fetch_crates: false,
+            oculus_ext: false,
         }
     }
 }
@@ -433,9 +436,11 @@ impl Default for AlxBuildFlags {
 impl AlxBuildFlags {
     pub fn make_build_string(&self) -> String {
         let enable_bundle_ffmpeg = cfg!(target_os = "linux") && self.bundle_ffmpeg;
+        let enable_oculus_ext = cfg!(target_os = "windows") && self.oculus_ext;
         let feature_map = vec![
             (enable_bundle_ffmpeg, "bundled-ffmpeg"),
             (!self.no_nvidia, "cuda-interop"),
+            (enable_oculus_ext, "oculus-ext-headers")
         ];
 
         let flag_map = vec![
@@ -1018,6 +1023,7 @@ fn main() {
         let for_generic = args.contains("--generic");
         let for_pico_neo = args.contains("--pico-neo");
         let for_all_flavors = args.contains("--all-flavors");
+        let oculus_ext = args.contains("--oculus-ext");
         //
         let bundle_ffmpeg = args.contains("--bundle-ffmpeg");
         let no_nvidia = args.contains("--no-nvidia");
@@ -1068,6 +1074,7 @@ fn main() {
                         no_nvidia: no_nvidia,
                         bundle_ffmpeg: bundle_ffmpeg,
                         fetch_crates: fetch,
+                        oculus_ext: oculus_ext,
                         ..Default::default()
                     },
                 ),
