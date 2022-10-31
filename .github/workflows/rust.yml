@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [master, alxr-workflows, alxr-uwp-workflows]
+    branches: [master, alxr-workflows, alxr-uwp-workflows, facial-eye-tracking]
   pull_request:
-    branches: [master, alxr-workflows, alxr-uwp-workflows]
+    branches: [master, alxr-workflows, alxr-uwp-workflows, facial-eye-tracking]
 
 env:
   CARGO_TERM_COLOR: always
