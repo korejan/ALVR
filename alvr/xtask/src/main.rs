@@ -440,7 +440,7 @@ impl AlxBuildFlags {
         let feature_map = vec![
             (enable_bundle_ffmpeg, "bundled-ffmpeg"),
             (!self.no_nvidia, "cuda-interop"),
-            (enable_oculus_ext, "oculus-ext-headers")
+            (enable_oculus_ext, "oculus-ext-headers"),
         ];
 
         let flag_map = vec![
