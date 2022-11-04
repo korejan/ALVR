@@ -57,6 +57,7 @@ fn main() {
                 noSuggestedBindings: APP_CONFIG.no_bindings,
                 noServerFramerateLock: false,
                 noFrameSkip: false,
+                enableLocalDimming: APP_CONFIG.enable_localdimming,
             };
             let mut sys_properties = ALXRSystemProperties::new();
             if !alxr_init(&ctx, &mut sys_properties) {
