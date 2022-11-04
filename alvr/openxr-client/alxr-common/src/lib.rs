@@ -164,8 +164,8 @@ impl Options {
 
         let property_name = "debug.alxr.enable_localdimming";
         if let Some(value) = sys_properties.get(&property_name) {
-            new_options.enable_localdimming =
-                std::str::FromStr::from_str(value.as_str()).unwrap_or(new_options.enable_localdimming);
+            new_options.enable_localdimming = std::str::FromStr::from_str(value.as_str())
+                .unwrap_or(new_options.enable_localdimming);
             println!(
                 "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
                 new_options.enable_localdimming
