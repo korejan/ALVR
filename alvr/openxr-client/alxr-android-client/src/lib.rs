@@ -139,7 +139,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             noSuggestedBindings: APP_CONFIG.no_bindings,
             noServerFramerateLock: APP_CONFIG.no_server_framerate_lock,
             noFrameSkip: APP_CONFIG.no_frameskip,
-            enableLocalDimming: APP_CONFIG.enable_localdimming,
+            disableLocalDimming: APP_CONFIG.disable_localdimming,
         };
         let mut sys_properties = ALXRSystemProperties::new();
         if !alxr_init(&ctx, &mut sys_properties) {

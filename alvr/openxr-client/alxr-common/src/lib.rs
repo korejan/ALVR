@@ -71,7 +71,7 @@ pub struct Options {
     pub no_frameskip: bool,
 
     #[structopt(/*short,*/ long)]
-    pub enable_localdimming: bool,
+    pub disable_localdimming: bool,
     // /// Set speed
     // // we don't want to name it "speed", need to look smart
     // #[structopt(short = "v", long = "velocity", default_value = "42")]
@@ -108,7 +108,7 @@ impl Options {
             no_bindings: false,
             no_server_framerate_lock: false,
             no_frameskip: false,
-            enable_localdimming: false,
+            disable_localdimming: false,
         };
 
         let sys_properties = AndroidSystemProperties::new();
@@ -162,13 +162,13 @@ impl Options {
             );
         }
 
-        let property_name = "debug.alxr.enable_localdimming";
+        let property_name = "debug.alxr.disable_localdimming";
         if let Some(value) = sys_properties.get(&property_name) {
-            new_options.enable_localdimming = std::str::FromStr::from_str(value.as_str())
-                .unwrap_or(new_options.enable_localdimming);
+            new_options.disable_localdimming = std::str::FromStr::from_str(value.as_str())
+                .unwrap_or(new_options.disable_localdimming);
             println!(
                 "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
-                new_options.enable_localdimming
+                new_options.disable_localdimming
             );
         }
 
@@ -190,7 +190,7 @@ impl Options {
             no_bindings: false,
             no_server_framerate_lock: false,
             no_frameskip: false,
-            enable_localdimming: false,
+            disable_localdimming: false,
         };
         new_options
     }
