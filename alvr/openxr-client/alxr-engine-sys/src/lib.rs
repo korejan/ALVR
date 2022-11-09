@@ -33,6 +33,23 @@ impl From<&str> for crate::ALXRDecoderType {
     }
 }
 
+impl From<&str> for crate::ALXRColorSpace {
+    fn from(input: &str) -> Self {
+        let trimmed = input.trim();
+        match trimmed {
+            "Unmanaged" => crate::ALXRColorSpace::Unmanaged,
+            "Rec709" => crate::ALXRColorSpace::Rec709,
+            "RiftCV1" => crate::ALXRColorSpace::RiftCV1,
+            "RiftS" => crate::ALXRColorSpace::RiftS,
+            "Quest" => crate::ALXRColorSpace::Quest,
+            "P3" => crate::ALXRColorSpace::P3,
+            "AdobeRgb" => crate::ALXRColorSpace::AdobeRgb,
+            "Rec2020" => crate::ALXRColorSpace::Rec2020,
+            _ => crate::ALXRColorSpace::Rec2020,
+        }
+    }
+}
+
 impl ALXRSystemProperties {
     pub fn new() -> ALXRSystemProperties {
         ALXRSystemProperties {

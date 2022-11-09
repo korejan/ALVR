@@ -4,8 +4,8 @@ use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_on_pause, alxr_on_resume,
     alxr_process_frame, battery_send, init_connections, input_send, path_string_to_hash,
     request_idr, set_waiting_next_idr, shutdown, time_sync_send, video_error_report_send,
-    views_config_send, ALXRDecoderType, ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties,
-    APP_CONFIG,
+    views_config_send, ALXRColorSpace, ALXRDecoderType, ALXRGraphicsApi, ALXRRustCtx,
+    ALXRSystemProperties, APP_CONFIG,
 };
 use permissions::check_android_permissions;
 
@@ -124,6 +124,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
         let ctx = ALXRRustCtx {
             graphicsApi: APP_CONFIG.graphics_api.unwrap_or(ALXRGraphicsApi::Auto),
             decoderType: ALXRDecoderType::NVDEC, // Not used on android.
+            displayColorSpace: APP_CONFIG.color_space.unwrap_or(ALXRColorSpace::Rec2020),
             verbose: APP_CONFIG.verbose,
             applicationVM: vm_ptr as *mut std::ffi::c_void,
             applicationActivity: native_activity,

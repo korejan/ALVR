@@ -3,8 +3,8 @@
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, battery_send,
     init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
-    time_sync_send, video_error_report_send, views_config_send, ALXRDecoderType, ALXRGraphicsApi,
-    ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
+    time_sync_send, video_error_report_send, views_config_send, ALXRColorSpace, ALXRDecoderType,
+    ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties, APP_CONFIG,
 };
 use std::{thread, time};
 
@@ -52,6 +52,7 @@ fn main() {
                 requestIDR: Some(request_idr),
                 graphicsApi: selected_api,
                 decoderType: selected_decoder,
+                displayColorSpace: APP_CONFIG.color_space.unwrap_or(ALXRColorSpace::Rec2020),
                 verbose: APP_CONFIG.verbose,
                 disableLinearizeSrgb: APP_CONFIG.no_linearize_srgb,
                 noSuggestedBindings: APP_CONFIG.no_bindings,

@@ -45,6 +45,9 @@ pub struct Options {
     #[structopt(long, default_value = "1")]
     pub decoder_thread_count: u32,
 
+    #[structopt(long, parse(from_str))]
+    pub color_space: Option<ALXRColorSpace>,
+
     /// Disables sRGB linerization, use this if the output in your headset looks to "dark".
     #[structopt(long)]
     pub no_linearize_srgb: bool,
@@ -103,6 +106,7 @@ impl Options {
             graphics_api: Some(ALXRGraphicsApi::Auto),
             decoder_type: None,
             decoder_thread_count: 0,
+            color_space: Some(ALXRColorSpace::Rec2020),
             no_linearize_srgb: false,
             no_alvr_server: false,
             no_bindings: false,
@@ -172,6 +176,15 @@ impl Options {
             );
         }
 
+        let property_name = "debug.alxr.color_space";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.color_space = Some(From::from(value.as_str()));
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {:?}",
+                new_options.color_space
+            );
+        }
+
         new_options
     }
 }
@@ -184,6 +197,7 @@ impl Options {
             verbose: cfg!(debug_assertions),
             graphics_api: Some(ALXRGraphicsApi::D3D12),
             decoder_type: Some(ALXRDecoderType::D311VA),
+            color_space: Some(ALXRColorSpace::Rec2020),
             decoder_thread_count: 0,
             no_linearize_srgb: false,
             no_alvr_server: false,
