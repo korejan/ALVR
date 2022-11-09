@@ -259,6 +259,7 @@ fn main() {
         .derive_default(true)
         .rustified_enum("ALXRGraphicsApi")
         .rustified_enum("ALXRDecoderType")
+        .rustified_enum("ALXRColorSpace")
         .generate()
         .expect("bindings")
         .write_to_file(out_dir.join("alxr_engine.rs"))
