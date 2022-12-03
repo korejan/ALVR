@@ -17,7 +17,7 @@ oculus-ext-headers = []
 
 [build-dependencies]
 cmake = "0.1"
-bindgen = "0.61"
+bindgen = "0.63"
 cc = { version = "1", features = ["parallel"] }
 walkdir = "2"
 target-lexicon = "0.12"

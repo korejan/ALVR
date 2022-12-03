@@ -1,4 +1,5 @@
 mod permissions;
+mod wifi_manager;
 
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_on_pause, alxr_on_resume,
@@ -8,6 +9,7 @@ use alxr_common::{
     ALXRSystemProperties, APP_CONFIG,
 };
 use permissions::check_android_permissions;
+use wifi_manager::{acquire_wifi_lock, release_wifi_lock};
 
 use ndk::looper::*;
 use ndk_context;
@@ -50,9 +52,11 @@ impl AppData {
                 println!("alxr-client: received on_pause event.");
                 self.resumed = false;
                 unsafe { alxr_on_pause() };
+                release_wifi_lock();
             }
             ndk_glue::Event::Resume => {
                 println!("alxr-client: received on_resume event.");
+                acquire_wifi_lock();
                 unsafe { alxr_on_resume() };
                 self.resumed = true;
             }
