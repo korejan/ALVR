@@ -17,6 +17,8 @@ ndk = "0.7" #{ path = "../ndk", features = ["trace"] }
 ndk-glue = "0.7" #{ path = "../ndk-glue", features = ["logger"] }
 ndk-context = "0.1"
 libloading = "0.7"
+lazy_static = "1"
+parking_lot = "0.12"
 
 [package.metadata.android]
 build_targets = ["aarch64-linux-android"]
@@ -217,6 +219,17 @@ name = "android.permission.ACCESS_NETWORK_STATE"
  #<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 [[package.metadata.android.uses_permission]]
 name = "android.permission.READ_EXTERNAL_STORAGE"
+
+# <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+[[package.metadata.android.uses_permission]]
+name = "android.permission.ACCESS_WIFI_STATE"
+
+# android.permission.WAKE_LOCK
+[[package.metadata.android.uses_permission]]
+name = "android.permission.WAKE_LOCK"
+
+[[package.metadata.android.uses_permission]]
+name = "com.oculus.permission.WIFI_LOCK"
 
 #<!-- Allows to access TrackingEnvironment functionality -->
 # [[package.metadata.android.uses_permission]]
