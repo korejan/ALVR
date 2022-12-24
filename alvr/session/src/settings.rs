@@ -61,6 +61,14 @@ pub enum RateControlMode {
     VBR = 1,
 }
 
+#[repr(u8)]
+#[derive(SettingsSchema, Serialize, Deserialize, Clone)]
+#[serde(tag = "type", content = "content")]
+pub enum EntropyCoding {
+    CABAC = 0,
+    CAVLC = 1,
+}
+
 /// Except for preset, the value of these fields is not applied if == -1 (flag)
 #[derive(SettingsSchema, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -225,6 +233,9 @@ pub struct VideoDesc {
 
     #[schema(advanced)]
     pub rate_control_mode: RateControlMode,
+
+    #[schema(advanced)]
+    pub entropy_coding: EntropyCoding,
 
     // #[schema(advanced)]
     // pub video_coding: VideoCoding,
@@ -629,6 +640,9 @@ pub fn session_settings_default() -> SettingsDefault {
                 variant: RateControlModeDefaultVariant::CBR,
             },
             client_request_realtime_decoder: true,
+            entropy_coding: EntropyCodingDefault {
+                variant: EntropyCodingDefaultVariant::CAVLC,
+            },
             use_10bit_encoder: false,
             sw_thread_count: 0,
             encode_bitrate_mbs: 30,
