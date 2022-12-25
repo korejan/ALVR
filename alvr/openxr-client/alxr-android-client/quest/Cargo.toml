@@ -38,7 +38,7 @@ apk_name = "alxr-client-quest"
 # Folder containing extra shared libraries intended to be dynamically loaded at runtime.
 # Files matching `libs_folder/${android_abi}/*.so` are added to the apk
 # according to the specified build_targets.
-#runtime_libs = "runtime-libs"
+#runtime_libs = "../runtime-libs"
 
 #
 # The following value can be customized on a per bin/example basis. See multiple_targets example
@@ -117,6 +117,7 @@ min_sdk_version = 28#24 # for offical low-latency medicodec mode to be enabled, 
 "android:debuggable" = "false"
 "android:hardwareAccelerated" = "true"
 "android:allowBackup" = "false"
+"android:hasCode" = "false"
 
 # Adds extra arbitrary XML attributes to the <activity> tag in the manifest.
 # See https://developer.android.com/guide/topics/manifest/activity-element.html
@@ -287,6 +288,8 @@ theme = "@android:style/Theme.Black.NoTitleBar.Fullscreen"
 label = "alxr_client"
 
 allow_backup = false
+
+has_code = false
 
 # See https://developer.android.com/guide/topics/manifest/activity-element
 [package.metadata.android.application.activity]

@@ -107,6 +107,7 @@ min_sdk_version = 28 # for offical low-latency medicodec mode to be enabled, min
 [package.metadata.android.application_attributes]
 "android:debuggable" = "false"
 "android:allowBackup" = "false"
+"android:hasCode" = "false"
 
 # Adds extra arbitrary XML attributes to the <activity> tag in the manifest.
 # See https://developer.android.com/guide/topics/manifest/activity-element.html
@@ -223,6 +224,8 @@ theme = "@android:style/Theme.Black.NoTitleBar.Fullscreen"
 label = "alxr-client"
 
 allow_backup = false
+
+has_code = false
 
 # See https://developer.android.com/guide/topics/manifest/activity-element
 [package.metadata.android.application.activity]
