@@ -120,6 +120,7 @@ min_sdk_version = 28#24 # for offical low-latency medicodec mode to be enabled, 
 "android:debuggable" = "false"
 "android:hardwareAccelerated" = "true"
 "android:allowBackup" = "false"
+"android:hasCode" = "false"
 
 # Adds extra arbitrary XML attributes to the <activity> tag in the manifest.
 # See https://developer.android.com/guide/topics/manifest/activity-element.html
@@ -205,6 +206,11 @@ required = true
 # name = "wave.feature.simultaneous_interaction"
 # required = true
 
+# <uses-feature android:name="com.magicleap.api_level" android:version="20" />
+[[package.metadata.android.uses_feature]]
+name = "com.magicleap.api_level"
+version = 20
+
 # See https://developer.android.com/guide/topics/manifest/uses-permission-element
 #
 # Note: there can be multiple .uses_permission entries.
@@ -243,6 +249,9 @@ name = "android.permission.WAKE_LOCK"
 [[package.metadata.android.uses_permission]]
 name = "android.permission.READ_EXTERNAL_STORAGE"
 
+#[[package.metadata.android.uses_permission]]
+#name = "android.permission.CAMERA"
+
 #<!-- Allows to access TrackingEnvironment functionality -->
 # [[package.metadata.android.uses_permission]]
 # name = "com.oculus.permission.ACCESS_TRACKING_ENV"
@@ -256,6 +265,10 @@ name = "android.permission.READ_EXTERNAL_STORAGE"
 
 # [[package.metadata.android.uses_permission]]
 # name = "com.oculus.permission.HAND_TRACKING"
+
+#<uses-permission android:name="com.magicleap.permission.HAND_TRACKING" />
+[[package.metadata.android.uses_permission]]
+name = "com.magicleap.permission.HAND_TRACKING"
 
 [[package.metadata.android.uses_permission]]
 name = "org.khronos.openxr.permission.OPENXR"
@@ -299,6 +312,8 @@ theme = "@android:style/Theme.Black.NoTitleBar.Fullscreen"
 label = "alxr_client"
 
 allow_backup = false
+
+has_code = false
 
 # See https://developer.android.com/guide/topics/manifest/meta-data-element
 #
