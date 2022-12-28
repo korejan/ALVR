@@ -257,7 +257,7 @@ async fn client_handshake(
         use_preproc: amf_controls.use_preproc,
         preproc_sigma: amf_controls.preproc_sigma,
         preproc_tor: amf_controls.preproc_tor,
-        encoder_quality_preset: amf_controls.encoder_quality_preset as u32,
+        encoder_quality_preset: settings.video.advanced_codec_options.encoder_quality_preset as u32,
         force_sw_encoding: false, //force_sw_encoding: settings.video.force_sw_encoding,
         sw_thread_count: settings.video.sw_thread_count,
         encode_bitrate_mbs: settings.video.encode_bitrate_mbs,
@@ -471,7 +471,10 @@ async fn client_handshake(
         sharpening: session_settings.video.color_correction.content.sharpening,
         enable_fec: session_settings.connection.enable_fec,
         linux_async_reprojection: session_settings.extra.patches.linux_async_reprojection,
-        nvenc_preset: nvenc_overrides.preset as i64,
+        nvenc_tuning_preset: nvenc_overrides.tuning_preset as u32,
+        nvenc_multi_pass: nvenc_overrides.multi_pass as u32,
+        nvenc_adaptive_quantization_mode: nvenc_overrides.adaptive_quantization_mode as u32,
+        nvenc_low_delay_key_frame_scale: nvenc_overrides.low_delay_key_frame_scale,
         nvenc_refresh_rate: nvenc_overrides.refresh_rate,
         enable_intra_refresh: nvenc_overrides.enable_intra_refresh,
         intra_refresh_period: nvenc_overrides.intra_refresh_period,
@@ -484,7 +487,7 @@ async fn client_handshake(
         rc_initial_delay: nvenc_overrides.rc_initial_delay,
         rc_max_bitrate: nvenc_overrides.rc_max_bitrate,
         rc_average_bitrate: nvenc_overrides.rc_average_bitrate,
-        enable_aq: nvenc_overrides.enable_aq,
+        nvenc_enable_weighted_prediction: nvenc_overrides.enable_weighted_prediction,
     };
 
     if SESSION_MANAGER.lock().get().openvr_config != new_openvr_config {
