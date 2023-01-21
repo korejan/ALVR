@@ -238,10 +238,16 @@ jobs:
         run: |
           unset ANDROID_HOME
           cargo apk build -p alxr-client-quest --verbose --target-dir=target/quest
+      
       - name: Build alxr-android-pico
         run: |
           unset ANDROID_HOME
           cargo apk build -p alxr-client-pico --verbose --target-dir=target/pico
+      
+      - name: Build alxr-android-pico-v4
+        run: |
+          unset ANDROID_HOME
+          cargo apk build -p alxr-client-pico-v4 --verbose --target-dir=target/pico-v4
   
   tests:
     runs-on: ubuntu-latest

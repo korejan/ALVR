@@ -61,6 +61,11 @@ impl ALXRSystemProperties {
             recommendedEyeHeight: 0,
         }
     }
+
+    pub fn system_name(&self) -> String {
+        let system_name = unsafe { std::ffi::CStr::from_ptr(self.systemName.as_ptr()) };
+        system_name.to_str().unwrap_or("UnknownHMD").to_string()
+    }
 }
 
 unsafe impl Send for ALXRGuardianData {}
