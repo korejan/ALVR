@@ -653,7 +653,8 @@ fn install_alxr_depends() {
 pub enum AndroidFlavor {
     Generic,
     OculusQuest, // Q1 or Q2
-    PicoNeo3,
+    Pico,        // PUI >= 5.2.x
+    PicoV4,      // PUI >= 4.7.x && < 5.2.x
 }
 
 pub fn build_alxr_android(
@@ -679,7 +680,8 @@ pub fn build_alxr_android(
 
     let client_dir = match client_flavor {
         AndroidFlavor::OculusQuest => "quest",
-        AndroidFlavor::PicoNeo3 => "pico-neo",
+        AndroidFlavor::Pico => "pico",
+        AndroidFlavor::PicoV4 => "pico-v4",
         _ => "",
     };
     // cargo-apk has an issue where it will search the entire "target" build directory for "output" files that contain

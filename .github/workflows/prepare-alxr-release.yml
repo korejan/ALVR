@@ -347,6 +347,11 @@ jobs:
           unset ANDROID_HOME
           cargo xtask build-alxr-pico --release
       
+      - name: Build & Package alxr-android-pico-v4-release
+        run: |
+          unset ANDROID_HOME
+          cargo xtask build-alxr-pico-v4 --release
+      
       - name: Upload alxr-android-generic-release
         uses: actions/upload-release-asset@v1
         env:
@@ -366,7 +371,7 @@ jobs:
           asset_path: ./build/release/alxr_client_android/alxr-client-quest.apk
           asset_name: alxr-client-quest.apk
           asset_content_type: application/vnd.android.package-archive
-      
+
       - name: Upload alxr-android-pico-release
         uses: actions/upload-release-asset@v1
         env:
@@ -375,6 +380,16 @@ jobs:
           upload_url: ${{ needs.prepare_release.outputs.upload_url }}
           asset_path: ./build/release/alxr_client_android/alxr-client-pico.apk
           asset_name: alxr-client-pico.apk
+          asset_content_type: application/vnd.android.package-archive
+      
+      - name: Upload alxr-android-pico-v4-release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/release/alxr_client_android/alxr-client-pico-v4.apk
+          asset_name: alxr-client-pico-v4.apk
           asset_content_type: application/vnd.android.package-archive
   
   build_alxr_android_debug:
@@ -424,6 +439,13 @@ jobs:
           cd ./build/debug/alxr_client_android
           mv alxr-client-pico.apk alxr-client-pico-debug.apk
       
+      - name: Build & Package alxr-android-pico-v4-debug
+        run: |
+          unset ANDROID_HOME
+          cargo xtask build-alxr-pico-v4
+          cd ./build/debug/alxr_client_android
+          mv alxr-client-pico-v4.apk alxr-client-pico-v4-debug.apk
+      
       - name: Upload alxr-android-generic-debug
         uses: actions/upload-release-asset@v1
         env:
@@ -452,6 +474,16 @@ jobs:
           upload_url: ${{ needs.prepare_release.outputs.upload_url }}
           asset_path: ./build/debug/alxr_client_android/alxr-client-pico-debug.apk
           asset_name: alxr-client-pico-debug.apk
+          asset_content_type: application/vnd.android.package-archive
+      
+      - name: Upload alxr-android-pico-v4-debug
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/debug/alxr_client_android/alxr-client-pico-v4-debug.apk
+          asset_name: alxr-client-pico-v4-debug.apk
           asset_content_type: application/vnd.android.package-archive
   
   build_alxr_win_x64_release:

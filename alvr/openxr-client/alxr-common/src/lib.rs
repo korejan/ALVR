@@ -240,8 +240,7 @@ pub fn init_connections(sys_properties: &ALXRSystemProperties) {
     alvr_common::show_err(|| -> StrResult {
         println!("Init-connections started.");
 
-        let system_name = unsafe { CStr::from_ptr(sys_properties.systemName.as_ptr()) };
-        let device_name: &str = system_name.to_str().unwrap_or("UnknownHMD");
+        let device_name = sys_properties.system_name();
         let available_refresh_rates = unsafe {
             slice::from_raw_parts(
                 sys_properties.refreshRates,
@@ -275,7 +274,7 @@ pub fn init_connections(sys_properties: &ALXRSystemProperties) {
 
         runtime.spawn(async move {
             let connection_loop =
-                connection::connection_lifecycle_loop(headset_info, device_name, private_identity);
+                connection::connection_lifecycle_loop(headset_info, &device_name, private_identity);
             tokio::select! {
                 _ = connection_loop => (),
                 _ = ON_PAUSE_NOTIFIER.notified() => ()
