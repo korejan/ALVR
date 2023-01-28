@@ -249,6 +249,9 @@ name = "android.permission.WAKE_LOCK"
 [[package.metadata.android.uses_permission]]
 name = "android.permission.READ_EXTERNAL_STORAGE"
 
+[[package.metadata.android.uses_permission]]
+name = "android.permission.VIBRATE"
+
 #[[package.metadata.android.uses_permission]]
 #name = "android.permission.CAMERA"
 
