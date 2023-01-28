@@ -90,8 +90,8 @@ fn get_preferred_resolution<'a>(
     let model_name = get_build_model(&jvm);
     for name in [sys_name, model_name] {
         match name.as_str() {
-            "XR Elite" => return Some((1920, 1920)),
-            "Focus 3" => return Some((2448, 2448)),
+            //"XR Elite" => return Some((1920, 1920)),
+            //"Focus 3" => return Some((2448, 2448)),
             "Lynx" => return Some((1600, 1600)),
             "Meta Quest Pro" => return Some((1800, 1920)),
             "Pico Neo 3" | "Pico Neo 3 Link" | "Oculus Quest2" | "Oculus Quest 2" => {
