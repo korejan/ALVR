@@ -3,7 +3,7 @@ name = "alxr-client-pico"
 version = "0.10.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
-description = "An OpenXR based ALVR client for Pico Neo 3"
+description = "An OpenXR based ALVR client for Pico 4/Neo 3, PUI >= v5.2.x"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 path = "../src/lib.rs" 
 
 [dependencies]
-alxr-common = { path = "../../alxr-common", features = ["pico-neo-flavor"] }
+alxr-common = { path = "../../alxr-common", features = ["pico-flavor"] }
 jni = "0.20"
 ndk = "0.7"
 ndk-glue = "0.7"
@@ -21,7 +21,7 @@ lazy_static = "1"
 parking_lot = "0.12"
 
 [package.metadata.android]
-build_targets = ["aarch64-linux-android", "armv7-linux-androideabi"]
+build_targets = ["aarch64-linux-android"]
 
 # Path to your application's resources folder.
 # If not specified, resources will not be included in the APK.
@@ -259,17 +259,29 @@ resizeableActivity = "false"
 name = "pvr.app.type"
 value = "vr"
 
+#[[package.metadata.android.application.meta_data]]
+#name = "pvr.sdk.version"
+#value = "XR Platform_2.1.2.4"
+
 [[package.metadata.android.application.meta_data]]
 name = "rendering_mode"
 value = "1" # 0 Multipass, 1 Multview
 
 [[package.metadata.android.application.meta_data]]
 name = "display_rate"
-value = "120"
+value = "90"
 
 [[package.metadata.android.application.meta_data]]
 name = "handtracking"
 value = "1"
+
+[[package.metadata.android.application.meta_data]]
+name = "MRCsupport"
+value = "1"
+
+[[package.metadata.android.application.meta_data]]
+name = "color_Space"
+value = "1" # 1 == Linear space.
 
 #[[package.metadata.android.application.activity.intent_filters]] -- old version of cargo-apk/manifest.rs
 [[package.metadata.android.application.activity.intent_filter]]

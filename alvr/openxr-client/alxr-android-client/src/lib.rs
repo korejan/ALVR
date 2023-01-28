@@ -1,5 +1,8 @@
+#![cfg(target_os = "android")]
 mod permissions;
 mod wifi_manager;
+
+use std::println;
 
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_on_pause, alxr_on_resume,
@@ -66,6 +69,42 @@ impl AppData {
     }
 }
 
+fn get_build_model<'a>(jvm: &'a jni::JavaVM) -> String {
+    let env = jvm.attach_current_thread().unwrap();
+
+    let jdevice_name = env
+        .get_static_field("android/os/Build", "MODEL", "Ljava/lang/String;")
+        .unwrap()
+        .l()
+        .unwrap();
+    let device_name_raw = env.get_string(jdevice_name.into()).unwrap();
+
+    device_name_raw.to_string_lossy().as_ref().to_owned()
+}
+
+fn get_preferred_resolution<'a>(
+    jvm: &'a jni::JavaVM,
+    sys_prop: &ALXRSystemProperties,
+) -> Option<(u32, u32)> {
+    let sys_name = sys_prop.system_name();
+    let model_name = get_build_model(&jvm);
+    for name in [sys_name, model_name] {
+        match name.as_str() {
+            "XR Elite" => return Some((1920, 1920)),
+            "Focus 3" => return Some((2448, 2448)),
+            "Lynx" => return Some((1600, 1600)),
+            "Meta Quest Pro" => return Some((1800, 1920)),
+            "Pico Neo 3" | "Pico Neo 3 Link" | "Oculus Quest2" | "Oculus Quest 2" => {
+                return Some((1832, 1920))
+            }
+            "Oculus Quest" => return Some((1440, 1600)),
+            "Pico 4" | "A8150" => return Some((2160, 2160)),
+            _ => (),
+        }
+    }
+    None
+}
+
 #[cfg_attr(target_os = "android", ndk_glue::main(backtrace = "on"))]
 pub fn main() {
     println!("{:?}", *APP_CONFIG);
@@ -111,7 +150,6 @@ pub fn poll_all_ms(block: bool) -> Option<ndk_glue::Event> {
     }
 }
 
-#[cfg(target_os = "android")]
 fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
         let ctx = ndk_context::android_context();
@@ -149,6 +187,13 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
         let mut sys_properties = ALXRSystemProperties::new();
         if !alxr_init(&ctx, &mut sys_properties) {
             return Ok(());
+        }
+
+        if let Some((eye_w, eye_h)) = get_preferred_resolution(&vm, &sys_properties) {
+            println!("ALXR: Overriding recommend eye resolution ({}x{}) with prefferred resolution ({eye_w}x{eye_h})",
+                        sys_properties.recommendedEyeWidth, sys_properties.recommendedEyeHeight);
+            sys_properties.recommendedEyeWidth = eye_w;
+            sys_properties.recommendedEyeHeight = eye_h;
         }
         init_connections(&sys_properties);
 

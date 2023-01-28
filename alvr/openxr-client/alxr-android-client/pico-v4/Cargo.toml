@@ -1,0 +1,297 @@
+[package]
+name = "alxr-client-pico-v4"
+version = "0.10.0"
+authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
+edition = "2021"
+description = "An OpenXR based ALVR client for Pico 4/Neo 3, pre PUI v5.2.x"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib"]
+path = "../src/lib.rs" 
+
+[dependencies]
+alxr-common = { path = "../../alxr-common", features = ["pico-v4-flavor"] }
+jni = "0.20"
+ndk = "0.7"
+ndk-glue = "0.7"
+ndk-context = "0.1"
+libloading = "0.7"
+lazy_static = "1"
+parking_lot = "0.12"
+
+[package.metadata.android]
+build_targets = ["aarch64-linux-android"]
+
+# Path to your application's resources folder.
+# If not specified, resources will not be included in the APK.
+#resources = "path/to/resources_folder"
+
+# Path to the folder containing your application's assets.
+# If not specified, assets will not be included in the APK.
+#assets = "path/to/assets_folder"
+
+# Name for final APK file.
+# Defaults to package name.
+apk_name = "alxr-client-pico-v4"
+
+# Folder containing extra shared libraries intended to be dynamically loaded at runtime.
+# Files matching `libs_folder/${android_abi}/*.so` are added to the apk
+# according to the specified build_targets.
+#runtime_libs = "../runtime-libs"
+
+#
+# The following value can be customized on a per bin/example basis. See multiple_targets example
+# If a value is not specified for a secondary target, it will inherit the value defined in the `package.metadata.android`
+# section unless otherwise noted.
+#
+
+# The Java package name for your application.
+# Hyphens are converted to underscores.
+package = "com.alvr.alxr_client"
+
+# The user-friendly name for your app, as displayed in the applications menu.
+label = "alxr_client"
+
+# This is automatically set from cargo version, do no define!
+#version_code = 1
+
+# This is automatically set from cargo version, do no define!
+#version_name = "1.0"
+
+install_location = "auto"
+
+# Path to your application's res/ folder.
+#res = "res"
+
+# Virtual path your application's icon for any mipmap level.
+#icon = "@mipmap/ic_launcher"
+
+# Path to the folder containing your application's assets.
+#assets = "assets"
+
+# If set to true, makes the app run in full-screen, by adding the following line
+# as an XML attribute to the manifest's <application> tag :
+#     android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen
+# Defaults to false.
+fullscreen = true
+
+# Defaults to `$HOME/.android/debug.keystore` for the `dev` profile. Will ONLY generate a new
+# debug.keystore if this file does NOT exist.
+# A keystore path is always required on the `release` profile.
+[package.metadata.android.signing.release]
+path = "../debug.keystore"
+keystore_password = "android"
+
+# See https://developer.android.com/guide/topics/manifest/uses-sdk-element
+#
+# Defaults to a `min_sdk_version` of 23 and `target_sdk_version` is based on the ndk's default platform.
+[package.metadata.android.sdk]
+target_sdk_version = 29
+compile_sdk = 33
+min_sdk_version = 28 # for offical low-latency medicodec mode to be enabled, min sdk must be >= 30.
+
+#[dependencies.android_glue]
+#path = "../../glue"
+
+#[[package.metadata.android.bin]]
+#name = "secondary-bin"
+#label = "Secondary Binary"
+
+#[[package.metadata.android.example]]
+#name = "example1"
+#label = "Example 1"
+
+# Adds extra arbitrary XML attributes to the <application> tag in the manifest.
+# See https://developer.android.com/guide/topics/manifest/application-element.html
+[package.metadata.android.application_attributes]
+"android:debuggable" = "false"
+"android:allowBackup" = "false"
+"android:hasCode" = "false"
+
+# Adds extra arbitrary XML attributes to the <activity> tag in the manifest.
+# See https://developer.android.com/guide/topics/manifest/activity-element.html
+[package.metadata.android.activity_attributes]
+"android:theme" = "@android:style/Theme.Black.NoTitleBar.Fullscreen"
+"android:launchMode" = "singleTask"
+"android:screenOrientation" = "landscape"
+"android:excludeFromRecents" = "false"
+"android:resizeableActivity"= "false"
+"android:configChanges" = "screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode|density"
+
+# See https://developer.android.com/guide/topics/manifest/uses-feature-element
+#
+# Note: there can be multiple .uses_feature entries.
+[[package.metadata.android.uses_feature]]
+name = "android.hardware.vr.headtracking"
+required = true
+version = 1
+
+[[package.metadata.android.uses_feature]]
+opengles_version = [3, 2]
+required = true
+
+[[package.metadata.android.uses_feature]]
+name = "android.hardware.microphone"
+required = true
+
+#[[package.metadata.android.uses_feature]]
+#name = "android.hardware.vulkan.compute"
+#version = 0
+#required = true
+
+[[package.metadata.android.uses_feature]]
+name = "android.hardware.vulkan.level"
+# https://developer.android.google.cn/reference/android/content/pm/PackageManager#FEATURE_VULKAN_HARDWARE_LEVEL
+version = 1 
+required = true
+
+[[package.metadata.android.uses_feature]]
+name = "android.hardware.vulkan.version"
+version = 0x00401000
+required = true
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.MODIFY_AUDIO_SETTINGS"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.RECORD_AUDIO"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.INTERNET"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.ACCESS_NETWORK_STATE"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.WRITE_EXTERNAL_STORAGE"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.READ_EXTERNAL_STORAGE"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.WRITE_SETTINGS"
+
+# <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+[[package.metadata.android.uses_permission]]
+name = "android.permission.ACCESS_WIFI_STATE"
+
+# android.permission.WAKE_LOCK
+[[package.metadata.android.uses_permission]]
+name = "android.permission.WAKE_LOCK"
+
+# [[package.metadata.android.uses_permission]]
+# name = "org.khronos.openxr.permission.OPENXR"
+# [[package.metadata.android.uses_permission]]
+# name = "org.khronos.openxr.permission.OPENXR_SYSTEM"
+#
+# # These package elements are typically required when the target-sdk is level 29
+# # check: https://www.khronos.org/registry/OpenXR/specs/1.0/loader.html#android-active-runtime-location
+# [[package.metadata.android.queries.package]]
+# name = "org.freedesktop.monado.openxr_runtime.in_process"
+# [[package.metadata.android.queries.package]]
+# name = "org.freedesktop.monado.openxr_runtime.out_of_process"
+# [[package.metadata.android.queries.package]]
+# name = "com.pico.xr.openxr_runtime"
+
+# [[package.metadata.android.queries.provider]]
+# authorities = "org.khronos.openxr.runtime_broker;org.khronos.openxr.system_runtime_broker"
+#  # `name` attribute is not to be part of query-provider but cargo-apk uses aapt which throws errors without
+#  # possibly needs to change to use appt2
+# name = "org.khronos.openxr"
+
+# See https://developer.android.com/guide/topics/manifest/application-element
+[package.metadata.android.application]
+# See https://developer.android.com/guide/topics/manifest/application-element#debug
+#
+# Defaults to false.
+debuggable = false
+
+hardwareAccelerated = true
+
+# See https://developer.android.com/guide/topics/manifest/application-element#theme
+#
+# Example shows setting the theme of an application to fullscreen.
+theme = "@android:style/Theme.Black.NoTitleBar.Fullscreen"
+
+# Virtual path your application's icon for any mipmap level.
+# If not specified, an icon will not be included in the APK.
+#icon = "@mipmap/ic_launcher"
+
+# See https://developer.android.com/guide/topics/manifest/application-element#label
+#
+# Defaults to the compiled artifact's name.
+label = "alxr-client"
+
+allow_backup = false
+
+has_code = false
+
+# See https://developer.android.com/guide/topics/manifest/activity-element
+[package.metadata.android.application.activity]
+
+theme = "@android:style/Theme.Black.NoTitleBar.Fullscreen"
+
+# See https://developer.android.com/guide/topics/manifest/activity-element#config
+#
+# Defaults to "orientation|keyboardHidden|screenSize".
+config_changes = "screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode|density"
+
+# See https://developer.android.com/guide/topics/manifest/activity-element#label
+#
+# Defaults to the application's label.
+label = "alxr-client"
+
+# See https://developer.android.com/guide/topics/manifest/activity-element#lmode
+#
+# Defaults to "standard".
+launch_mode = "singleTask"
+
+# See https://developer.android.com/guide/topics/manifest/activity-element#screen
+#
+# Defaults to "unspecified".
+orientation = "landscape"
+
+resizeableActivity = "false"
+
+# for Pico Neo OXR runtime.
+[[package.metadata.android.application.meta_data]]
+name = "pvr.app.type"
+value = "vr"
+
+[[package.metadata.android.application.meta_data]]
+name = "rendering_mode"
+value = "1" # 0 Multipass, 1 Multview
+
+[[package.metadata.android.application.meta_data]]
+name = "display_rate"
+value = "90"
+
+[[package.metadata.android.application.meta_data]]
+name = "handtracking"
+value = "1"
+
+[[package.metadata.android.application.meta_data]]
+name = "MRCsupport"
+value = "1"
+
+[[package.metadata.android.application.meta_data]]
+name = "color_Space"
+value = "1" # 1 == Linear space.
+
+#[[package.metadata.android.application.activity.intent_filters]] -- old version of cargo-apk/manifest.rs
+[[package.metadata.android.application.activity.intent_filter]]
+actions = ["android.intent.action.MAIN"]
+categories = ["android.intent.category.LAUNCHER"]
+
+# See https://developer.android.com/guide/topics/manifest/data-element
+#
+# Note: there can be several .data entries.
+# Note: not specifying an attribute excludes it from the final data specification.
+#[[package.metadata.android.application.activity.intent_filter.data]]
+#scheme = "https"
+#host = "github.com"
+#port = "8080"
+#path = "/rust-windowing/android-ndk-rs/tree/master/cargo-apk"
+#path_prefix = "/rust-windowing/"
+#mime_type = "image/jpeg"
