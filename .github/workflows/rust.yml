@@ -210,6 +210,7 @@ jobs:
   build_alxr_android:
     runs-on: ubuntu-22.04
     env:
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/25.2.9519653
       RUST_BACKTRACE: 1
     steps:
       - uses: actions/checkout@v3
@@ -224,6 +225,9 @@ jobs:
       
       - name: Prepare android deps
         run: |
+          SDK_MANAGER=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager
+          sudo $SDK_MANAGER --install "ndk;25.2.9519653"
+          
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
           cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
           
