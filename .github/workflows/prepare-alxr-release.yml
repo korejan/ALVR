@@ -311,6 +311,7 @@ jobs:
     needs: [prepare_release]
     env:
       RUST_BACKTRACE: 1
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/25.2.9519653
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -326,6 +327,9 @@ jobs:
       #     cache-targets: "false"
       - name: Build / Install ALXR Android dependencies
         run: |
+          SDK_MANAGER=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager
+          sudo $SDK_MANAGER --install "ndk;25.2.9519653"
+
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
           cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
 
@@ -397,6 +401,7 @@ jobs:
     needs: [prepare_release]
     env:
       RUST_BACKTRACE: 1
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/25.2.9519653
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -411,7 +416,10 @@ jobs:
       #   with:
       #     cache-targets: "false"
       - name: Build / Install ALXR Android dependencies
-        run: |          
+        run: |
+          SDK_MANAGER=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager
+          sudo $SDK_MANAGER --install "ndk;25.2.9519653"
+
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
           cargo install cargo-apk --git https://github.com/korejan/android-ndk-rs.git --branch android-manifest-entries
           
