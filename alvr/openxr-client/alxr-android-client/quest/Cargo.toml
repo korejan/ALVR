@@ -19,6 +19,7 @@ ndk-context = "0.1"
 libloading = "0.7"
 lazy_static = "1"
 parking_lot = "0.12"
+version-compare = "0.1"
 
 [package.metadata.android]
 build_targets = ["aarch64-linux-android"]
