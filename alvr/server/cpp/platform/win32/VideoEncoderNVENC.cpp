@@ -196,6 +196,10 @@ void VideoEncoderNVENC::FillEncodeConfig(NV_ENC_INITIALIZE_PARAMS &initializePar
 
 		config.maxNumRefFrames = maxNumRefFrames;
 		config.idrPeriod = gopLength;
+
+		if (Settings::Instance().m_fillerData) {
+			config.enableFillerDataInsertion = Settings::Instance().m_rateControlMode == ALVR_CBR;
+		}
 	} 
 	else {
 		auto &config = encodeConfig.encodeCodecConfig.hevcConfig;
@@ -214,6 +218,10 @@ void VideoEncoderNVENC::FillEncodeConfig(NV_ENC_INITIALIZE_PARAMS &initializePar
 
 		if (Settings::Instance().m_use10bitEncoder) {
 			encodeConfig.encodeCodecConfig.hevcConfig.pixelBitDepthMinus8 = 2;
+		}
+
+		if (Settings::Instance().m_fillerData) {
+			config.enableFillerDataInsertion = Settings::Instance().m_rateControlMode == ALVR_CBR;
 		}
 	}
 
