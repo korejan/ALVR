@@ -9,7 +9,7 @@ use alxr_common::{
     alxr_process_frame, battery_send, init_connections, input_send, path_string_to_hash,
     request_idr, set_waiting_next_idr, shutdown, time_sync_send, video_error_report_send,
     views_config_send, ALXRColorSpace, ALXRDecoderType, ALXRGraphicsApi, ALXRRustCtx,
-    ALXRSystemProperties, APP_CONFIG,
+    ALXRSystemProperties, ALXRVersion, APP_CONFIG,
 };
 use permissions::check_android_permissions;
 use wifi_manager::{acquire_wifi_lock, release_wifi_lock};
@@ -17,6 +17,7 @@ use wifi_manager::{acquire_wifi_lock, release_wifi_lock};
 use ndk::looper::*;
 use ndk_context;
 use ndk_glue;
+use version_compare::{Part, Version};
 
 struct AppData {
     destroy_requested: bool,
@@ -69,17 +70,49 @@ impl AppData {
     }
 }
 
-fn get_build_model<'a>(jvm: &'a jni::JavaVM) -> String {
+fn get_build_property<'a>(jvm: &'a jni::JavaVM, property_name: &str) -> String {
     let env = jvm.attach_current_thread().unwrap();
 
     let jdevice_name = env
-        .get_static_field("android/os/Build", "MODEL", "Ljava/lang/String;")
+        .get_static_field("android/os/Build", &property_name, "Ljava/lang/String;")
         .unwrap()
         .l()
         .unwrap();
     let device_name_raw = env.get_string(jdevice_name.into()).unwrap();
 
     device_name_raw.to_string_lossy().as_ref().to_owned()
+}
+
+fn get_firmware_version<'a>(jvm: &'a jni::JavaVM) -> ALXRVersion {
+    fn get_version_helper<'a, 'b>(jvm: &'a jni::JavaVM, prop_name: &str) -> Option<[u32; 3]> {
+        let value_str = get_build_property(&jvm, &prop_name);
+        match Version::from(&value_str) {
+            Some(v) => {
+                let mut ret: [u32; 3] = [0, 0, 0];
+                for idx in 0..3 {
+                    match v.part(idx) {
+                        Ok(Part::Number(val)) => ret[idx] = val as u32,
+                        _ => (),
+                    }
+                }
+                Some(ret)
+            }
+            _ => None,
+        }
+    }
+
+    let version = get_version_helper(&jvm, "ID")
+        .unwrap_or_else(|| get_version_helper(&jvm, "DISPLAY").unwrap_or([0, 0, 0]));
+
+    ALXRVersion {
+        major: version[0],
+        minor: version[1],
+        patch: version[2],
+    }
+}
+
+fn get_build_model<'a>(jvm: &'a jni::JavaVM) -> String {
+    get_build_property(&jvm, "MODEL")
 }
 
 fn get_preferred_resolution<'a>(
@@ -183,6 +216,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             noServerFramerateLock: APP_CONFIG.no_server_framerate_lock,
             noFrameSkip: APP_CONFIG.no_frameskip,
             disableLocalDimming: APP_CONFIG.disable_localdimming,
+            firmwareVersion: get_firmware_version(&vm),
         };
         let mut sys_properties = ALXRSystemProperties::new();
         if !alxr_init(&ctx, &mut sys_properties) {
