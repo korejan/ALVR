@@ -59,6 +59,7 @@ fn main() {
                 noServerFramerateLock: false,
                 noFrameSkip: false,
                 disableLocalDimming: APP_CONFIG.disable_localdimming,
+                headlessSession: APP_CONFIG.headless_session,
                 firmwareVersion: ALXRVersion {
                     major: 0,
                     minor: 0,
