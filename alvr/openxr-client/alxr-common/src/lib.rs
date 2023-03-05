@@ -75,6 +75,10 @@ pub struct Options {
 
     #[structopt(/*short,*/ long)]
     pub disable_localdimming: bool,
+
+    /// Enables a headless OpenXR session when a runtime supports it.
+    #[structopt(/*short,*/ long = "headless")]
+    pub headless_session: bool,
     // /// Set speed
     // // we don't want to name it "speed", need to look smart
     // #[structopt(short = "v", long = "velocity", default_value = "42")]
@@ -113,6 +117,7 @@ impl Options {
             no_server_framerate_lock: false,
             no_frameskip: false,
             disable_localdimming: false,
+            headless_session: false,
         };
 
         let sys_properties = AndroidSystemProperties::new();
@@ -185,6 +190,16 @@ impl Options {
             );
         }
 
+        let property_name = "debug.alxr.headless_session";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.headless_session =
+                std::str::FromStr::from_str(value.as_str()).unwrap_or(new_options.headless_session);
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
+                new_options.headless_session
+            );
+        }
+
         new_options
     }
 }
@@ -205,6 +220,7 @@ impl Options {
             no_server_framerate_lock: false,
             no_frameskip: false,
             disable_localdimming: false,
+            headless_session: false,
         };
         new_options
     }
