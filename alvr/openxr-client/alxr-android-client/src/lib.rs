@@ -216,6 +216,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
             noServerFramerateLock: APP_CONFIG.no_server_framerate_lock,
             noFrameSkip: APP_CONFIG.no_frameskip,
             disableLocalDimming: APP_CONFIG.disable_localdimming,
+            headlessSession: APP_CONFIG.headless_session,
             firmwareVersion: get_firmware_version(&vm),
         };
         let mut sys_properties = ALXRSystemProperties::new();
