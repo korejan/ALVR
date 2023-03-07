@@ -206,6 +206,20 @@ required = true
 # [[package.metadata.android.uses_feature]]
 # name = "wave.feature.simultaneous_interaction"
 # required = true
+#<uses-feature
+#    android:name="wave.feature.eyetracking"
+#    android:required="true" />
+#
+[[package.metadata.android.uses_feature]]
+name = "wave.feature.eyetracking"
+required = true
+
+#<uses-feature
+#    android:name="wave.feature.lipexpression"
+#    android:required="true" />
+[[package.metadata.android.uses_feature]]
+name = "wave.feature.lipexpression"
+required = true
 
 # <uses-feature android:name="com.magicleap.api_level" android:version="20" />
 [[package.metadata.android.uses_feature]]
