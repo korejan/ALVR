@@ -288,6 +288,10 @@ name = "android.permission.VIBRATE"
 [[package.metadata.android.uses_permission]]
 name = "com.magicleap.permission.HAND_TRACKING"
 
+#<uses-permission android:name="com.magicleap.permission.EYE_TRACKING" />
+[[package.metadata.android.uses_permission]]
+name = "com.magicleap.permission.EYE_TRACKING"
+
 [[package.metadata.android.uses_permission]]
 name = "org.khronos.openxr.permission.OPENXR"
 [[package.metadata.android.uses_permission]]
