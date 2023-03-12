@@ -181,6 +181,9 @@ name = "android.permission.ACCESS_WIFI_STATE"
 [[package.metadata.android.uses_permission]]
 name = "android.permission.WAKE_LOCK"
 
+[[package.metadata.android.uses_permission]]
+name = "com.picovr.permission.EYE_TRACKING"
+
 # [[package.metadata.android.uses_permission]]
 # name = "org.khronos.openxr.permission.OPENXR"
 # [[package.metadata.android.uses_permission]]
@@ -283,6 +286,10 @@ value = "1"
 [[package.metadata.android.application.meta_data]]
 name = "color_Space"
 value = "1" # 1 == Linear space.
+
+[[package.metadata.android.application.meta_data]]
+name = "picovr.software.eye_tracking"
+value = "false/true"
 
 #[[package.metadata.android.application.activity.intent_filters]] -- old version of cargo-apk/manifest.rs
 [[package.metadata.android.application.activity.intent_filter]]
