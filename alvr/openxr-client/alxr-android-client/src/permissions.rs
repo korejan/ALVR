@@ -123,6 +123,8 @@ pub fn check_android_permissions<'a>(
         "READ_EXTERNAL_STORAGE",
         "com.oculus.permission.EYE_TRACKING",
         "com.oculus.permission.FACE_TRACKING",
+        "com.magicleap.permission.EYE_TRACKING",
+        "com.picovr.permission.EYE_TRACKING"
     ] {
         if !android_has_permission(activity, &perm_name, &mut env)? {
             permission_names.push(perm_name);
