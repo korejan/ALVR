@@ -86,7 +86,9 @@ void VideoEncoderSW::Initialize() {
 	m_codecContext->rc_buffer_size = m_codecContext->bit_rate / Settings::Instance().m_refreshRate * 1.1;
 	switch (Settings::Instance().m_rateControlMode) {
 		case ALVR_CBR:
-			av_dict_set(&opt, "nal-hrd", "cbr", 0);
+			if (settings.m_fillerData) {
+				av_dict_set(&opt, "nal-hrd", "cbr", 0);
+			}
 			break;
 		case ALVR_VBR:
 			av_dict_set(&opt, "nal-hrd", "vbr", 0);
