@@ -45,7 +45,7 @@ impl From<&str> for crate::ALXRColorSpace {
             "P3" => crate::ALXRColorSpace::P3,
             "AdobeRgb" => crate::ALXRColorSpace::AdobeRgb,
             "Rec2020" => crate::ALXRColorSpace::Rec2020,
-            _ => crate::ALXRColorSpace::Rec2020,
+            _ => crate::ALXRColorSpace::Default,
         }
     }
 }
