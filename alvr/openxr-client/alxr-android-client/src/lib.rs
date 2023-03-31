@@ -199,7 +199,7 @@ fn run(app_data: &mut AppData) -> Result<(), Box<dyn std::error::Error>> {
         let ctx = ALXRRustCtx {
             graphicsApi: APP_CONFIG.graphics_api.unwrap_or(ALXRGraphicsApi::Auto),
             decoderType: ALXRDecoderType::NVDEC, // Not used on android.
-            displayColorSpace: APP_CONFIG.color_space.unwrap_or(ALXRColorSpace::Rec2020),
+            displayColorSpace: APP_CONFIG.color_space.unwrap_or(ALXRColorSpace::Default),
             verbose: APP_CONFIG.verbose,
             applicationVM: vm_ptr as *mut std::ffi::c_void,
             applicationActivity: native_activity,
