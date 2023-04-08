@@ -41,11 +41,11 @@ FECQueue::FECQueue()
 }
 
 // Add packet to queue. packet must point to buffer whose size=ALVR_MAX_PACKET_SIZE.
-void FECQueue::addVideoPacket(const VideoFrame *packet, int packetSize, bool &fecFailure) {
-    if (m_recovered && m_currentFrame.videoFrameIndex == packet->videoFrameIndex) {
+void FECQueue::addVideoPacket(const VideoFrame& packet, const FECQueue::VideoPacket& vidFrameBuffer, bool& fecFailure) {
+    if (m_recovered && m_currentFrame.videoFrameIndex == packet.videoFrameIndex) {
         return;
     }
-    if (m_currentFrame.videoFrameIndex != packet->videoFrameIndex) {
+    if (m_currentFrame.videoFrameIndex != packet.videoFrameIndex) {
         // New frame
         if (!m_recovered) {
             FrameLog(m_currentFrame.trackingFrameIndex,
@@ -56,18 +56,18 @@ void FECQueue::addVideoPacket(const VideoFrame *packet, int packetSize, bool &fe
                      m_totalParityShards,
                      m_currentFrame.frameByteSize, m_currentFrame.fecPercentage, m_totalShards,
                      m_shardPackets, m_blockSize);
-            for (size_t packet = 0; packet < m_shardPackets; packet++) {
+            for (size_t packet = 0; packet < m_shardPackets; ++packet) {
                 FrameLog(m_currentFrame.trackingFrameIndex,
                          "packetIndex=%d, shards=%u:%u",
                          packet, m_receivedDataShards[packet], m_receivedParityShards[packet]);
             }
             fecFailure = m_fecFailure = true;
         }
-        m_currentFrame = *packet;
+        m_currentFrame = packet;
         m_recovered = false;
         m_rs.reset();
 
-        const uint32_t fecDataPackets = (packet->frameByteSize + ALVR_MAX_VIDEO_BUFFER_SIZE - 1) /
+        const uint32_t fecDataPackets = (packet.frameByteSize + ALVR_MAX_VIDEO_BUFFER_SIZE - 1) /
                                   ALVR_MAX_VIDEO_BUFFER_SIZE;
         m_shardPackets = CalculateFECShardPackets(m_currentFrame.frameByteSize,
                                                   m_currentFrame.fecPercentage);
@@ -94,7 +94,7 @@ void FECQueue::addVideoPacket(const VideoFrame *packet, int packetSize, bool &fe
         }
 
         m_marks.resize(m_shardPackets);
-        for (size_t i = 0; i < m_shardPackets; i++) {
+        for (size_t i = 0; i < m_shardPackets; ++i) {
             m_marks[i].resize(m_totalShards);
             memset(&m_marks[i][0], 1, m_totalShards);
         }
@@ -107,9 +107,9 @@ void FECQueue::addVideoPacket(const VideoFrame *packet, int packetSize, bool &fe
 
         // Padding packets are not sent, so we can fill bitmap by default.
         const size_t padding = (m_shardPackets - fecDataPackets % m_shardPackets) % m_shardPackets;
-        for (size_t i = 0; i < padding; i++) {
+        for (size_t i = 0; i < padding; ++i) {
             m_marks[m_shardPackets - i - 1][m_totalDataShards - 1] = 0;
-            m_receivedDataShards[m_shardPackets - i - 1]++;
+            ++m_receivedDataShards[m_shardPackets - i - 1];
         }
 
         // Calculate last packet counter of current frame to detect whole frame packet loss.
@@ -148,28 +148,27 @@ void FECQueue::addVideoPacket(const VideoFrame *packet, int packetSize, bool &fe
                  m_currentFrame.videoFrameIndex, m_currentFrame.frameByteSize, m_currentFrame.fecPercentage, m_totalDataShards,
                  m_totalParityShards, m_totalShards, m_shardPackets, m_blockSize);
     }
-    const size_t shardIndex = packet->fecIndex / m_shardPackets;
-    const size_t packetIndex = packet->fecIndex % m_shardPackets;
+    const size_t shardIndex = packet.fecIndex / m_shardPackets;
+    const size_t packetIndex = packet.fecIndex % m_shardPackets;
     if (m_marks[packetIndex][shardIndex] == 0) {
         // Duplicate packet.
-        LOGI("Packet duplication. packetCounter=%d fecIndex=%d", packet->packetCounter,
-             packet->fecIndex);
+        LOGI("Packet duplication. packetCounter=%d fecIndex=%d", packet.packetCounter,
+             packet.fecIndex);
         return;
     }
     m_marks[packetIndex][shardIndex] = 0;
     if (shardIndex < m_totalDataShards) {
-        m_receivedDataShards[packetIndex]++;
+        ++m_receivedDataShards[packetIndex];
     } else {
-        m_receivedParityShards[packetIndex]++;
+        ++m_receivedParityShards[packetIndex];
     }
 
-    std::byte *p = &m_frameBuffer[packet->fecIndex * ALVR_MAX_VIDEO_BUFFER_SIZE];
-    char *payload = ((char *) packet) + sizeof(VideoFrame);
-    int payloadSize = packetSize - sizeof(VideoFrame);
-    memcpy(p, payload, payloadSize);
-    if (payloadSize != ALVR_MAX_VIDEO_BUFFER_SIZE) {
+    std::byte *p = &m_frameBuffer[packet.fecIndex * ALVR_MAX_VIDEO_BUFFER_SIZE];
+    const std::size_t payloadSize = vidFrameBuffer.size();
+    std::memcpy(p, vidFrameBuffer.data(), payloadSize);
+    if (payloadSize != size_t(ALVR_MAX_VIDEO_BUFFER_SIZE)) {
         // Fill padding
-        memset(p + payloadSize, 0, ALVR_MAX_VIDEO_BUFFER_SIZE - payloadSize);
+        std::memset(p + payloadSize, 0, size_t(ALVR_MAX_VIDEO_BUFFER_SIZE) - payloadSize);
     }
 }
 

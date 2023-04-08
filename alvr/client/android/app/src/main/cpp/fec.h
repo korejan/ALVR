@@ -1,7 +1,11 @@
 #ifndef ALVRCLIENT_FEC_H
 #define ALVRCLIENT_FEC_H
 
+#include <cstddef>
+#include <cstdint>
+#include <cassert>
 #include <memory>
+#include <span>
 #include <vector>
 #include <mutex>
 #include "packet_types.h"
@@ -11,13 +15,26 @@ class FECQueue {
 public:
     FECQueue();
 
-    void addVideoPacket(const VideoFrame *packet, int packetSize, bool &fecFailure);
+    using VideoPacket = std::span<const std::uint8_t>;
+    void addVideoPacket(const VideoFrame& header, const VideoPacket& packet, bool& fecFailure);
+
+    void addVideoPacket(const VideoFrame* packet, std::size_t packetSize, bool& fecFailure) {
+        assert(packet != nullptr && packetSize > sizeof(VideoFrame));
+        addVideoPacket(*packet, {
+            reinterpret_cast<const std::uint8_t*>(packet) + sizeof(VideoFrame),
+            packetSize - sizeof(VideoFrame)
+        }, fecFailure);
+    }
+
     bool reconstruct();
     const std::byte *getFrameBuffer() const;
     int getFrameByteSize() const;
 
     bool fecFailure() const;
     void clearFecFailure();
+
+    FECQueue(const FECQueue&) = delete;
+    FECQueue& operator=(const FECQueue&) = delete;
 private:
 
     VideoFrame m_currentFrame;
