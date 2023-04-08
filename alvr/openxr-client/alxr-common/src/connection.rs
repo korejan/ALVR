@@ -21,13 +21,12 @@ use std::{
     future,
     sync::{
         atomic::{AtomicBool, Ordering},
-        mpsc as smpsc, Arc,
+        Arc,
     },
     time::Duration,
 };
 use tokio::{
     sync::{mpsc as tmpsc, Mutex},
-    task,
     time::{self, Instant},
 };
 
@@ -447,33 +446,29 @@ async fn connection_pipeline(
         }
     };
 
-    let (legacy_receive_data_sender, legacy_receive_data_receiver) = smpsc::channel();
-    let legacy_receive_data_sender = Arc::new(Mutex::new(legacy_receive_data_sender));
-
-    // let video_receive_loop = {
-    //     let mut receiver = stream_socket.subscribe_to_stream::<()>(VIDEO).await?;
-    //     let legacy_receive_data_sender = legacy_receive_data_sender.clone();
-    //     async move {
-    //         loop {
-    //             let packet = receiver.recv().await?;
-    //             legacy_receive_data_sender.lock().await.send(packet.buffer).ok();
-    //         }
-    //     }
-    // };
-
     let video_receive_loop = {
         let mut receiver = stream_socket
             .subscribe_to_stream::<VideoFrameHeaderPacket>(VIDEO)
             .await?;
-        let legacy_receive_data_sender = legacy_receive_data_sender.clone();
         async move {
+            let mut idr_request_deadline = None;
             loop {
-                let packet = receiver.recv().await?;
+                let packet = receiver.recv().await.unwrap();
 
-                //let now = std::time::Instant::now();
+                // Send again IDR packet every 2s in case it is missed
+                // (due to dropped burst of packets at the start of the stream or otherwise).
+                if !crate::IDR_PARSED.load(Ordering::Relaxed) {
+                    if let Some(deadline) = idr_request_deadline {
+                        if deadline < Instant::now() {
+                            println!("IDR_PARSED sending IDR request");
+                            crate::IDR_REQUEST_NOTIFIER.notify_waiters();
+                            idr_request_deadline = None;
+                        }
+                    } else {
+                        idr_request_deadline = Some(Instant::now() + Duration::from_secs(2));
+                    }
+                }
 
-                let mut buffer =
-                    vec![0_u8; std::mem::size_of::<VideoFrame>() + packet.buffer.len()];
                 let header = VideoFrame {
                     type_: 9, // ALVR_PACKET_TYPE_VIDEO_FRAME
                     packetCounter: packet.header.packet_counter,
@@ -484,13 +479,13 @@ async fn connection_pipeline(
                     fecIndex: packet.header.fec_index,
                     fecPercentage: packet.header.fec_percentage,
                 };
-
-                buffer[..std::mem::size_of::<VideoFrame>()].copy_from_slice(unsafe {
-                    &std::mem::transmute::<_, [u8; std::mem::size_of::<VideoFrame>()]>(header)
-                });
-                buffer[std::mem::size_of::<VideoFrame>()..].copy_from_slice(&packet.buffer);
-
-                legacy_receive_data_sender.lock().await.send(buffer).ok();
+                unsafe {
+                    crate::alxr_on_video_packet(
+                        &header,
+                        packet.buffer.as_ptr(),
+                        packet.buffer.len() as _,
+                    );
+                }
             }
         }
     };
@@ -514,58 +509,6 @@ async fn connection_pipeline(
             }
         }
     };
-
-    // The main stream loop must be run in a normal thread, because it needs to access the JNI env
-    // many times per second. If using a future I'm forced to attach and detach the env continuously.
-    // When the parent function exits or gets canceled, this loop will run to finish.
-    let legacy_stream_socket_loop = task::spawn_blocking({
-        //let java_vm = Arc::clone(&java_vm);
-        //let activity_ref = Arc::clone(&activity_ref);
-        //let nal_class_ref = Arc::clone(&nal_class_ref);
-        let _codec = settings.video.codec;
-        let _enable_fec = settings.connection.enable_fec;
-        move || -> StrResult {
-            //let env = trace_err!(java_vm.attach_current_thread())?;
-            //let env_ptr = env.get_native_interface() as _;
-            //let activity_obj = activity_ref.as_obj();
-            //let nal_class: JClass = nal_class_ref.as_obj().into();
-
-            unsafe {
-                // crate::initializeSocket(
-                //     env_ptr,
-                //     *activity_obj as _,
-                //     **nal_class as _,
-                //     matches!(codec, CodecType::HEVC) as _,
-                //     enable_fec,
-                // );
-
-                let mut idr_request_deadline = None;
-
-                while let Ok(data) = legacy_receive_data_receiver.recv() {
-                    // Send again IDR packet every 2s in case it is missed
-                    // (due to dropped burst of packets at the start of the stream or otherwise).
-                    if !crate::IDR_PARSED.load(Ordering::Relaxed) {
-                        if let Some(deadline) = idr_request_deadline {
-                            if deadline < Instant::now() {
-                                println!("IDR_PARSED sending IDR request");
-                                crate::IDR_REQUEST_NOTIFIER.notify_waiters();
-                                idr_request_deadline = None;
-                            }
-                        } else {
-                            idr_request_deadline = Some(Instant::now() + Duration::from_secs(2));
-                        }
-                    }
-
-                    //println!("Receiving data...");
-                    crate::alxr_on_receive(data.as_ptr(), data.len() as _);
-                }
-
-                //crate::closeSocket(env_ptr);
-            }
-
-            Ok(())
-        }
-    });
 
     let tracking_interval = Duration::from_secs_f32(1_f32 / (config_packet.fps * 3_f32)); // Duration::from_secs_f32(1_f32 / 360_f32);//
     let tracking_loop = async move {
@@ -712,12 +655,9 @@ async fn connection_pipeline(
                                     trackingRecvFrameIndex: data.tracking_recv_frame_index,
                                 };
 
-                                let mut buffer = vec![0_u8; std::mem::size_of::<TimeSync>()];
-                                buffer.copy_from_slice(unsafe {
-                                    &std::mem::transmute::<_, [u8; std::mem::size_of::<TimeSync>()]>(time_sync)
-                                });
-
-                                legacy_receive_data_sender.lock().await.send(buffer).ok();
+                                unsafe {
+                                    crate::alxr_on_time_sync(&time_sync);
+                                }
                             },
                             Ok(_) => (),
                             Err(e) => {
@@ -768,7 +708,6 @@ async fn connection_pipeline(
         res = spawn_cancelable(battery_send_loop) => res,
         res = spawn_cancelable(video_receive_loop) => res,
         res = spawn_cancelable(haptics_receive_loop) => res,
-        res = legacy_stream_socket_loop => trace_err!(res)?,
 
         // keep these loops on the current task
         res = keepalive_sender_loop => res,
