@@ -274,6 +274,8 @@ fn main() {
         .rustified_enum("ALXRGraphicsApi")
         .rustified_enum("ALXRDecoderType")
         .rustified_enum("ALXRColorSpace")
+        .rustified_enum("ALXRFacialExpressionType")
+        .rustified_enum("ALXREyeTrackingType")
         .generate()
         .expect("bindings")
         .write_to_file(out_dir.join("alxr_engine.rs"))
@@ -325,24 +327,11 @@ fn main() {
         }
     };
 
-    // println!("cargo:rustc-link-lib=dylib={0}", "VkLayer_khronos_validation");
-    //println!("cargo:rustc-link-lib=dylib={0}", "XrApiLayer_core_validation");
     if target_triple.operating_system != OperatingSystem::Windows {
-        // println!("cargo:rustc-link-lib=dylib=avutil");
-        // println!("cargo:rustc-link-lib=dylib=swresample");
-        // println!("cargo:rustc-link-lib=dylib=avdevice");
-        // println!("cargo:rustc-link-lib=dylib=avcodec");
-        // println!("cargo:rustc-link-lib=dylib=avformat");
-        // println!("cargo:rustc-link-lib=dylib=avfilter");
-        // println!("cargo:rustc-link-lib=dylib=swscale");
         println!("cargo:rustc-link-lib=dylib={0}", "openxr_loader");
     }
 
     println!("cargo:rustc-link-lib=dylib={0}", "alxr_engine");
-
-    //println!("cargo:rustc-link-lib=static=stdc++");
-    //println!("cargo:rustc-link-lib=static=stdc++");
-    //println!("cargo:rustc-cdylib-link-arg=-Wl,--export-dynamic");
 
     for path in cpp_paths.iter() {
         println!("cargo:rerun-if-changed={}", path.to_string_lossy());

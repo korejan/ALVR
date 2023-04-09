@@ -14,7 +14,8 @@ use alxr_common::{
     alxr_destroy, alxr_init, alxr_on_pause, alxr_on_resume, alxr_process_frame, battery_send,
     init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
     time_sync_send, video_error_report_send, views_config_send, ALXRColorSpace, ALXRDecoderType,
-    ALXRGraphicsApi, ALXRRustCtx, ALXRSystemProperties, ALXRVersion, APP_CONFIG,
+    ALXREyeTrackingType, ALXRFacialExpressionType, ALXRGraphicsApi, ALXRRustCtx,
+    ALXRSystemProperties, ALXRVersion, APP_CONFIG,
 };
 
 fn get_build_property<'a>(jvm: &'a jni::JavaVM, property_name: &str) -> String {
@@ -202,7 +203,15 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
         noFrameSkip: APP_CONFIG.no_frameskip,
         disableLocalDimming: APP_CONFIG.disable_localdimming,
         headlessSession: APP_CONFIG.headless_session,
+        noPassthrough: APP_CONFIG.no_passthrough,
+        noFTServer: APP_CONFIG.no_tracking_server,
+        noHandTracking: APP_CONFIG.no_hand_tracking,
+        facialTracking: APP_CONFIG
+            .facial_tracking
+            .unwrap_or(ALXRFacialExpressionType::Auto),
+        eyeTracking: APP_CONFIG.eye_tracking.unwrap_or(ALXREyeTrackingType::Auto),
         firmwareVersion: get_firmware_version(&vm),
+        trackingServerPortNo: APP_CONFIG.tracking_server_port_no,
     };
     let mut sys_properties = ALXRSystemProperties::new();
     if !alxr_init(&ctx, &mut sys_properties) {

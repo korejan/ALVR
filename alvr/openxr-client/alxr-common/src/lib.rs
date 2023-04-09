@@ -27,6 +27,8 @@ use structopt::StructOpt;
 #[cfg(target_os = "android")]
 use android_system_properties::AndroidSystemProperties;
 
+const ALXR_TRACKING_SERVER_PORT_NO: u16 = 49192;
+
 #[derive(Debug, StructOpt)]
 #[structopt(name = "alxr-client", about = "An OpenXR based ALVR client.")]
 pub struct Options {
@@ -79,26 +81,30 @@ pub struct Options {
     /// Enables a headless OpenXR session when a runtime supports it.
     #[structopt(/*short,*/ long = "headless")]
     pub headless_session: bool,
-    // /// Set speed
-    // // we don't want to name it "speed", need to look smart
-    // #[structopt(short = "v", long = "velocity", default_value = "42")]
-    // speed: f64,
 
-    // /// Input file
-    // #[structopt(parse(from_os_str))]
-    // input: PathBuf,
+    /// Disables TrackingServer, if disabled no third-party apps will be able to make connection for features like facial/eye tracking.
+    #[structopt(/*short,*/ long)]
+    pub no_tracking_server: bool,
 
-    // /// Output file, stdout if not present
-    // #[structopt(parse(from_os_str))]
-    // output: Option<PathBuf>,
+    /// Disables passthrough extensions, (XR_FB_passthrough | XR_HTC_passthrough) no attempt will be made to enable the extension.
+    #[structopt(/*short,*/ long)]
+    pub no_passthrough: bool,
 
-    // /// Where to write the output: to `stdout` or `file`
-    // #[structopt(short)]
-    // out_type: String,
+    /// Disables hand-tracking extensions, XR_EXT_hand_tracking no attempt will be made to enable the extension.
+    #[structopt(/*short,*/ long)]
+    pub no_hand_tracking: bool,
 
-    // /// File name: only required when `out-type` is set to `file`
-    // #[structopt(name = "FILE", required_if("out-type", "file"))]
-    // file_name: Option<String>,
+    /// Disable or Specify which type of facial tracking extension to use, default is auto detection in order of vendor specific to multi-vendor
+    #[structopt(long, parse(from_str))]
+    pub facial_tracking: Option<ALXRFacialExpressionType>,
+
+    /// Disable or specify which type of facial tracking extension to use, default is auto detection in order of vendor specific to multi-vendor
+    #[structopt(long, parse(from_str))]
+    pub eye_tracking: Option<ALXREyeTrackingType>,
+
+    /// Sets the port number for the tracking server to listen on.
+    #[structopt(long, default_value = "49192")]
+    pub tracking_server_port_no: u16,
 }
 
 #[cfg(target_os = "android")]
@@ -118,6 +124,12 @@ impl Options {
             no_frameskip: false,
             disable_localdimming: false,
             headless_session: false,
+            no_tracking_server: false,
+            no_passthrough: false,
+            no_hand_tracking: false,
+            facial_tracking: Some(ALXRFacialExpressionType::Auto),
+            eye_tracking: Some(ALXREyeTrackingType::Auto),
+            tracking_server_port_no: ALXR_TRACKING_SERVER_PORT_NO,
         };
 
         let sys_properties = AndroidSystemProperties::new();
@@ -200,6 +212,64 @@ impl Options {
             );
         }
 
+        let property_name = "debug.alxr.no_tracking_server";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.no_tracking_server = std::str::FromStr::from_str(value.as_str())
+                .unwrap_or(new_options.no_tracking_server);
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
+                new_options.no_tracking_server
+            );
+        }
+
+        let property_name = "debug.alxr.no_passthrough";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.no_passthrough =
+                std::str::FromStr::from_str(value.as_str()).unwrap_or(new_options.no_passthrough);
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
+                new_options.no_passthrough
+            );
+        }
+
+        let property_name = "debug.alxr.no_hand_tracking";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.no_hand_tracking =
+                std::str::FromStr::from_str(value.as_str()).unwrap_or(new_options.no_hand_tracking);
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
+                new_options.no_hand_tracking
+            );
+        }
+
+        let property_name = "debug.alxr.facial_tracking";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.facial_tracking = Some(From::from(value.as_str()));
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {:?}",
+                new_options.facial_tracking
+            );
+        }
+
+        let property_name = "debug.alxr.eye_tracking";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.eye_tracking = Some(From::from(value.as_str()));
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {:?}",
+                new_options.eye_tracking
+            );
+        }
+
+        let property_name = "debug.alxr.tracking_server_port_no";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.tracking_server_port_no = std::str::FromStr::from_str(value.as_str())
+                .unwrap_or(new_options.tracking_server_port_no);
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
+                new_options.tracking_server_port_no
+            );
+        }
+
         new_options
     }
 }
@@ -221,6 +291,12 @@ impl Options {
             no_frameskip: false,
             disable_localdimming: false,
             headless_session: false,
+            no_tracking_server: false,
+            no_passthrough: false,
+            no_hand_tracking: false,
+            facial_tracking: Some(ALXRFacialExpressionType::Auto),
+            eye_tracking: Some(ALXREyeTrackingType::Auto),
+            tracking_server_port_no: ALXR_TRACKING_SERVER_PORT_NO,
         };
         new_options
     }
