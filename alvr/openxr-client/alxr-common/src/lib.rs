@@ -79,7 +79,7 @@ pub struct Options {
     /// Enables a headless OpenXR session when a runtime supports it.
     #[structopt(/*short,*/ long = "headless")]
     pub headless_session: bool,
-    
+
     /// Disables TrackingServer, if disabled no third-party apps will be able to make connection for features like facial/eye tracking.
     #[structopt(/*short,*/ long)]
     pub no_tracking_server: bool,
@@ -207,8 +207,8 @@ impl Options {
 
         let property_name = "debug.alxr.no_tracking_server";
         if let Some(value) = sys_properties.get(&property_name) {
-            new_options.no_tracking_server =
-                std::str::FromStr::from_str(value.as_str()).unwrap_or(new_options.no_tracking_server);
+            new_options.no_tracking_server = std::str::FromStr::from_str(value.as_str())
+                .unwrap_or(new_options.no_tracking_server);
             println!(
                 "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
                 new_options.no_tracking_server
