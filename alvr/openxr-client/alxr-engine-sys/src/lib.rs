@@ -50,6 +50,31 @@ impl From<&str> for crate::ALXRColorSpace {
     }
 }
 
+impl From<&str> for crate::ALXRFacialExpressionType {
+    fn from(input: &str) -> Self {
+        let trimmed = input.trim();
+        match trimmed {
+            "None" => crate::ALXRFacialExpressionType::None,
+            "FB" => crate::ALXRFacialExpressionType::FB,
+            "HTC" => crate::ALXRFacialExpressionType::HTC,
+            "Pico" => crate::ALXRFacialExpressionType::Pico,
+            _ => crate::ALXRFacialExpressionType::Auto,
+        }
+    }
+}
+
+impl From<&str> for crate::ALXREyeTrackingType {
+    fn from(input: &str) -> Self {
+        let trimmed = input.trim();
+        match trimmed {
+            "None" => crate::ALXREyeTrackingType::None,
+            "FBEyeTrackingSocial" => crate::ALXREyeTrackingType::FBEyeTrackingSocial,
+            "ExtEyeGazeInteraction" => crate::ALXREyeTrackingType::ExtEyeGazeInteraction,
+            _ => crate::ALXREyeTrackingType::Auto,
+        }
+    }
+}
+
 impl ALXRSystemProperties {
     pub fn new() -> ALXRSystemProperties {
         ALXRSystemProperties {
