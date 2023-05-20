@@ -52,6 +52,8 @@ android {
             externalNativeBuild.cmake.arguments += [/*"-DANDROID_STL=c++_shared",*/ "-DBUILD_LOADER=ON", "-DUSE_OCULUS_MOBILE_LOADER=OFF"]
         }
         OculusMobileOXR {
+            minSdk 29
+            targetSdk 32
             dimension 'headset'
             //applicationIdSuffix '.oculus'
             ndk {
