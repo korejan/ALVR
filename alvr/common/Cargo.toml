@@ -10,7 +10,7 @@ rust-version = "1.58"
 backtrace = "0.3"
 lazy_static = "1"
 log = "0.4"
-glam = { version = "0.20", features = ["serde"] }
+glam = { version = "0.24", features = ["serde"] }
 semver = { version = "1", features = ["serde"] }
 
 [target.'cfg(windows)'.dependencies]

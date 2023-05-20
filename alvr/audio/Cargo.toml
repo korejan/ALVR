@@ -11,20 +11,20 @@ alvr_common = { path = "../common" }
 alvr_session = { path = "../session" }
 alvr_sockets = { path = "../sockets" }
 
-cpal = "0.13.5"
+cpal = "0.14"
 parking_lot = "0.12"
-rodio = "0.15"
+rodio = "0.16"
 serde = "1"
 tokio = "1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-cpal = { version = "0.13.5", features = ["jack"] }
+cpal = { version = "0.14", features = ["jack"] }
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
-cpal = "0.13.5"
+cpal = "0.14"
 
 [target.'cfg(windows)'.dependencies]
-widestring = "0.5"
+widestring = "1"
 winapi = { version = "0.3", features = [
     "impl-default",
     "combaseapi",

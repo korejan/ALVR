@@ -36,7 +36,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
 semver = "1"
 local_ipaddress = "0.1"
 structopt = "0.3"
-glam = { version = "0.20", features = ["serde"] }
+glam = { version = "0.24", features = ["serde"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 alvr_audio = { path = "../../audio" }
