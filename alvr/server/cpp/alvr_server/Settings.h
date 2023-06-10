@@ -156,6 +156,4 @@ public:
 	int64_t m_nvencRcMaxBitrate;
 	int64_t m_nvencRcAverageBitrate;
 	bool m_nvencEnableWeightedPrediction;
-
-	std::string m_captureFrameDir;
 };
