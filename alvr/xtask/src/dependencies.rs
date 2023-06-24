@@ -27,7 +27,7 @@ pub fn build_ffmpeg_linux_install(
     */
 
     let download_path = afs::deps_dir().join("linux");
-    let ffmpeg_path = download_path.join(format!("FFmpeg-{}", version_tag));
+    let ffmpeg_path = download_path.join(format!("FFmpeg-{}", version_tag.replace("/", "-")));
     if !ffmpeg_path.exists() {
         download_and_extract_zip(
             format!(
@@ -139,10 +139,10 @@ pub fn build_ffmpeg_linux(nvenc_flag: bool) -> std::path::PathBuf {
 
 pub fn extract_ffmpeg_windows() -> std::path::PathBuf {
     let download_path = afs::deps_dir().join("windows");
-    let ffmpeg_path = download_path.join("ffmpeg-n5.1-latest-win64-gpl-shared-5.1");
+    let ffmpeg_path = download_path.join("ffmpeg-n6.0-latest-win64-gpl-shared-6.0");
     if !ffmpeg_path.exists() {
         download_and_extract_zip(
-            "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n5.1-latest-win64-gpl-shared-5.1.zip",
+            "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n6.0-latest-win64-gpl-shared-6.0.zip",
             &download_path,
         );
     }

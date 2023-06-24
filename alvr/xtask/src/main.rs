@@ -1029,16 +1029,13 @@ fn main() {
         let reproducible = args.contains("--reproducible");
         let root: Option<String> = args.opt_value_from_str("--root").unwrap();
 
-        let default_var = String::from("n5.0");
+        let default_var = String::from("release/6.0");
         let mut ffmpeg_version: String =
             args.opt_value_from_str("--ffmpeg-version").unwrap().map_or(
                 default_var.clone(),
                 |s: String| if s.is_empty() { default_var } else { s },
             );
         assert!(!ffmpeg_version.is_empty());
-        if !ffmpeg_version.starts_with('n') {
-            ffmpeg_version.insert(0, 'n');
-        }
 
         if args.finish().is_empty() {
             match subcommand.as_str() {

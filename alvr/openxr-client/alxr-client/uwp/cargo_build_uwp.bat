@@ -16,7 +16,7 @@ for /f "usebackq delims=" %%i in (`%toolpath% -latest -property installationPath
 )
 
 if exist !VCVarsAllBat! (
-    call !VCVarsAllBat! !arch! uwp 10.0.20348.0 -vcvars_ver=14.33.31629
+    call !VCVarsAllBat! !arch! uwp 10.0.20348.0 -vcvars_ver=14.36.32532
     @REM Must use Visual Studio's fork of cmake for building UWP apps.
     if exist !CMakePath! (
         set PATH=!CMakePath!;!PATH!

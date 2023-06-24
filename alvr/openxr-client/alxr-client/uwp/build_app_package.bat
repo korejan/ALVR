@@ -15,6 +15,6 @@ for /f "usebackq delims=" %%i in (`%toolpath% -latest -property installationPath
 )
 
 if exist !VCVarsAllBat! (
-    call !VCVarsAllBat! !arch! uwp 10.0.20348.0 -vcvars_ver=14.33.31629
+    call !VCVarsAllBat! !arch! uwp 10.0.20348.0 -vcvars_ver=14.36.32532
     makeappx pack /o /p alxr-client-uwp_%2_%1.msix /v /f %3
 )
