@@ -87,11 +87,11 @@ jobs:
           sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
           # ubuntu-focal cmake package is too old...
-          CMAKE_FILE=cmake-3.24.2-linux-x86_64.sh
-          wget https://github.com/Kitware/CMake/releases/download/v3.24.2/${CMAKE_FILE}
+          CMAKE_FILE=cmake-3.26.4-linux-x86_64.sh
+          wget https://github.com/Kitware/CMake/releases/download/v3.26.4/${CMAKE_FILE}
           chmod +x ${CMAKE_FILE}
           ./${CMAKE_FILE} --skip-license --include-subdir
-          export PATH=${PWD}/cmake-3.24.2-linux-x86_64:$PATH
+          export PATH=${PWD}/cmake-3.26.4-linux-x86_64:$PATH
           
           # ubuntu-focal glslang package is too old...
           wget https://github.com/KhronosGroup/glslang/releases/download/master-tot/glslang-master-linux-Release.zip
@@ -113,7 +113,7 @@ jobs:
           CXX: /usr/bin/g++-10
           RUST_BACKTRACE: 1
         run: |
-          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=n4.4
+          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=release/4.4
           tar -czvf ./build/alxr-client-linux.tar.gz -C ./build/release/alxr_client_linux .
       
       - name: Upload portable alxr-release for Linux
@@ -151,11 +151,11 @@ jobs:
           sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
           # ubuntu-focal cmake package is too old...
-          CMAKE_FILE=cmake-3.24.2-linux-x86_64.sh
-          wget https://github.com/Kitware/CMake/releases/download/v3.24.2/${CMAKE_FILE}
+          CMAKE_FILE=cmake-3.26.4-linux-x86_64.sh
+          wget https://github.com/Kitware/CMake/releases/download/v3.26.4/${CMAKE_FILE}
           chmod +x ${CMAKE_FILE}
           ./${CMAKE_FILE} --skip-license --include-subdir
-          export PATH=${PWD}/cmake-3.24.2-linux-x86_64:$PATH
+          export PATH=${PWD}/cmake-3.26.4-linux-x86_64:$PATH
           
           # ubuntu-focal glslang package is too old...
           wget https://github.com/KhronosGroup/glslang/releases/download/master-tot/glslang-master-linux-Release.zip
@@ -177,7 +177,7 @@ jobs:
           CXX: /usr/bin/g++-10
           RUST_BACKTRACE: 1
         run: |
-          cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=n4.4
+          cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=release/4.4
           tar -czvf ./build/alxr-client-linux-debug.tar.gz -C ./build/debug/alxr_client_linux .
             
       - name: Upload portable alxr-debug for Linux
