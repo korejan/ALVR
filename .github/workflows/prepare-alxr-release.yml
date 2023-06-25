@@ -222,10 +222,10 @@ jobs:
           RUST_BACKTRACE: 1
         run: |
           # without nvidia/cuda
-          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia
+          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=release/5.1
           tar -czvf ./build/alxr-client-ubuntu-22.04-no-nvidia.tar.gz -C ./build/release/alxr_client_linux .
           # with nvidia/cuda
-          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl
+          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --ffmpeg-version=release/5.1
           tar -czvf ./build/alxr-client-ubuntu-22.04.tar.gz -C ./build/release/alxr_client_linux_cuda .
       
       - name: Upload  ubuntu-22.04 alxr-release for Linux
@@ -280,10 +280,10 @@ jobs:
           RUST_BACKTRACE: 1
         run: |
           # without nvidia/cuda
-          cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia
+          cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=release/5.1
           tar -czvf ./build/alxr-client-ubuntu-22.04-no-nvidia-debug.tar.gz -C ./build/debug/alxr_client_linux .
           # with nvidia/cuda
-          cargo xtask build-alxr-client --bundle-ffmpeg --gpl
+          cargo xtask build-alxr-client --bundle-ffmpeg --gpl --ffmpeg-version=release/5.1
           tar -czvf ./build/alxr-client-ubuntu-22.04-debug.tar.gz -C ./build/debug/alxr_client_linux_cuda .
       
       - name: Upload  ubuntu-22.04 alxr-debug for Linux
@@ -517,11 +517,11 @@ jobs:
           vulkan-query-version: latest
           vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
           vulkan-use-cache: true
-      - uses: Jimver/cuda-toolkit@v0.2.8
+      - uses: Jimver/cuda-toolkit@v0.2.10
         id: cuda-toolkit
         with:
           method: 'network'
-          cuda: '11.7.0'
+          cuda: '12.1.0'
           # sub-packages: '["nvcc", "visual_studio_integration"]'
       
       - name: Build and install ALXR dependencies
@@ -586,11 +586,11 @@ jobs:
           vulkan-query-version: latest
           vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
           vulkan-use-cache: true
-      - uses: Jimver/cuda-toolkit@v0.2.8
+      - uses: Jimver/cuda-toolkit@v0.2.10
         id: cuda-toolkit
         with:
           method: 'network'
-          cuda: '11.7.0'
+          cuda: '12.1.0'
           # sub-packages: '["nvcc", "visual_studio_integration"]'
       
       - name: Build and install ALXR dependencies
