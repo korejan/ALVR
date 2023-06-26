@@ -656,23 +656,23 @@ pub fn session_settings_default() -> SettingsDefault {
             adapter_index: 0,
             render_resolution: FrameSizeDefault {
                 variant: FrameSizeDefaultVariant::Scale,
-                Scale: 0.75,
+                Scale: 1.0,
                 Absolute: FrameSizeAbsoluteDefault {
-                    width: 2880,
-                    height: 1600,
+                    width: 3664,
+                    height: 1920,
                 },
             },
             recommended_target_resolution: FrameSizeDefault {
                 variant: FrameSizeDefaultVariant::Scale,
-                Scale: 0.75,
+                Scale: 1.0,
                 Absolute: FrameSizeAbsoluteDefault {
-                    width: 2880,
-                    height: 1600,
+                    width: 3664,
+                    height: 1920,
                 },
             },
-            preferred_fps: 72.,
+            preferred_fps: 90.,
             codec: CodecTypeDefault {
-                variant: CodecTypeDefaultVariant::H264,
+                variant: CodecTypeDefaultVariant::HEVC,
             },
             rate_control_mode: RateControlModeDefault {
                 variant: RateControlModeDefaultVariant::CBR,
@@ -682,11 +682,11 @@ pub fn session_settings_default() -> SettingsDefault {
             entropy_coding: EntropyCodingDefault {
                 variant: EntropyCodingDefaultVariant::CAVLC,
             },
-            use_10bit_encoder: false,
+            use_10bit_encoder: true,
             sw_thread_count: 0,
-            encode_bitrate_mbs: 30,
+            encode_bitrate_mbs: 200,
             adaptive_bitrate: SwitchDefault {
-                enabled: true,
+                enabled: false,
                 content: AdaptiveBitrateDescDefault {
                     bitrate_maximum: 200,
                     latency_target: 12000,
@@ -773,7 +773,7 @@ pub fn session_settings_default() -> SettingsDefault {
                 },
             },
             color_correction: SwitchDefault {
-                enabled: true,
+                enabled: false,
                 content: ColorCorrectionDescDefault {
                     brightness: 0.,
                     contrast: 0.,
@@ -854,11 +854,11 @@ pub fn session_settings_default() -> SettingsDefault {
                     registered_device_type: "oculus/1WMGH000XX0000_Controller".into(),
                     input_profile_path: "{oculus}/input/touch_profile.json".into(),
                     pose_time_offset: 0.01,
-                    clientside_prediction: false,
-                    serverside_prediction: true,
+                    clientside_prediction: true,
+                    serverside_prediction: false,
                     linear_velocity_cutoff: 0.01,
                     angular_velocity_cutoff: 10.,
-                    position_offset_left: [-0.0065, 0.002, -0.051],
+                    position_offset_left: [-0.008, 0.038, -0.01],
                     rotation_offset_left: [40., 0., 0.],
                     haptics_intensity: 1.,
                     haptics_amplitude_curve: 0.4,
@@ -882,7 +882,7 @@ pub fn session_settings_default() -> SettingsDefault {
                 variant: if !cfg!(target_os = "linux") {
                     SocketProtocolDefaultVariant::Udp
                 } else {
-                    SocketProtocolDefaultVariant::Tcp
+                    SocketProtocolDefaultVariant::Udp
                 },
                 ThrottledUdp: SocketProtocolThrottledUdpDefault {
                     bitrate_multiplier: 1.5,
@@ -919,13 +919,7 @@ pub fn session_settings_default() -> SettingsDefault {
             restart_confirm_dialog: true,
             prompt_before_update: true,
             update_channel: UpdateChannelDefault {
-                variant: if alvr_common::is_stable() && cfg!(windows) {
-                    UpdateChannelDefaultVariant::Stable
-                } else if alvr_common::is_nightly() && cfg!(windows) {
-                    UpdateChannelDefaultVariant::Nightly
-                } else {
-                    UpdateChannelDefaultVariant::NoUpdates
-                },
+                variant: UpdateChannelDefaultVariant::NoUpdates,
             },
             log_to_disk: cfg!(debug_assertions),
             notification_level: LogLevelDefault {

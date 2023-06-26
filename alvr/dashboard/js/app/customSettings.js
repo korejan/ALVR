@@ -588,10 +588,10 @@ define([
                     ${alvrSettings.getHelpReset(
                         "trackingSpeed",
                         "_root_headset_controllers_content",
-                        "steamvr",
+                        "oculus",
                         (postFix = ""),
                         "trackingSpeed",
-                        i18nWizard.steamvrTracking
+                        i18nWizard.oculusTracking
                     )}
                         </div>
                         <div class="btn-group" data-toggle="buttons" id="trackingSpeedButtons">
