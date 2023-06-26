@@ -50,6 +50,18 @@ define([
                     keyboard: false,
                 });
 
+                var trackingRadioButton = $("input:radio[name='tracking'][value='oculus']");
+                if (trackingRadioButton.length > 0) {
+                    trackingRadioButton.prop("checked", "true");
+                    trackingRadioButton.parent().addClass("active");
+                }
+
+                var perfRadioButton = $("input:radio[name='performance'][value='visual_quality']");
+                if (perfRadioButton.length > 0) {
+                    perfRadioButton.prop("checked", "true");
+                    perfRadioButton.parent().addClass("active");
+                }
+
                 $("#wizardBackButton").hide();
 
                 $("#GPUSupportText").text(getAndCheckGPUSupport());
@@ -169,15 +181,17 @@ define([
                     const ffrStrengthTarget = $("#_root_video_foveatedRendering_content_strength");
                     const bitrateTarget = $("#_root_video_encodeBitrateMbs");
                     const preferredFps = $("#_root_video_preferredFps");
+                    const adaptiveBitrate = $("#_root_connection_adaptiveBitrateEnabled");
 
                     switch (target.attr("value")) {
                         case "compatibility":
-                            renderResolutionScale.val(0.75);
-                            targetResolutionScale.val(0.75);
-                            bitrateTarget.val(15);
+                            renderResolutionScale.val(1);
+                            targetResolutionScale.val(1);
+                            bitrateTarget.val(60);
                             enableFfrTarget.prop("checked", true);
+                            adaptiveBitrate.prop("checked", true);
                             ffrStrengthTarget.val(2);
-                            preferredFps.val(72);
+                            preferredFps.val(90);
 
                             const h264CodecTarget = $("#_root_video_codec_H264-choice-");
                             h264CodecTarget
@@ -192,8 +206,9 @@ define([
                         case "visual_quality":
                             renderResolutionScale.val(1);
                             targetResolutionScale.val(1);
-                            bitrateTarget.val(40);
-                            enableFfrTarget.prop("checked", false);
+                            bitrateTarget.val(200);
+                            adaptiveBitrate.prop("checked", false);
+                            enableFfrTarget.prop("checked", true);
                             preferredFps.val(90);
 
                             const hevcCodecTarget = $("#_root_video_codec_HEVC-choice-");
