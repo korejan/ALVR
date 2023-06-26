@@ -50,6 +50,18 @@ define([
                     keyboard: false,
                 });
 
+                var trackingRadioButton = $("input:radio[name='tracking'][value='oculus']");
+                if (trackingRadioButton.length > 0) {
+                    trackingRadioButton.prop("checked", "true");
+                    trackingRadioButton.parent().addClass("active");
+                }
+
+                var perfRadioButton = $("input:radio[name='performance'][value='visual_quality']");
+                if (perfRadioButton.length > 0) {
+                    perfRadioButton.prop("checked", "true");
+                    perfRadioButton.parent().addClass("active");
+                }
+
                 $("#wizardBackButton").hide();
 
                 $("#GPUSupportText").text(getAndCheckGPUSupport());
@@ -172,12 +184,12 @@ define([
 
                     switch (target.attr("value")) {
                         case "compatibility":
-                            renderResolutionScale.val(0.75);
-                            targetResolutionScale.val(0.75);
-                            bitrateTarget.val(15);
+                            renderResolutionScale.val(1);
+                            targetResolutionScale.val(1);
+                            bitrateTarget.val(60);
                             enableFfrTarget.prop("checked", true);
                             ffrStrengthTarget.val(2);
-                            preferredFps.val(72);
+                            preferredFps.val(90);
 
                             const h264CodecTarget = $("#_root_video_codec_H264-choice-");
                             h264CodecTarget
@@ -192,7 +204,7 @@ define([
                         case "visual_quality":
                             renderResolutionScale.val(1);
                             targetResolutionScale.val(1);
-                            bitrateTarget.val(40);
+                            bitrateTarget.val(150);
                             enableFfrTarget.prop("checked", false);
                             preferredFps.val(90);
 
