@@ -29,7 +29,7 @@ pub use paths::*;
 pub use primitives::*;
 pub use version::*;
 
-pub const ALVR_NAME: &str = "ALVR";
+pub const ALVR_NAME: &str = "ALXR";
 
 pub type StrResult<T = ()> = Result<T, String>;
 
