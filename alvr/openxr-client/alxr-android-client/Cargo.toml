@@ -42,7 +42,7 @@ apk_name = "alxr-client"
 # Folder containing extra shared libraries intended to be dynamically loaded at runtime.
 # Files matching `libs_folder/${android_abi}/*.so` are added to the apk
 # according to the specified build_targets.
-runtime_libs = "runtime-libs"
+#runtime_libs = "runtime-libs"
 
 #
 # The following value can be customized on a per bin/example basis. See multiple_targets example
