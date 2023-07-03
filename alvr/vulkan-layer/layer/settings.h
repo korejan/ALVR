@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 
 class Settings
 {
@@ -21,6 +22,6 @@ public:
 	}
 
 	int m_refreshRate;
-	uint32_t m_renderWidth;
-	uint32_t m_renderHeight;
+	std::uint32_t m_renderWidth;
+	std::uint32_t m_renderHeight;
 };
