@@ -9,7 +9,7 @@ use std::{env, path::PathBuf};
 #[cfg(target_os = "linux")]
 fn do_ffmpeg_pkg_config(build: &mut cc::Build) {
     let ffmpeg_path =
-        env::var("CARGO_MANIFEST_DIR").unwrap() + "/../../deps/linux/FFmpeg-release-5.1";
+        env::var("CARGO_MANIFEST_DIR").unwrap() + "/../../deps/linux/FFmpeg-release-5.1/";
 
     #[cfg(feature = "bundled_ffmpeg")]
     {
