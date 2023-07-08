@@ -165,9 +165,9 @@ void (*LogWarn)(const char *stringPtr);
 void (*LogInfo)(const char *stringPtr);
 void (*LogDebug)(const char *stringPtr);
 void (*DriverReadyIdle)(bool setDefaultChaprone);
-void (*VideoSend)(VideoFrame header, unsigned char *buf, int len);
+void (*VideoSend)(const VideoFrame* header, unsigned char *buf, int len);
 void (*HapticsSend)(unsigned long long path, float duration_s, float frequency, float amplitude);
-void (*TimeSyncSend)(TimeSync packet);
+void (*TimeSyncSend)(const TimeSync* packet);
 void (*ShutdownRuntime)();
 unsigned long long (*PathStringToHash)(const char *path);
 
@@ -207,7 +207,7 @@ void RequestIDR() {
     }
 }
 
-void InputReceive(TrackingInfo data) {
+void InputReceive(const TrackingInfo* data) {
     if (g_driver_provider.hmd && g_driver_provider.hmd->m_Listener) {
         g_driver_provider.hmd->m_Listener->m_Statistics->CountPacket(sizeof(TrackingInfo));
 
@@ -215,15 +215,15 @@ void InputReceive(TrackingInfo data) {
         TimeSync sendBuf = {};
         sendBuf.mode = 3;
         sendBuf.serverTime = Current - g_driver_provider.hmd->m_Listener->m_TimeDiff;
-        sendBuf.trackingRecvFrameIndex = data.targetTimestampNs;
-        TimeSyncSend(sendBuf);
+        sendBuf.trackingRecvFrameIndex = data->targetTimestampNs;
+        TimeSyncSend(&sendBuf);
 
-        g_driver_provider.hmd->OnPoseUpdated(data);
+        g_driver_provider.hmd->OnPoseUpdated(*data);
     }
 }
-void TimeSyncReceive(TimeSync data) {
+void TimeSyncReceive(const TimeSync *data) {
     if (g_driver_provider.hmd && g_driver_provider.hmd->m_Listener) {
-        g_driver_provider.hmd->m_Listener->ProcessTimeSync(data);
+        g_driver_provider.hmd->m_Listener->ProcessTimeSync(*data);
     }
 }
 void VideoErrorReportReceive() {
@@ -248,9 +248,9 @@ void SetOpenvrProperty(unsigned long long top_level_path, OpenvrProperty prop) {
     }
 }
 
-void SetViewsConfig(ViewsConfigData config) {
+void SetViewsConfig(const ViewsConfigData *config) {
     if (g_driver_provider.hmd) {
-        g_driver_provider.hmd->SetViewsConfig(config);
+        g_driver_provider.hmd->SetViewsConfig(*config);
     }
 }
 

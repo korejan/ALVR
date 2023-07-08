@@ -38,7 +38,7 @@ class OvrHmd : public TrackedDevice,
     virtual void DebugRequest(const char *request, char *response_buffer, uint32_t size) {}
     virtual vr::DriverPose_t GetPose();
 
-    void OnPoseUpdated(TrackingInfo info);
+    void OnPoseUpdated(const TrackingInfo& info);
 
     void StartStreaming();
 
@@ -46,7 +46,7 @@ class OvrHmd : public TrackedDevice,
 
     void updateController(const TrackingInfo &info);
 
-    void SetViewsConfig(ViewsConfigData config);
+    void SetViewsConfig(const ViewsConfigData &config);
 
     bool IsTrackingRef() const { return m_deviceClass == vr::TrackedDeviceClass_TrackingReference; }
     bool IsHMD() const { return m_deviceClass == vr::TrackedDeviceClass_HMD; }

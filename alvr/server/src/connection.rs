@@ -949,7 +949,7 @@ async fn connection_pipeline() -> StrResult {
                     ],
                 };
 
-                unsafe { crate::InputReceive(tracking_info) };
+                unsafe { crate::InputReceive(&tracking_info) };
             }
         }
     };
@@ -1017,13 +1017,13 @@ async fn connection_pipeline() -> StrResult {
                         trackingRecvFrameIndex: data.tracking_recv_frame_index,
                     };
 
-                    unsafe { crate::TimeSyncReceive(time_sync) };
+                    unsafe { crate::TimeSyncReceive(&time_sync) };
                 }
                 Ok(ClientControlPacket::VideoErrorReport) => unsafe {
                     crate::VideoErrorReportReceive()
                 },
                 Ok(ClientControlPacket::ViewsConfig(config)) => unsafe {
-                    crate::SetViewsConfig(crate::ViewsConfigData {
+                    let vc = crate::ViewsConfigData {
                         fov: [
                             EyeFov {
                                 left: config.fov[0].left,
@@ -1039,7 +1039,8 @@ async fn connection_pipeline() -> StrResult {
                             },
                         ],
                         ipd_m: config.ipd_m,
-                    });
+                    };
+                    crate::SetViewsConfig(&vc);
                 },
                 Ok(ClientControlPacket::Battery(packet)) => unsafe {
                     crate::SetBattery(packet.device_id, packet.gauge_value, packet.is_plugged);

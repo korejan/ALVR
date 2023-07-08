@@ -23,7 +23,7 @@
 const vr::HmdMatrix34_t MATRIX_IDENTITY = {
     {{1.0, 0.0, 0.0, 0.0}, {0.0, 1.0, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}}};
 
-vr::HmdRect2_t fov_to_projection(EyeFov fov) {
+vr::HmdRect2_t fov_to_projection(const EyeFov& fov) {
     auto proj_bounds = vr::HmdRect2_t{};
     proj_bounds.vTopLeft.v[0] = tanf(fov.left);
     proj_bounds.vBottomRight.v[0] = tanf(fov.right);
@@ -347,17 +347,17 @@ vr::DriverPose_t OvrHmd::GetPose() {
     return pose;
 }
 
-void OvrHmd::OnPoseUpdated(TrackingInfo info) {
+void OvrHmd::OnPoseUpdated(const TrackingInfo& info) {
     if (this->object_id != vr::k_unTrackedDeviceIndexInvalid) {
+        
+        m_TrackingInfo = info;
         // if 3DOF, zero the positional data!
         if (Settings::Instance().m_force3DOF) {
-            info.HeadPose_Pose_Position.x = 0;
-            info.HeadPose_Pose_Position.y = 0;
-            info.HeadPose_Pose_Position.z = 0;
+            m_TrackingInfo.HeadPose_Pose_Position.x = 0;
+            m_TrackingInfo.HeadPose_Pose_Position.y = 0;
+            m_TrackingInfo.HeadPose_Pose_Position.z = 0;
         }
-
-        m_TrackingInfo = info;
-
+        
         // TODO: Right order?
 
         if (!Settings::Instance().m_disableController) {
@@ -417,7 +417,7 @@ void OvrHmd::StartStreaming() {
     m_streamComponentsInitialized = true;
 }
 
-void OvrHmd::SetViewsConfig(ViewsConfigData config) {
+void OvrHmd::SetViewsConfig(const ViewsConfigData &config) {
     this->views_config = config;
 
     auto left_transform = MATRIX_IDENTITY;

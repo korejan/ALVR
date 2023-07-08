@@ -81,7 +81,7 @@ void ClientConnection::FECSend(uint8_t *buf, int len, uint64_t targetTimestampNs
 
 			header->packetCounter = videoPacketCounter;
 			videoPacketCounter++;
-			VideoSend(*header, (unsigned char *)packetBuffer + sizeof(VideoFrame), copyLength);
+			VideoSend(header, (unsigned char *)packetBuffer + sizeof(VideoFrame), copyLength);
 			m_Statistics->CountPacket(sizeof(VideoFrame) + copyLength);
 			header->fecIndex++;
 		}
@@ -95,7 +95,7 @@ void ClientConnection::FECSend(uint8_t *buf, int len, uint64_t targetTimestampNs
 			header->packetCounter = videoPacketCounter;
 			videoPacketCounter++;
 			
-			VideoSend(*header, (unsigned char *)packetBuffer + sizeof(VideoFrame), copyLength);
+			VideoSend(header, (unsigned char *)packetBuffer + sizeof(VideoFrame), copyLength);
 			m_Statistics->CountPacket(sizeof(VideoFrame) + copyLength);
 			header->fecIndex++;
 		}
@@ -120,7 +120,7 @@ void ClientConnection::SendVideo(uint8_t *buf, int len, uint64_t targetTimestamp
 		header.sentTime = GetTimestampUs();
 		header.frameByteSize = len;
 
-		VideoSend(header, buf, len);
+		VideoSend(&header, buf, len);
 
 		m_Statistics->CountPacket(sizeof(VideoFrame) + len);
 
@@ -130,10 +130,10 @@ void ClientConnection::SendVideo(uint8_t *buf, int len, uint64_t targetTimestamp
 	mVideoFrameIndex++;
 }
 
-void ClientConnection::ProcessTimeSync(TimeSync data) {
+void ClientConnection::ProcessTimeSync(const TimeSync &data) {
 	m_Statistics->CountPacket(sizeof(TrackingInfo));
 
-	TimeSync *timeSync = &data;
+	const TimeSync * const timeSync = &data;
 	uint64_t Current = GetTimestampUs();
 
 	if (timeSync->mode == 0) {
@@ -148,7 +148,7 @@ void ClientConnection::ProcessTimeSync(TimeSync data) {
 		sendBuf.mode = 1;
 		sendBuf.serverTime = Current;
 		sendBuf.serverTotalLatency = (int)(m_reportedStatistics.averageSendLatency + (timing[0].m_flPreSubmitGpuMs + timing[0].m_flPostSubmitGpuMs + timing[0].m_flTotalRenderGpuMs + timing[0].m_flCompositorRenderGpuMs + timing[0].m_flCompositorRenderCpuMs + timing[0].m_flCompositorIdleCpuMs + timing[0].m_flClientFrameIntervalMs + timing[0].m_flPresentCallCpuMs + timing[0].m_flWaitForPresentCpuMs + timing[0].m_flSubmitFrameMs) * 1000 + m_Statistics->GetEncodeLatencyAverage() + m_reportedStatistics.averageTransportLatency + m_reportedStatistics.averageDecodeLatency + m_reportedStatistics.idleTime);
-		TimeSyncSend(sendBuf);
+		TimeSyncSend(&sendBuf);
 
 		m_Statistics->NetworkTotal(sendBuf.serverTotalLatency);
 		m_Statistics->NetworkSend(m_reportedStatistics.averageTransportLatency);

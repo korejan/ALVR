@@ -158,12 +158,12 @@ extern "C" void (*LogWarn)(const char *stringPtr);
 extern "C" void (*LogInfo)(const char *stringPtr);
 extern "C" void (*LogDebug)(const char *stringPtr);
 extern "C" void (*DriverReadyIdle)(bool setDefaultChaprone);
-extern "C" void (*VideoSend)(VideoFrame header, unsigned char *buf, int len);
+extern "C" void (*VideoSend)(const VideoFrame* header, unsigned char *buf, int len);
 extern "C" void (*HapticsSend)(unsigned long long path,
                                float duration_s,
                                float frequency,
                                float amplitude);
-extern "C" void (*TimeSyncSend)(TimeSync packet);
+extern "C" void (*TimeSyncSend)(const TimeSync* packet);
 extern "C" void (*ShutdownRuntime)();
 extern "C" unsigned long long (*PathStringToHash)(const char *path);
 
@@ -172,11 +172,11 @@ extern "C" void InitializeStreaming();
 extern "C" void DeinitializeStreaming();
 extern "C" void RequestIDR();
 extern "C" void SetChaperone(float areaWidth, float areaHeight);
-extern "C" void InputReceive(TrackingInfo data);
-extern "C" void TimeSyncReceive(TimeSync data);
+extern "C" void InputReceive(const TrackingInfo* data);
+extern "C" void TimeSyncReceive(const TimeSync* data);
 extern "C" void VideoErrorReportReceive();
 extern "C" void ShutdownSteamvr();
 
 extern "C" void SetOpenvrProperty(unsigned long long topLevelPath, OpenvrProperty prop);
-extern "C" void SetViewsConfig(ViewsConfigData config);
+extern "C" void SetViewsConfig(const ViewsConfigData* config);
 extern "C" void SetBattery(unsigned long long topLevelPath, float gauge_value, bool is_plugged);

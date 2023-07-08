@@ -319,17 +319,17 @@ pub unsafe extern "C" fn HmdDriverFactory(
         log(log::Level::Debug, string_ptr);
     }
 
-    extern "C" fn video_send(header: VideoFrame, buffer_ptr: *mut u8, len: i32) {
+    extern "C" fn video_send(header: *const VideoFrame, buffer_ptr: *mut u8, len: i32) {
         if let Some(sender) = &*VIDEO_SENDER.lock() {
-            let header = VideoFrameHeaderPacket {
-                packet_counter: header.packetCounter,
-                tracking_frame_index: header.trackingFrameIndex,
-                video_frame_index: header.videoFrameIndex,
-                sent_time: header.sentTime,
-                frame_byte_size: header.frameByteSize,
-                fec_index: header.fecIndex,
-                fec_percentage: header.fecPercentage,
-            };
+            let header = unsafe { VideoFrameHeaderPacket {
+                packet_counter: (*header).packetCounter,
+                tracking_frame_index: (*header).trackingFrameIndex,
+                video_frame_index: (*header).videoFrameIndex,
+                sent_time: (*header).sentTime,
+                frame_byte_size: (*header).frameByteSize,
+                fec_index: (*header).fecIndex,
+                fec_percentage: (*header).fecPercentage,
+            } };
 
             let mut vec_buffer = vec![0; len as _];
 
@@ -355,25 +355,25 @@ pub unsafe extern "C" fn HmdDriverFactory(
         }
     }
 
-    extern "C" fn time_sync_send(data: TimeSync) {
+    extern "C" fn time_sync_send(data: *const TimeSync) {
         if let Some(sender) = &*TIME_SYNC_SENDER.lock() {
-            let time_sync = TimeSyncPacket {
-                mode: data.mode,
-                server_time: data.serverTime,
-                client_time: data.clientTime,
-                packets_lost_total: data.packetsLostTotal,
-                packets_lost_in_second: data.packetsLostInSecond,
-                average_send_latency: data.averageSendLatency,
-                average_transport_latency: data.averageTransportLatency,
-                average_decode_latency: data.averageDecodeLatency,
-                idle_time: data.idleTime,
-                fec_failure: data.fecFailure,
-                fec_failure_in_second: data.fecFailureInSecond,
-                fec_failure_total: data.fecFailureTotal,
-                fps: data.fps,
-                server_total_latency: data.serverTotalLatency,
-                tracking_recv_frame_index: data.trackingRecvFrameIndex,
-            };
+            let time_sync = unsafe { TimeSyncPacket {
+                mode: (*data).mode,
+                server_time: (*data).serverTime,
+                client_time: (*data).clientTime,
+                packets_lost_total: (*data).packetsLostTotal,
+                packets_lost_in_second: (*data).packetsLostInSecond,
+                average_send_latency: (*data).averageSendLatency,
+                average_transport_latency: (*data).averageTransportLatency,
+                average_decode_latency: (*data).averageDecodeLatency,
+                idle_time: (*data).idleTime,
+                fec_failure: (*data).fecFailure,
+                fec_failure_in_second: (*data).fecFailureInSecond,
+                fec_failure_total: (*data).fecFailureTotal,
+                fps: (*data).fps,
+                server_total_latency: (*data).serverTotalLatency,
+                tracking_recv_frame_index: (*data).trackingRecvFrameIndex,
+            } };
 
             sender.send(time_sync).ok();
         }
