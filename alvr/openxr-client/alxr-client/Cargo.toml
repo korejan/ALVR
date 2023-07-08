@@ -1,9 +1,14 @@
 [package]
 name = "alxr-client"
-version = "0.11.0"
-authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
-edition = "2021"
-description = "An OpenXR based ALVR client for non-android platorms"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+# version = "0.11.0"
+# authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
+# edition = "2021"
+# description = "An OpenXR based ALVR client for non-android platorms"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
@@ -12,7 +17,8 @@ bundled-ffmpeg = ["alxr-common/bundled-ffmpeg"]
 oculus-ext-headers = ["alxr-common/oculus-ext-headers"]
 
 [dependencies]
-alxr-common = { path = "../alxr-common" }
+alxr-common.workspace = true
+#alxr-common = { path = "../alxr-common" }
 
 # for building linux AppImages with cargo-appimage: https://crates.io/crates/cargo-appimage
 #[package.metadata.appimage]

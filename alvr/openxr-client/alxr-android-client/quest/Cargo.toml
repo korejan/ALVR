@@ -1,9 +1,14 @@
 [package]
 name = "alxr-client-quest"
-version = "0.11.0"
-authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
-edition = "2021"
-description = "An OpenXR based ALVR client for Oculus Quest 1/2"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+# version = "0.11.0"
+# authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
+# edition = "2021"
+# description = "An OpenXR based ALVR client for Oculus Quest 1/2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
@@ -11,7 +16,9 @@ crate-type = ["cdylib"]
 path = "../src/lib.rs" 
 
 [dependencies]
-alxr-common = { path = "../../alxr-common", features = ["quest-flavor"] }
+alxr-common = { workspace = true, features = ["quest-flavor"] }
+#alxr-common = { path = "../../alxr-common", features = ["quest-flavor"] }
+
 jni = "0.20"
 ndk = "0.7" #{ path = "../ndk", features = ["trace"] }
 ndk-glue = "0.7" #{ path = "../ndk-glue", features = ["logger"] }

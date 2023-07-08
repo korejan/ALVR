@@ -1,9 +1,14 @@
 [package]
 name = "alxr-client-uwp"
-version = "1.11.0"
-authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
-edition = "2021"
-build = ".build/main.rs"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+# version = "1.11.0"
+# authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
+# edition = "2021"
+# build = ".build/main.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]
@@ -11,7 +16,8 @@ name = "alxr-client-uwp"
 path = "../src/main.rs" 
 
 [dependencies]
-alxr-common = { path = "../../alxr-common" }
+alxr-common.workspace = true
+#alxr-common = { path = "../../alxr-common" }
 
 [dependencies.windows-sys]
 version = "0.36.1"

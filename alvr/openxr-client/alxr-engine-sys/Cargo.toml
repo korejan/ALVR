@@ -1,8 +1,13 @@
 [package]
 name = "alxr-engine-sys"
-version = "0.11.0"
-authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+#version = "0.11.0"
+#authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
+#edition = "2021"
 links = "alxr_engine"
 
 [features]

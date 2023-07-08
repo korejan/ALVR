@@ -1,8 +1,13 @@
 [package]
 name = "alxr-common"
-version = "0.11.0"
-authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+#version = "0.11.0"
+#authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
+#edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
@@ -17,11 +22,17 @@ bundled-ffmpeg = ["alxr-engine-sys/bundled-ffmpeg"]
 oculus-ext-headers = ["alxr-engine-sys/oculus-ext-headers"]
 
 [dependencies]
-alxr-engine-sys = { path = "../alxr-engine-sys" }
-alvr_common = { path = "../../common" }
-alvr_session = { path = "../../session" }
-alvr_sockets = { path = "../../sockets" }
-settings-schema = { path = "../../settings-schema", features = ["rename_camel_case"] }
+alvr_common.workspace = true
+alvr_client_core.workspace = true
+alvr_packets.workspace = true
+alvr_session.workspace = true
+alxr-engine-sys.workspace = true
+# alxr-engine-sys = { path = "../alxr-engine-sys" }
+# alvr_common = { path = "../../common" }
+# alvr_session = { path = "../../session" }
+# alvr_sockets = { path = "../../sockets" }
+# settings-schema = { path = "../../settings-schema", features = ["rename_camel_case"] }
+
 # Basic utilities
 lazy_static = "1"
 parking_lot = "0.12"

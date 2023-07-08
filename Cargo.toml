@@ -1,6 +1,17 @@
 [workspace]
 resolver = "2"
-members = ["alvr/*"]
+exclude = ["alvr/openxr-client"]
+members = [
+    "alvr/*",
+    "alvr/openxr-client/alxr-engine-sys",
+    "alvr/openxr-client/alxr-common",
+    "alvr/openxr-client/alxr-client",
+    "alvr/openxr-client/alxr-client/uwp",
+    "alvr/openxr-client/alxr-android-client",
+    "alvr/openxr-client/alxr-android-client/quest",
+    "alvr/openxr-client/alxr-android-client/pico",
+    "alvr/openxr-client/alxr-android-client/pico-v4",
+]
 
 [workspace.package]
 version = "20.1.0"
@@ -19,6 +30,15 @@ alvr_packets = { path = "alvr/packets" }
 alvr_server_io = { path = "alvr/server_io" }
 alvr_session = { path = "alvr/session" }
 alvr_sockets = { path = "alvr/sockets" }
+#####################################################
+alxr-engine-sys = { path = "alvr/openxr-client/alxr-engine-sys" }
+alxr-common = { path = "alvr/openxr-client/alxr-common" }
+alxr-client = { path = "alvr/openxr-client/alxr-client" }
+alxr-client-uwp = { path = "alvr/openxr-client/alxr-client/uwp" }
+alxr-android-client = { path = "alvr/openxr-client/alxr-android-client" }
+alxr-client-quest = { path = "alvr/openxr-client/alxr-android-client/quest" }
+alxr-client-pico = { path = "alvr/openxr-client/alxr-android-client/pico" }
+alxr-client-pico-v4 = { path = "alvr/openxr-client/alxr-android-client/pico-v4" }
 
 [profile.distribution]
 inherits = "release"

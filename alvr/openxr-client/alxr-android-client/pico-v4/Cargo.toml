@@ -1,9 +1,14 @@
 [package]
 name = "alxr-client-pico-v4"
-version = "0.11.0"
-authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
-edition = "2021"
-description = "An OpenXR based ALVR client for Pico 4/Neo 3, pre PUI v5.2.x"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+# version = "0.11.0"
+# authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
+# edition = "2021"
+# description = "An OpenXR based ALVR client for Pico 4/Neo 3, pre PUI v5.2.x"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
@@ -11,7 +16,8 @@ crate-type = ["cdylib"]
 path = "../src/lib.rs" 
 
 [dependencies]
-alxr-common = { path = "../../alxr-common", features = ["pico-v4-flavor"] }
+alxr-common = { workspace = true, features = ["pico-v4-flavor"] }
+#alxr-common = { path = "../../alxr-common", features = ["pico-v4-flavor"] }
 jni = "0.20"
 ndk = "0.7"
 ndk-glue = "0.7"

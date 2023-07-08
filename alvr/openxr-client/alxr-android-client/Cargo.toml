@@ -1,9 +1,14 @@
 [package]
 name = "alxr-android-client"
-version = "0.11.0"
-authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
-edition = "2021"
-description = "An OpenXR based ALVR client for android platorms"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+# version = "0.11.0"
+# authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
+# edition = "2021"
+# description = "An OpenXR based ALVR client for android platorms"
 
 # If you modify this file please consider if it needs replicating in ./quest/Cargo.toml & ./pico-neo/Cargo.toml
 # cargo(-apk) has a limitation of not being able to apply build time conditional logic to toml meta data.
@@ -14,7 +19,9 @@ description = "An OpenXR based ALVR client for android platorms"
 crate-type = ["cdylib"]
 
 [dependencies]
-alxr-common = { path = "../alxr-common" }
+alxr-common.workspace = true
+#alxr-common = { path = "../alxr-common" }
+
 jni = "0.20"
 ndk = "0.7" #{ path = "../ndk", features = ["trace"] }
 ndk-glue = "0.7" #{ path = "../ndk-glue", features = ["logger"] }
