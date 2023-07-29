@@ -62,6 +62,7 @@ FLAGS:
     --gpl               Enables usage of GPL libs like ffmpeg on Windows, allowing software encoding.
     --ffmpeg-version    Bundle ffmpeg libraries. Only used for build-alxr-client subcommand on Linux          
     --no-decoder        Disables building decoder support and dependencies. Only used for build-alxr-*
+    --oculus-ext        Enables using Oculus OpenXR extensions (headers), Used only for build-alxr-client subcommand
     --help              Print this text
 
 ARGS:
@@ -419,6 +420,7 @@ pub struct AlxBuildFlags {
     bundle_ffmpeg: bool,
     fetch_crates: bool,
     no_decoder: bool,
+    oculus_ext: bool,
 }
 
 impl Default for AlxBuildFlags {
@@ -430,6 +432,7 @@ impl Default for AlxBuildFlags {
             bundle_ffmpeg: true,
             fetch_crates: false,
             no_decoder: false,
+            oculus_ext: false,
         }
     }
 }
@@ -437,10 +440,12 @@ impl Default for AlxBuildFlags {
 impl AlxBuildFlags {
     pub fn make_build_string(&self) -> String {
         let enable_bundle_ffmpeg = cfg!(target_os = "linux") && self.bundle_ffmpeg;
+        let enable_oculus_ext = cfg!(target_os = "windows") && self.oculus_ext;
         let feature_map = vec![
             (enable_bundle_ffmpeg, "bundled-ffmpeg"),
             (!self.no_nvidia, "cuda-interop"),
             (self.no_decoder, "no-decoder"),
+            (enable_oculus_ext, "oculus-ext-headers"),
         ];
 
         let flag_map = vec![
@@ -1026,6 +1031,7 @@ fn main() {
         let for_pico = args.contains("--pico");
         let for_pico_neo_v4 = args.contains("--pico-v4");
         let for_all_flavors = args.contains("--all-flavors");
+        let oculus_ext = args.contains("--oculus-ext");
         //
         let no_decoder = args.contains("--no-decoder");
         let bundle_ffmpeg = args.contains("--bundle-ffmpeg");
@@ -1075,6 +1081,7 @@ fn main() {
                         bundle_ffmpeg: bundle_ffmpeg,
                         fetch_crates: fetch,
                         no_decoder: no_decoder,
+                        oculus_ext: oculus_ext,
                         ..Default::default()
                     },
                 ),
