@@ -125,6 +125,8 @@ pub fn check_android_permissions<'a>(
         "com.oculus.permission.FACE_TRACKING",
         "com.magicleap.permission.EYE_TRACKING",
         "com.picovr.permission.EYE_TRACKING",
+        // Re-enable when Pico runtime supports it.
+        //"com.picovr.permission.FACE_TRACKING",
     ] {
         if !android_has_permission(activity, &perm_name, &mut env)? {
             permission_names.push(perm_name);
