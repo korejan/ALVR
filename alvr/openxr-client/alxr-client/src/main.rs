@@ -3,8 +3,8 @@
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, battery_send,
     init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
-    time_sync_send, video_error_report_send, views_config_send, ALXRColorSpace, ALXRDecoderType,
-    ALXREyeTrackingType, ALXRFacialExpressionType, ALXRGraphicsApi, ALXRRustCtx,
+    time_sync_send, video_error_report_send, views_config_send, ALXRClientCtx, ALXRColorSpace,
+    ALXRDecoderType, ALXREyeTrackingType, ALXRFacialExpressionType, ALXRGraphicsApi,
     ALXRSystemProperties, ALXRVersion, APP_CONFIG,
 };
 use std::{thread, time};
@@ -42,7 +42,7 @@ fn main() {
     let selected_decoder = APP_CONFIG.decoder_type.unwrap_or(DEFAULT_DECODER_TYPE);
     unsafe {
         loop {
-            let ctx = ALXRRustCtx {
+            let ctx = ALXRClientCtx {
                 inputSend: Some(input_send),
                 viewsConfigSend: Some(views_config_send),
                 pathStringToHash: Some(path_string_to_hash),

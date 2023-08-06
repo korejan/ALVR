@@ -13,8 +13,8 @@ use android_logger;
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_on_pause, alxr_on_resume, alxr_process_frame, battery_send,
     init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
-    time_sync_send, video_error_report_send, views_config_send, ALXRColorSpace, ALXRDecoderType,
-    ALXREyeTrackingType, ALXRFacialExpressionType, ALXRGraphicsApi, ALXRRustCtx,
+    time_sync_send, video_error_report_send, views_config_send, ALXRClientCtx, ALXRColorSpace,
+    ALXRDecoderType, ALXREyeTrackingType, ALXRFacialExpressionType, ALXRGraphicsApi,
     ALXRSystemProperties, ALXRVersion, APP_CONFIG,
 };
 
@@ -182,7 +182,7 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
     assert!(app_data.window_inited);
     log::debug!("alxr-client: is activity paused? {0} ", !app_data.resumed);
 
-    let ctx = ALXRRustCtx {
+    let ctx = ALXRClientCtx {
         graphicsApi: APP_CONFIG.graphics_api.unwrap_or(ALXRGraphicsApi::Auto),
         decoderType: ALXRDecoderType::NVDEC, // Not used on android.
         displayColorSpace: APP_CONFIG.color_space.unwrap_or(ALXRColorSpace::Default),

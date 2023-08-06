@@ -27,6 +27,7 @@ use structopt::StructOpt;
 #[cfg(target_os = "android")]
 use android_system_properties::AndroidSystemProperties;
 
+#[cfg(any(target_os = "android", target_vendor = "uwp"))]
 const ALXR_TRACKING_SERVER_PORT_NO: u16 = 49192;
 
 #[derive(Debug, StructOpt)]
