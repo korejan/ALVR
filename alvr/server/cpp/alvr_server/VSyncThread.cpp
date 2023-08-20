@@ -15,11 +15,11 @@ void VSyncThread::Run() {
 	m_PreviousVsync = 0;
 
 	while (!m_bExit) {
-		uint64_t current = GetTimestampUs();
-		uint64_t interval = 1000 * 1000 / m_refreshRate;
+		const std::uint64_t current = GetSteadyTimeStampUS();
+		const std::uint64_t interval = 1000 * 1000 / m_refreshRate;
 
 		if (m_PreviousVsync + interval > current) {
-			uint64_t sleepTimeMs = (m_PreviousVsync + interval - current) / 1000;
+			const std::uint64_t sleepTimeMs = (m_PreviousVsync + interval - current) / 1000;
 
 			if (sleepTimeMs > 0) {
 				Debug("Sleep %llu ms for next VSync.\n", sleepTimeMs);

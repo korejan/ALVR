@@ -31,28 +31,15 @@ const float DEG_TO_RAD = (float)(M_PI / 180.);
 extern uint64_t gPerformanceCounterFrequency;
 
 // Get elapsed time in us from Unix Epoch
-inline uint64_t GetTimestampUs() {
-	auto duration = std::chrono::system_clock::now().time_since_epoch();
+inline uint64_t GetSystemTimestampUs() {
+	const auto duration = std::chrono::system_clock::now().time_since_epoch();
 	return std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
 }
 
-// Get performance counter in us
-inline uint64_t GetCounterUs() {
-#ifdef _WIN32
-	if (gPerformanceCounterFrequency == 0) {
-		LARGE_INTEGER freq;
-		QueryPerformanceFrequency(&freq);
-		gPerformanceCounterFrequency = freq.QuadPart;
-	}
-
-	LARGE_INTEGER counter;
-	QueryPerformanceCounter(&counter);
-
-	return counter.QuadPart * 1000000LLU / gPerformanceCounterFrequency;
-#else
-	auto duration = std::chrono::steady_clock::now().time_since_epoch();
+inline std::uint64_t GetSteadyTimeStampUS() {
+	static_assert(std::chrono::steady_clock::is_steady);
+	const auto duration = std::chrono::steady_clock::now().time_since_epoch();
 	return std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-#endif
 }
 
 inline std::string DumpMatrix(const float *m) {

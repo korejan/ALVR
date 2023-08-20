@@ -110,14 +110,14 @@ fn main() {
         .cpp(true)
         .files(source_files_paths)
         .flag_if_supported("-isystemcpp/openvr/headers") // silences many warnings from openvr headers
-        .flag_if_supported("-std=c++17")
+        .flag_if_supported("-std=c++20")
         .include("cpp/openvr/headers")
         .include("cpp");
 
     #[cfg(windows)]
     build
         .debug(false) // This is because we cannot link to msvcrtd (see below)
-        .flag("/std:c++17")
+        .flag("/std:c++20")
         .flag("/permissive-")
         .define("NOMINMAX", None)
         .define("_WINSOCKAPI_", None)

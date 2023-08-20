@@ -1,114 +1,122 @@
 #pragma once
 
-struct EyeFov {
+#ifdef __cplusplus
+extern "C" {;
+#endif
+
+#include <stdint.h>
+
+typedef struct EyeFov {
     float left = 49.;
     float right = 45.;
     float top = 50.;
     float bottom = 48.;
-};
+} EyeFov;
 
-struct TrackingQuat {
+typedef struct TrackingQuat {
     float x;
     float y;
     float z;
     float w;
-};
-struct TrackingVector3 {
+} TrackingQuat;
+typedef struct TrackingVector3 {
     float x;
     float y;
     float z;
-};
-struct TrackingVector2 {
+} TrackingVector3;
+typedef struct TrackingVector2 {
     float x;
     float y;
-};
-struct TrackingInfo {
-    static const unsigned int MAX_CONTROLLERS = 2;
-    static const unsigned int BONE_COUNT = 19;
+} TrackingVector2;
+
+typedef struct TrackingPosef {
+    TrackingQuat    orientation;
+    TrackingVector3 position;
+} TrackingPosef;
+
+typedef struct TrackingInfo {
+    static constexpr const uint32_t MAX_CONTROLLERS = 2;
+    static constexpr const uint32_t BONE_COUNT = 19;
+
     struct Controller {
         // Tracking info of hand. A3
-        TrackingQuat boneRotations[BONE_COUNT];
-        // TrackingQuat boneRotationsBase[alvrHandBone_MaxSkinnable];
+        TrackingQuat    boneRotations[BONE_COUNT];
         TrackingVector3 bonePositionsBase[BONE_COUNT];
-        TrackingQuat boneRootOrientation;
-        TrackingVector3 boneRootPosition;
+        TrackingPosef   boneRootPose;
 
         // Tracking info of controller. (float * 19 = 76 bytes)
-        TrackingQuat orientation;
-        TrackingVector3 position;
+        TrackingPosef pose;
         TrackingVector3 angularVelocity;
         TrackingVector3 linearVelocity;
 
         TrackingVector2 joystickPosition;
         TrackingVector2 trackpadPosition;
 
-        unsigned long long buttons;
+        uint64_t buttons;
 
         float triggerValue;
         float gripValue;
 
-        unsigned int handFingerConfidences;
+        uint32_t handFingerConfidences;
 
         bool enabled;
         bool isHand;
     } controller[MAX_CONTROLLERS];
-
-    TrackingQuat HeadPose_Pose_Orientation;
-    TrackingVector3 HeadPose_Pose_Position;
-
-    unsigned long long targetTimestampNs;
-    unsigned char mounted;
-};
+    
+    TrackingPosef headPose;
+    uint64_t      targetTimestampNs;
+    uint8_t       mounted;
+} TrackingInfo;
 // Client >----(mode 0)----> Server
 // Client <----(mode 1)----< Server
 // Client >----(mode 2)----> Server
 // Client <----(mode 3)----< Server
-struct TimeSync {
-    unsigned int mode; // 0,1,2,3
-    unsigned long long sequence;
-    unsigned long long serverTime;
-    unsigned long long clientTime;
+typedef struct TimeSync {
+    uint32_t mode; // 0,1,2,3
+    uint64_t sequence;
+    uint64_t serverTime;
+    uint64_t clientTime;
 
     // Following value are filled by client only when mode=0.
-    unsigned long long packetsLostTotal;
-    unsigned long long packetsLostInSecond;
+    uint64_t packetsLostTotal;
+    uint64_t packetsLostInSecond;
 
-    unsigned int averageTotalLatency;
+    uint64_t averageDecodeLatency;
 
-    unsigned int averageSendLatency;
+    uint32_t averageTotalLatency;
 
-    unsigned int averageTransportLatency;
+    uint32_t averageSendLatency;
 
-    unsigned long long averageDecodeLatency;
+    uint32_t averageTransportLatency;
+    
+    uint32_t idleTime;
 
-    unsigned int idleTime;
-
-    unsigned int fecFailure;
-    unsigned long long fecFailureInSecond;
-    unsigned long long fecFailureTotal;
+    uint64_t fecFailureInSecond;
+    uint64_t fecFailureTotal;
+    uint32_t fecFailure;
 
     float fps;
 
-    // Following value are filled by server only when mode=1.
-    unsigned int serverTotalLatency;
-
     // Following value are filled by server only when mode=3.
-    unsigned long long trackingRecvFrameIndex;
-};
-struct VideoFrame {
-    unsigned int type; // ALVR_PACKET_TYPE_VIDEO_FRAME
-    unsigned int packetCounter;
-    unsigned long long trackingFrameIndex;
+    uint64_t trackingRecvFrameIndex;
+
+    // Following value are filled by server only when mode=1.
+    uint32_t serverTotalLatency;
+} TimeSync;
+typedef struct VideoFrame {
+    uint32_t type; // ALVR_PACKET_TYPE_VIDEO_FRAME
+    uint32_t packetCounter;
+    uint64_t trackingFrameIndex;
     // FEC decoder needs some value for identify video frame number to detect new frame.
     // trackingFrameIndex becomes sometimes same value as previous video frame (in case of low
     // tracking rate).
-    unsigned long long videoFrameIndex;
-    unsigned long long sentTime;
-    unsigned int frameByteSize;
-    unsigned int fecIndex;
-    unsigned short fecPercentage;
+    uint64_t videoFrameIndex;
+    uint64_t sentTime;
+    uint32_t frameByteSize;
+    uint32_t fecIndex;
+    uint16_t fecPercentage;
     // char frameBuffer[];
-};
+} VideoFrame;
 enum OpenvrPropertyType {
     Bool,
     Float,
@@ -122,15 +130,15 @@ enum OpenvrPropertyType {
 union OpenvrPropertyValue {
     bool bool_;
     float float_;
-    int int32;
-    unsigned long long uint64;
+    int32_t int32;
+    uint64_t uint64;
     float vector3[3];
     double double_;
     char string[64];
 };
 
 struct OpenvrProperty {
-    unsigned int key;
+    uint32_t key;
     OpenvrPropertyType type;
     OpenvrPropertyValue value;
 };
@@ -167,12 +175,12 @@ extern "C" void (*LogWarn)(const char *stringPtr);
 extern "C" void (*LogInfo)(const char *stringPtr);
 extern "C" void (*LogDebug)(const char *stringPtr);
 extern "C" void (*DriverReadyIdle)(bool setDefaultChaprone);
-extern "C" void (*VideoSend)(VideoFrame header, unsigned char *buf, int len);
+extern "C" void (*VideoSend)(const VideoFrame* header, const uint8_t *buf, uint32_t len);
 extern "C" void (*HapticsSend)(unsigned long long path,
                                float duration_s,
                                float frequency,
                                float amplitude);
-extern "C" void (*TimeSyncSend)(TimeSync packet);
+extern "C" void (*TimeSyncSend)(const TimeSync* packet);
 extern "C" void (*ShutdownRuntime)();
 extern "C" unsigned long long (*PathStringToHash)(const char *path);
 
@@ -181,11 +189,15 @@ extern "C" void InitializeStreaming();
 extern "C" void DeinitializeStreaming();
 extern "C" void RequestIDR();
 extern "C" void SetChaperone(float areaWidth, float areaHeight);
-extern "C" void InputReceive(TrackingInfo data);
-extern "C" void TimeSyncReceive(TimeSync data);
+extern "C" void InputReceive(const TrackingInfo* data);
+extern "C" void TimeSyncReceive(const TimeSync* data);
 extern "C" void VideoErrorReportReceive();
 extern "C" void ShutdownSteamvr();
 
-extern "C" void SetOpenvrProperty(unsigned long long topLevelPath, OpenvrProperty prop);
+extern "C" void SetOpenvrProperty(uint64_t topLevelPath, OpenvrProperty prop);
 extern "C" void SetViewsConfig(const ViewsConfigData* config);
-extern "C" void SetBattery(unsigned long long topLevelPath, float gauge_value, bool is_plugged);
+extern "C" void SetBattery(uint64_t topLevelPath, float gauge_value, bool is_plugged);
+
+#ifdef __cplusplus
+}
+#endif

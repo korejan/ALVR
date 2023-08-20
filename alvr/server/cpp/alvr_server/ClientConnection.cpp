@@ -22,14 +22,14 @@ ClientConnection::ClientConnection() : m_LastStatisticsUpdate(0) {
 	m_Statistics->ResetAll();
 }
 
-void ClientConnection::FECSend(uint8_t *buf, int len, uint64_t targetTimestampNs, uint64_t videoFrameIndex) {
-	int shardPackets = CalculateFECShardPackets(len, m_fecPercentage);
+void ClientConnection::FECSend(const uint8_t *buf, uint32_t len, uint64_t targetTimestampNs, uint64_t videoFrameIndex) {
+	const int shardPackets = CalculateFECShardPackets(len, m_fecPercentage);
 
-	int blockSize = shardPackets * ALVR_MAX_VIDEO_BUFFER_SIZE;
+	const int blockSize = shardPackets * ALVR_MAX_VIDEO_BUFFER_SIZE;
 
-	int dataShards = (len + blockSize - 1) / blockSize;
-	int totalParityShards = CalculateParityShards(dataShards, m_fecPercentage);
-	int totalShards = dataShards + totalParityShards;
+	const int dataShards = (len + blockSize - 1) / blockSize;
+	const int totalParityShards = CalculateParityShards(dataShards, m_fecPercentage);
+	const int totalShards = dataShards + totalParityShards;
 
 	assert(totalShards <= DATA_SHARDS_MAX);
 
@@ -40,8 +40,8 @@ void ClientConnection::FECSend(uint8_t *buf, int len, uint64_t targetTimestampNs
 
 	std::vector<uint8_t *> shards(totalShards);
 
-	for (int i = 0; i < dataShards; i++) {
-		shards[i] = buf + i * blockSize;
+	for (int i = 0; i < dataShards; ++i) {
+		shards[i] = const_cast<uint8_t*>(buf) + i * blockSize;
 	}
 	if (len % blockSize != 0) {
 		// Padding
@@ -49,29 +49,31 @@ void ClientConnection::FECSend(uint8_t *buf, int len, uint64_t targetTimestampNs
 		memset(shards[dataShards - 1], 0, blockSize);
 		memcpy(shards[dataShards - 1], buf + (dataShards - 1) * blockSize, len % blockSize);
 	}
-	for (int i = 0; i < totalParityShards; i++) {
+	for (int i = 0; i < totalParityShards; ++i) {
 		shards[dataShards + i] = new uint8_t[blockSize];
 	}
 
-	int ret = reed_solomon_encode(rs, &shards[0], totalShards, blockSize);
+	const int ret = reed_solomon_encode(rs, &shards[0], totalShards, blockSize);
 	assert(ret == 0);
 
 	reed_solomon_release(rs);
 
-	uint8_t packetBuffer[2000];
+	thread_local uint8_t packetBuffer[2000];
 	VideoFrame *header = (VideoFrame *)packetBuffer;
 	uint8_t *payload = packetBuffer + sizeof(VideoFrame);
 	int dataRemain = len;
 
-	header->type = ALVR_PACKET_TYPE_VIDEO_FRAME;
-	header->trackingFrameIndex = targetTimestampNs;
-	header->videoFrameIndex = videoFrameIndex;
-	header->sentTime = GetTimestampUs();
-	header->frameByteSize = len;
-	header->fecIndex = 0;
-	header->fecPercentage = (uint16_t)m_fecPercentage;
-	for (int i = 0; i < dataShards; i++) {
-		for (int j = 0; j < shardPackets; j++) {
+	*header = {
+		.type = ALVR_PACKET_TYPE_VIDEO_FRAME,
+		.trackingFrameIndex = targetTimestampNs,
+		.videoFrameIndex = videoFrameIndex,
+		.sentTime = GetSystemTimestampUs(),
+		.frameByteSize = len,
+		.fecIndex = 0,
+		.fecPercentage = (uint16_t)m_fecPercentage,
+	};
+	for (int i = 0; i < dataShards; ++i) {
+		for (int j = 0; j < shardPackets; ++j) {
 			int copyLength = std::min(ALVR_MAX_VIDEO_BUFFER_SIZE, dataRemain);
 			if (copyLength <= 0) {
 				break;
@@ -80,24 +82,24 @@ void ClientConnection::FECSend(uint8_t *buf, int len, uint64_t targetTimestampNs
 			dataRemain -= ALVR_MAX_VIDEO_BUFFER_SIZE;
 
 			header->packetCounter = videoPacketCounter;
-			videoPacketCounter++;
-			VideoSend(*header, (unsigned char *)packetBuffer + sizeof(VideoFrame), copyLength);
+			++videoPacketCounter;
+			VideoSend(header, (unsigned char *)packetBuffer + sizeof(VideoFrame), copyLength);
 			m_Statistics->CountPacket(sizeof(VideoFrame) + copyLength);
-			header->fecIndex++;
+			++header->fecIndex;
 		}
 	}
 	header->fecIndex = dataShards * shardPackets;
-	for (int i = 0; i < totalParityShards; i++) {
-		for (int j = 0; j < shardPackets; j++) {
+	for (int i = 0; i < totalParityShards; ++i) {
+		for (int j = 0; j < shardPackets; ++j) {
 			int copyLength = ALVR_MAX_VIDEO_BUFFER_SIZE;
 			memcpy(payload, shards[dataShards + i] + j * ALVR_MAX_VIDEO_BUFFER_SIZE, copyLength);
 
 			header->packetCounter = videoPacketCounter;
-			videoPacketCounter++;
+			++videoPacketCounter;
 			
-			VideoSend(*header, (unsigned char *)packetBuffer + sizeof(VideoFrame), copyLength);
+			VideoSend(header, (unsigned char *)packetBuffer + sizeof(VideoFrame), copyLength);
 			m_Statistics->CountPacket(sizeof(VideoFrame) + copyLength);
-			header->fecIndex++;
+			++header->fecIndex;
 		}
 	}
 
@@ -109,7 +111,7 @@ void ClientConnection::FECSend(uint8_t *buf, int len, uint64_t targetTimestampNs
 	}
 }
 
-void ClientConnection::SendVideo(uint8_t *buf, int len, uint64_t targetTimestampNs) {
+void ClientConnection::SendVideo(const uint8_t *buf, uint32_t len, uint64_t targetTimestampNs) {
 	if (Settings::Instance().m_enableFec) {
 		FECSend(buf, len, targetTimestampNs, mVideoFrameIndex);
 	} else {
@@ -117,10 +119,10 @@ void ClientConnection::SendVideo(uint8_t *buf, int len, uint64_t targetTimestamp
 		header.packetCounter = this->videoPacketCounter;
 		header.trackingFrameIndex = targetTimestampNs;
 		header.videoFrameIndex = mVideoFrameIndex;
-		header.sentTime = GetTimestampUs();
+		header.sentTime = GetSystemTimestampUs();
 		header.frameByteSize = len;
 
-		VideoSend(header, buf, len);
+		VideoSend(&header, buf, len);
 
 		m_Statistics->CountPacket(sizeof(VideoFrame) + len);
 
@@ -130,11 +132,11 @@ void ClientConnection::SendVideo(uint8_t *buf, int len, uint64_t targetTimestamp
 	mVideoFrameIndex++;
 }
 
-void ClientConnection::ProcessTimeSync(TimeSync data) {
+void ClientConnection::ProcessTimeSync(const TimeSync &data) {
 	m_Statistics->CountPacket(sizeof(TrackingInfo));
 
-	TimeSync *timeSync = &data;
-	uint64_t Current = GetTimestampUs();
+	const TimeSync * const timeSync = &data;
+	const std::uint64_t Current = GetSystemTimestampUs();
 
 	if (timeSync->mode == 0) {
 		//timings might be a little incorrect since it is a mix from a previous sent frame and latest frame
@@ -148,7 +150,7 @@ void ClientConnection::ProcessTimeSync(TimeSync data) {
 		sendBuf.mode = 1;
 		sendBuf.serverTime = Current;
 		sendBuf.serverTotalLatency = (int)(m_reportedStatistics.averageSendLatency + (timing[0].m_flPreSubmitGpuMs + timing[0].m_flPostSubmitGpuMs + timing[0].m_flTotalRenderGpuMs + timing[0].m_flCompositorRenderGpuMs + timing[0].m_flCompositorRenderCpuMs + timing[0].m_flCompositorIdleCpuMs + timing[0].m_flClientFrameIntervalMs + timing[0].m_flPresentCallCpuMs + timing[0].m_flWaitForPresentCpuMs + timing[0].m_flSubmitFrameMs) * 1000 + m_Statistics->GetEncodeLatencyAverage() + m_reportedStatistics.averageTransportLatency + m_reportedStatistics.averageDecodeLatency + m_reportedStatistics.idleTime);
-		TimeSyncSend(sendBuf);
+		TimeSyncSend(&sendBuf);
 
 		m_Statistics->NetworkTotal(sendBuf.serverTotalLatency);
 		m_Statistics->NetworkSend(m_reportedStatistics.averageTransportLatency);
@@ -168,7 +170,7 @@ void ClientConnection::ProcessTimeSync(TimeSync data) {
 			m_reportedStatistics.fps,
 			m_RTT / 2. / 1000.);
 
-		uint64_t now = GetTimestampUs();
+		const std::uint64_t now = GetSteadyTimeStampUS();
 		if (now - m_LastStatisticsUpdate > STATISTICS_TIMEOUT_US)
 		{
 			// Text statistics only, some values averaged
@@ -252,12 +254,13 @@ float ClientConnection::GetPoseTimeOffset() {
 
 void ClientConnection::OnFecFailure() {
 	Debug("Listener::OnFecFailure()\n");
-	if (GetTimestampUs() - m_lastFecFailure < CONTINUOUS_FEC_FAILURE) {
+	const std::uint64_t timestamp = GetSteadyTimeStampUS();
+	if (timestamp - m_lastFecFailure < CONTINUOUS_FEC_FAILURE) {
 		if (m_fecPercentage < MAX_FEC_PERCENTAGE) {
 			m_fecPercentage += 5;
 		}
 	}
-	m_lastFecFailure = GetTimestampUs();
+	m_lastFecFailure = timestamp;
 }
 
 std::shared_ptr<Statistics> ClientConnection::GetStatistics() {

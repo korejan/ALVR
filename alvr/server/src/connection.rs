@@ -1,7 +1,7 @@
 use crate::{
     CLIENTS_UPDATED_NOTIFIER, ClientListAction, EyeFov, HAPTICS_SENDER, RESTART_NOTIFIER,
     SESSION_MANAGER, TIME_SYNC_SENDER, TimeSync, TrackingInfo, TrackingInfo_Controller,
-    TrackingQuat, TrackingVector2, TrackingVector3, VIDEO_SENDER, connection_utils,
+    TrackingPosef, TrackingQuat, TrackingVector2, TrackingVector3, VIDEO_SENDER, connection_utils,
 };
 use alvr_audio::{AudioDevice, AudioDeviceType};
 use alvr_common::{
@@ -897,8 +897,10 @@ async fn connection_pipeline() -> StrResult {
 
                 let tracking_info = TrackingInfo {
                     targetTimestampNs: input.target_timestamp.as_nanos() as _,
-                    HeadPose_Pose_Orientation: to_tracking_quat(head_motion.orientation),
-                    HeadPose_Pose_Position: to_tracking_vector3(head_motion.position),
+                    headPose: TrackingPosef {
+                        orientation: to_tracking_quat(head_motion.orientation),
+                        position: to_tracking_vector3(head_motion.position),
+                    },
                     mounted: input.legacy.mounted,
                     controller: [
                         TrackingInfo_Controller {
@@ -913,8 +915,10 @@ async fn connection_pipeline() -> StrResult {
                             ),
                             triggerValue: input.legacy.controllers[0].trigger_value,
                             gripValue: input.legacy.controllers[0].grip_value,
-                            orientation: to_tracking_quat(left_hand_motion.orientation),
-                            position: to_tracking_vector3(left_hand_motion.position),
+                            pose: TrackingPosef {
+                                orientation: to_tracking_quat(left_hand_motion.orientation),
+                                position: to_tracking_vector3(left_hand_motion.position),
+                            },
                             angularVelocity: to_tracking_vector3(
                                 left_hand_motion.angular_velocity.unwrap_or(Vec3::ZERO),
                             ),
@@ -947,8 +951,10 @@ async fn connection_pipeline() -> StrResult {
 
                                 array
                             },
-                            boneRootOrientation: to_tracking_quat(left_hand_motion.orientation),
-                            boneRootPosition: to_tracking_vector3(left_hand_motion.position),
+                            boneRootPose: TrackingPosef {
+                                orientation: to_tracking_quat(left_hand_motion.orientation),
+                                position: to_tracking_vector3(left_hand_motion.position),
+                            },
                             handFingerConfidences: input.legacy.controllers[0]
                                 .hand_finger_confience,
                         },
@@ -964,8 +970,10 @@ async fn connection_pipeline() -> StrResult {
                             ),
                             triggerValue: input.legacy.controllers[1].trigger_value,
                             gripValue: input.legacy.controllers[1].grip_value,
-                            orientation: to_tracking_quat(right_hand_motion.orientation),
-                            position: to_tracking_vector3(right_hand_motion.position),
+                            pose: TrackingPosef {
+                                orientation: to_tracking_quat(right_hand_motion.orientation),
+                                position: to_tracking_vector3(right_hand_motion.position),
+                            },
                             angularVelocity: to_tracking_vector3(
                                 right_hand_motion.angular_velocity.unwrap_or(Vec3::ZERO),
                             ),
@@ -998,15 +1006,17 @@ async fn connection_pipeline() -> StrResult {
 
                                 array
                             },
-                            boneRootOrientation: to_tracking_quat(right_hand_motion.orientation),
-                            boneRootPosition: to_tracking_vector3(right_hand_motion.position),
+                            boneRootPose: TrackingPosef {
+                                orientation: to_tracking_quat(right_hand_motion.orientation),
+                                position: to_tracking_vector3(right_hand_motion.position),
+                            },
                             handFingerConfidences: input.legacy.controllers[1]
                                 .hand_finger_confience,
                         },
                     ],
                 };
 
-                unsafe { crate::InputReceive(tracking_info) };
+                unsafe { crate::InputReceive(&tracking_info) };
             }
         }
     };
@@ -1074,7 +1084,7 @@ async fn connection_pipeline() -> StrResult {
                         trackingRecvFrameIndex: data.tracking_recv_frame_index,
                     };
 
-                    unsafe { crate::TimeSyncReceive(time_sync) };
+                    unsafe { crate::TimeSyncReceive(&time_sync) };
                 }
                 Ok(ClientControlPacket::VideoErrorReport) => unsafe {
                     crate::VideoErrorReportReceive()

@@ -165,9 +165,9 @@ void (*LogWarn)(const char *stringPtr);
 void (*LogInfo)(const char *stringPtr);
 void (*LogDebug)(const char *stringPtr);
 void (*DriverReadyIdle)(bool setDefaultChaprone);
-void (*VideoSend)(VideoFrame header, unsigned char *buf, int len);
+void (*VideoSend)(const VideoFrame* header, const uint8_t *buf, uint32_t len);
 void (*HapticsSend)(unsigned long long path, float duration_s, float frequency, float amplitude);
-void (*TimeSyncSend)(TimeSync packet);
+void (*TimeSyncSend)(const TimeSync* packet);
 void (*ShutdownRuntime)();
 unsigned long long (*PathStringToHash)(const char *path);
 
@@ -207,23 +207,23 @@ void RequestIDR() {
     }
 }
 
-void InputReceive(TrackingInfo data) {
+void InputReceive(const TrackingInfo* data) {
     if (g_driver_provider.hmd && g_driver_provider.hmd->m_Listener) {
         g_driver_provider.hmd->m_Listener->m_Statistics->CountPacket(sizeof(TrackingInfo));
 
-        uint64_t Current = GetTimestampUs();
+        const uint64_t Current = GetSystemTimestampUs();
         TimeSync sendBuf = {};
         sendBuf.mode = 3;
         sendBuf.serverTime = Current - g_driver_provider.hmd->m_Listener->m_TimeDiff;
-        sendBuf.trackingRecvFrameIndex = data.targetTimestampNs;
-        TimeSyncSend(sendBuf);
+        sendBuf.trackingRecvFrameIndex = data->targetTimestampNs;
+        TimeSyncSend(&sendBuf);
 
-        g_driver_provider.hmd->OnPoseUpdated(data);
+        g_driver_provider.hmd->OnPoseUpdated(*data);
     }
 }
-void TimeSyncReceive(TimeSync data) {
+void TimeSyncReceive(const TimeSync *data) {
     if (g_driver_provider.hmd && g_driver_provider.hmd->m_Listener) {
-        g_driver_provider.hmd->m_Listener->ProcessTimeSync(data);
+        g_driver_provider.hmd->m_Listener->ProcessTimeSync(*data);
     }
 }
 void VideoErrorReportReceive() {
@@ -240,7 +240,7 @@ void ShutdownSteamvr() {
     }
 }
 
-void SetOpenvrProperty(unsigned long long top_level_path, OpenvrProperty prop) {
+void SetOpenvrProperty(uint64_t top_level_path, OpenvrProperty prop) {
     auto device_it = g_driver_provider.tracked_devices.find(top_level_path);
 
     if (device_it != g_driver_provider.tracked_devices.end()) {
@@ -254,7 +254,7 @@ void SetViewsConfig(const ViewsConfigData *config) {
     }
 }
 
-void SetBattery(unsigned long long top_level_path, float gauge_value, bool is_plugged) {
+void SetBattery(uint64_t top_level_path, float gauge_value, bool is_plugged) {
     auto device_it = g_driver_provider.tracked_devices.find(top_level_path);
 
     if (device_it != g_driver_provider.tracked_devices.end()) {
