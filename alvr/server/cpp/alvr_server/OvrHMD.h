@@ -40,7 +40,7 @@ class OvrHmd : public TrackedDevice,
     virtual void DebugRequest(const char *request, char *response_buffer, uint32_t size) {}
     virtual vr::DriverPose_t GetPose();
 
-    void OnPoseUpdated(TrackingInfo info);
+    void OnPoseUpdated(const TrackingInfo& info);
 
     void StartStreaming();
 
