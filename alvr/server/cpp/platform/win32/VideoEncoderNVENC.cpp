@@ -69,12 +69,14 @@ void VideoEncoderNVENC::Shutdown()
 	if(m_NvNecoder)
 		m_NvNecoder->EndEncode(vPacket);
 
+#ifndef NDEBUG
 	for (std::vector<uint8_t> &packet : vPacket)
 	{
 		if (fpOut) {
 			fpOut.write(reinterpret_cast<char*>(packet.data()), packet.size());
 		}
 	}
+#endif
 	if (m_NvNecoder) {
 		m_NvNecoder->DestroyEncoder();
 		m_NvNecoder.reset();
@@ -117,14 +119,16 @@ void VideoEncoderNVENC::Transmit(ID3D11Texture2D *pTexture, uint64_t presentatio
 	m_NvNecoder->EncodeFrame(vPacket, &picParams);
 
 	if (m_Listener) {
-		m_Listener->GetStatistics()->EncodeOutput(GetTimestampUs() - presentationTime);
+		m_Listener->GetStatistics()->EncodeOutput(GetSystemTimestampUs() - presentationTime);
 	}
 
 	for (std::vector<uint8_t> &packet : vPacket)
 	{
+#ifndef NDEBUG
 		if (fpOut) {
 			fpOut.write(reinterpret_cast<char*>(packet.data()), packet.size());
 		}
+#endif
 		if (m_Listener) {
 			m_Listener->SendVideo(packet.data(), (int)packet.size(), targetTimestampNs);
 		}

@@ -2,6 +2,7 @@
 
 #include <list>
 #include <mutex>
+#include <shared_mutex>
 #include <openvr_driver.h>
 #include <optional>
 #include "ALVR-common/packet_types.h"
@@ -21,6 +22,6 @@ public:
 	std::optional<TrackingHistoryFrame> GetPoseAt(uint64_t client_timestamp_us) const;
 
 private:
-	mutable std::mutex m_mutex;
+	mutable std::shared_mutex m_mutex{};
 	std::list<TrackingHistoryFrame> m_poseBuffer;
 };
