@@ -20,9 +20,10 @@ void IDRScheduler::OnPacketLoss()
 		// Waiting next insertion.
 		return;
 	}
-	if (GetTimestampUs() - m_insertIDRTime > m_minIDRFrameInterval) {
+	const std::uint64_t timestamp = GetSteadyTimeStampUS();
+	if (timestamp - m_insertIDRTime > m_minIDRFrameInterval) {
 		// Insert immediately
-		m_insertIDRTime = GetTimestampUs();
+		m_insertIDRTime = timestamp;
 		m_scheduled = true;
 	}
 	else {
@@ -46,7 +47,7 @@ void IDRScheduler::InsertIDR()
 {
 	std::unique_lock lock(m_mutex);
 
-	m_insertIDRTime = GetTimestampUs() - MIN_IDR_FRAME_INTERVAL * 2;
+	m_insertIDRTime = GetSteadyTimeStampUS() - MIN_IDR_FRAME_INTERVAL * 2;
 	m_scheduled = true;
 }
 
@@ -54,7 +55,7 @@ bool IDRScheduler::CheckIDRInsertion() {
 	std::unique_lock lock(m_mutex);
 
 	if (m_scheduled) {
-		if (m_insertIDRTime <= GetTimestampUs()) {
+		if (m_insertIDRTime <= GetSteadyTimeStampUS()) {
 			m_scheduled = false;
 			return true;
 		}
