@@ -160,10 +160,10 @@ void OvrDirectModeComponent::SubmitLayer(const SubmitLayerPerEye_t(&perEye)[2])
 			m_targetTimestampNs = pose->info.targetTimestampNs;
 
 			m_prevFramePoseRotation = m_framePoseRotation;
-			m_framePoseRotation.x = pose->info.HeadPose_Pose_Orientation.x;
-			m_framePoseRotation.y = pose->info.HeadPose_Pose_Orientation.y;
-			m_framePoseRotation.z = pose->info.HeadPose_Pose_Orientation.z;
-			m_framePoseRotation.w = pose->info.HeadPose_Pose_Orientation.w;
+			m_framePoseRotation.x = pose->info.headPose.orientation.x;
+			m_framePoseRotation.y = pose->info.headPose.orientation.y;
+			m_framePoseRotation.z = pose->info.headPose.orientation.z;
+			m_framePoseRotation.w = pose->info.headPose.orientation.w;
 
 			Debug("Frame pose found. m_prevSubmitFrameIndex=%llu m_submitFrameIndex=%llu\n", m_prevTargetTimestampNs, m_targetTimestampNs);
 		}
@@ -250,7 +250,7 @@ void OvrDirectModeComponent::Present(vr::SharedTextureHandle_t syncTexture)
 
 void OvrDirectModeComponent::CopyTexture(uint32_t layerCount) {
 
-	uint64_t presentationTime = GetTimestampUs();
+	const std::uint64_t presentationTime = GetSystemTimestampUs();
 
 	ID3D11Texture2D *pTexture[MAX_LAYERS][2];
 	ComPtr<ID3D11Texture2D> Texture[MAX_LAYERS][2];
@@ -291,7 +291,9 @@ void OvrDirectModeComponent::CopyTexture(uint32_t layerCount) {
 	}
 
 	// This can go away, but is useful to see it as a separate packet on the gpu in traces.
+#ifndef NDEBUG
 	m_pD3DRender->GetContext()->Flush();
+#endif
 
 	if (m_pEncoder) {
 		Debug("Waiting for finish of previous encode.\n");
@@ -309,6 +311,9 @@ void OvrDirectModeComponent::CopyTexture(uint32_t layerCount) {
 		// Copy entire texture to staging so we can read the pixels to send to remote device.
 		m_pEncoder->CopyToStaging(pTexture, bounds, layerCount,false, presentationTime, submitFrameIndex,"", debugText);
 
+// CopyToStaging invokes RenderFrame which already does a pipeline flush.
+#ifndef NDEBUG
 		m_pD3DRender->GetContext()->Flush();
+#endif
 	}
 }
