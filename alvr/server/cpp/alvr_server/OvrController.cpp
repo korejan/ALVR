@@ -934,51 +934,51 @@ bool OvrController::onPoseUpdate(const TrackingInfo::Controller &c) {
     if (c.isHand) {
 
         vr::HmdQuaternion_t rootBoneRot =
-            HmdQuaternion_Init(c.boneRootOrientation.w,
-                               c.boneRootOrientation.x,
-                               c.boneRootOrientation.y,
-                               c.boneRootOrientation.z);
+            HmdQuaternion_Init(c.boneRootPose.orientation.w,
+                               c.boneRootPose.orientation.x,
+                               c.boneRootPose.orientation.y,
+                               c.boneRootPose.orientation.z);
         vr::HmdQuaternion_t boneFixer = this->device_path == LEFT_HAND_PATH
                                             ? HmdQuaternion_Init(-0.5, 0.5, 0.5, -0.5)
                                             : HmdQuaternion_Init(0.5, 0.5, 0.5, 0.5);
         m_pose.qRotation = QuatMultiply(&rootBoneRot, &boneFixer);
-        m_pose.vecPosition[0] = c.boneRootPosition.x;
-        m_pose.vecPosition[1] = c.boneRootPosition.y;
-        m_pose.vecPosition[2] = c.boneRootPosition.z;
+        m_pose.vecPosition[0] = c.boneRootPose.position.x;
+        m_pose.vecPosition[1] = c.boneRootPose.position.y;
+        m_pose.vecPosition[2] = c.boneRootPose.position.z;
 
         if (this->device_path == LEFT_HAND_PATH) {
             double bonePosFixer[3] = {0.0, 0.05, -0.05};
             vr::HmdVector3d_t posFix =
                 vrmath::quaternionRotateVector(m_pose.qRotation, bonePosFixer);
             m_pose.vecPosition[0] =
-                c.boneRootPosition.x + posFix.v[0];
+                c.boneRootPose.position.x + posFix.v[0];
             m_pose.vecPosition[1] =
-                c.boneRootPosition.y + posFix.v[1];
+                c.boneRootPose.position.y + posFix.v[1];
             m_pose.vecPosition[2] =
-                c.boneRootPosition.z + posFix.v[2];
+                c.boneRootPose.position.z + posFix.v[2];
         } else {
             double bonePosFixer[3] = {0.0, 0.05, -0.05};
             vr::HmdVector3d_t posFix =
                 vrmath::quaternionRotateVector(m_pose.qRotation, bonePosFixer);
             m_pose.vecPosition[0] =
-                c.boneRootPosition.x + posFix.v[0];
+                c.boneRootPose.position.x + posFix.v[0];
             m_pose.vecPosition[1] =
-                c.boneRootPosition.y + posFix.v[1];
+                c.boneRootPose.position.y + posFix.v[1];
             m_pose.vecPosition[2] =
-                c.boneRootPosition.z + posFix.v[2];
+                c.boneRootPose.position.z + posFix.v[2];
         }
 
     } else {
 
         m_pose.qRotation = HmdQuaternion_Init(
-            c.orientation.w,
-            c.orientation.x,
-            c.orientation.y,
-            c.orientation.z); // controllerRotation;
+            c.pose.orientation.w,
+            c.pose.orientation.x,
+            c.pose.orientation.y,
+            c.pose.orientation.z); // controllerRotation;
 
-        m_pose.vecPosition[0] = c.position.x;
-        m_pose.vecPosition[1] = c.position.y;
-        m_pose.vecPosition[2] = c.position.z;
+        m_pose.vecPosition[0] = c.pose.position.x;
+        m_pose.vecPosition[1] = c.pose.position.y;
+        m_pose.vecPosition[2] = c.pose.position.z;
     }
 
     // use cutoffs for velocity to stop jitter when there is not a lot of movement
@@ -1254,7 +1254,7 @@ bool OvrController::onPoseUpdate(const TrackingInfo::Controller &c) {
 
         // Will use one of the existing poses from the implementation below instead for position
         // data.
-        // COPY3(c.boneRootPosition, m_boneTransform[HSB_Root].position);
+        // COPY3(c.boneRootPose.position, m_boneTransform[HSB_Root].position);
         // COPY3(c.bonePositionsBase[alvrHandBone_WristRoot], m_boneTransform[HSB_Wrist].position);
         // COPY3(c.bonePositionsBase[alvrHandBone_Thumb0], m_boneTransform[HSB_Thumb0].position);
         // COPY3(c.bonePositionsBase[alvrHandBone_Thumb1], m_boneTransform[HSB_Thumb1].position);

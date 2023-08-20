@@ -10,10 +10,10 @@ void PoseHistory::OnPoseUpdated(const TrackingInfo &info) {
 	history.info = info;
 
 
-	HmdMatrix_QuatToMat(info.HeadPose_Pose_Orientation.w,
-		info.HeadPose_Pose_Orientation.x,
-		info.HeadPose_Pose_Orientation.y,
-		info.HeadPose_Pose_Orientation.z,
+	HmdMatrix_QuatToMat(info.headPose.orientation.w,
+		info.headPose.orientation.x,
+		info.headPose.orientation.y,
+		info.headPose.orientation.z,
 		&history.rotationMatrix);
 
 	Debug("Rotation Matrix=(%f, %f, %f, %f) (%f, %f, %f, %f) (%f, %f, %f, %f)\n"
@@ -21,7 +21,7 @@ void PoseHistory::OnPoseUpdated(const TrackingInfo &info) {
 		, history.rotationMatrix.m[1][0], history.rotationMatrix.m[1][1], history.rotationMatrix.m[1][2], history.rotationMatrix.m[1][3]
 		, history.rotationMatrix.m[2][0], history.rotationMatrix.m[2][1], history.rotationMatrix.m[2][2], history.rotationMatrix.m[2][3]);
 
-	std::unique_lock<std::mutex> lock(m_mutex);
+	std::unique_lock lock(m_mutex);
 	if (m_poseBuffer.size() == 0) {
 		m_poseBuffer.push_back(history);
 	}
@@ -39,7 +39,7 @@ void PoseHistory::OnPoseUpdated(const TrackingInfo &info) {
 
 std::optional<PoseHistory::TrackingHistoryFrame> PoseHistory::GetBestPoseMatch(const vr::HmdMatrix34_t &pose) const
 {
-	std::unique_lock<std::mutex> lock(m_mutex);
+	std::shared_lock lock(m_mutex);
 	float minDiff = 100000;
 	auto minIt = m_poseBuffer.begin();
 	for (auto it = m_poseBuffer.begin(); it != m_poseBuffer.end(); ++it) {
@@ -66,7 +66,7 @@ std::optional<PoseHistory::TrackingHistoryFrame> PoseHistory::GetBestPoseMatch(c
 
 std::optional<PoseHistory::TrackingHistoryFrame> PoseHistory::GetPoseAt(uint64_t client_timestamp_ns) const
 {
-	std::unique_lock<std::mutex> lock(m_mutex);
+	std::shared_lock lock(m_mutex);
 	for (auto it = m_poseBuffer.rbegin(), end = m_poseBuffer.rend() ; it != end ; ++it)
 	{
 		if (it->info.targetTimestampNs == client_timestamp_ns)
