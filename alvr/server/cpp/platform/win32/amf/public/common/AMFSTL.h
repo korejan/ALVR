@@ -74,6 +74,7 @@ namespace amf
     template<class _Ty>
     class amf_allocator : public std::allocator<_Ty>
     {
+        using alloc_traits = std::allocator_traits< std::allocator<_Ty> >;
     public:
         amf_allocator() : std::allocator<_Ty>()
         {}
@@ -85,13 +86,13 @@ namespace amf
         {
             typedef amf_allocator<_Other> other;
         };
-        void deallocate(typename std::allocator<_Ty>::pointer _Ptr, typename std::allocator<_Ty>::size_type)
+        void deallocate(typename alloc_traits::pointer _Ptr, typename std::allocator<_Ty>::size_type)
         {
             amf_free((void*)_Ptr);
         }
-        typename std::allocator<_Ty>::pointer allocate(typename std::allocator<_Ty>::size_type _Count)
+        typename alloc_traits::pointer allocate(typename std::allocator<_Ty>::size_type _Count)
         { // allocate array of _Count el ements
-            return static_cast<typename std::allocator<_Ty>::pointer>((amf_alloc(_Count * sizeof(_Ty))));
+            return static_cast<typename alloc_traits::pointer>((amf_alloc(_Count * sizeof(_Ty))));
         }
     };
 
