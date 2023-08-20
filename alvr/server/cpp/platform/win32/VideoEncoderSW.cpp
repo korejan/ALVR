@@ -261,7 +261,7 @@ void VideoEncoderSW::Transmit(ID3D11Texture2D *pTexture, uint64_t presentationTi
 	}
 
 	// Send statistics to client
-	m_Listener->GetStatistics()->EncodeOutput(GetTimestampUs() - presentationTime);
+	m_Listener->GetStatistics()->EncodeOutput(GetSystemTimestampUs() - presentationTime);
 
 	// Unmap the copied texture and delete it
 	m_d3dRender->GetContext()->Unmap(stagingTex.Get(), 0);
