@@ -23,7 +23,7 @@
 const vr::HmdMatrix34_t MATRIX_IDENTITY = {
     {{1.0, 0.0, 0.0, 0.0}, {0.0, 1.0, 0.0, 0.0}, {0.0, 0.0, 1.0, 0.0}}};
 
-vr::HmdRect2_t fov_to_projection(EyeFov fov) {
+vr::HmdRect2_t fov_to_projection(const EyeFov& fov) {
     auto proj_bounds = vr::HmdRect2_t{};
     proj_bounds.vTopLeft.v[0] = tanf(fov.left);
     proj_bounds.vBottomRight.v[0] = tanf(fov.right);
@@ -320,14 +320,14 @@ vr::DriverPose_t OvrHmd::GetPose() {
     if (m_TrackingInfo.targetTimestampNs > 0) {
         TrackingInfo &info = m_TrackingInfo;
 
-        pose.qRotation = HmdQuaternion_Init(info.HeadPose_Pose_Orientation.w,
-                                            info.HeadPose_Pose_Orientation.x,
-                                            info.HeadPose_Pose_Orientation.y,
-                                            info.HeadPose_Pose_Orientation.z);
+        pose.qRotation = HmdQuaternion_Init(info.headPose.orientation.w,
+                                            info.headPose.orientation.x,
+                                            info.headPose.orientation.y,
+                                            info.headPose.orientation.z);
 
-        pose.vecPosition[0] = info.HeadPose_Pose_Position.x;
-        pose.vecPosition[1] = info.HeadPose_Pose_Position.y;
-        pose.vecPosition[2] = info.HeadPose_Pose_Position.z;
+        pose.vecPosition[0] = info.headPose.position.x;
+        pose.vecPosition[1] = info.headPose.position.y;
+        pose.vecPosition[2] = info.headPose.position.z;
 
         // set prox sensor
         vr::VRDriverInput()->UpdateBooleanComponent(m_proximity, info.mounted == 1, 0.0);
@@ -347,17 +347,17 @@ vr::DriverPose_t OvrHmd::GetPose() {
     return pose;
 }
 
-void OvrHmd::OnPoseUpdated(TrackingInfo info) {
+void OvrHmd::OnPoseUpdated(const TrackingInfo& info) {
     if (this->object_id != vr::k_unTrackedDeviceIndexInvalid) {
+        
+        m_TrackingInfo = info;
         // if 3DOF, zero the positional data!
         if (Settings::Instance().m_force3DOF) {
-            info.HeadPose_Pose_Position.x = 0;
-            info.HeadPose_Pose_Position.y = 0;
-            info.HeadPose_Pose_Position.z = 0;
+            m_TrackingInfo.headPose.position.x = 0;
+            m_TrackingInfo.headPose.position.y = 0;
+            m_TrackingInfo.headPose.position.z = 0;
         }
-
-        m_TrackingInfo = info;
-
+        
         // TODO: Right order?
 
         if (!Settings::Instance().m_disableController) {
@@ -417,7 +417,7 @@ void OvrHmd::StartStreaming() {
     m_streamComponentsInitialized = true;
 }
 
-void OvrHmd::SetViewsConfig(ViewsConfigData config) {
+void OvrHmd::SetViewsConfig(const ViewsConfigData &config) {
     this->views_config = config;
 
     auto left_transform = MATRIX_IDENTITY;
