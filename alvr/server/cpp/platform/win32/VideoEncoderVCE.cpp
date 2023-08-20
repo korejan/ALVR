@@ -463,7 +463,7 @@ void VideoEncoderVCE::Receive(AMFDataPtr data)
 		fpOut.write(p, length);
 	}
 	if (m_Listener) {
-		m_Listener->SendVideo(reinterpret_cast<uint8_t *>(p), length, targetTimestampNs);
+		m_Listener->SendVideo(reinterpret_cast<const uint8_t *>(p), length, targetTimestampNs);
 	}
 }
 
