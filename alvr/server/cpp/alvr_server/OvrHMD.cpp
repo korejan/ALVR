@@ -543,3 +543,15 @@ void OvrHmd::GetProjectionRaw(
 vr::DistortionCoordinates_t OvrHmd::ComputeDistortion(vr::EVREye, float u, float v) {
     return {{u, v}, {u, v}, {u, v}};
 }
+
+bool OvrHmd::ComputeInverseDistortion(vr::HmdVector2_t *pResult, vr::EVREye eEye, uint32_t unChannel, float fU, float fV) {
+    if (pResult == nullptr) {
+        return false;
+    }
+    // Since the original ComputeDistortion is an identity function,
+    // the inverse is also an identity function, and does not depend
+    // on the eye or channel.
+    pResult->v[0] = fU;
+    pResult->v[1] = fV;
+    return true; // Operation successful
+}
