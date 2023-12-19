@@ -65,15 +65,15 @@ void VideoEncoderNVENC::Initialize()
 
 void VideoEncoderNVENC::Shutdown()
 {
-	std::vector<std::vector<uint8_t>> vPacket;
+	m_vPacket.clear();
 	if(m_NvNecoder)
-		m_NvNecoder->EndEncode(vPacket);
+		m_NvNecoder->EndEncode(m_vPacket);
 
 #ifndef NDEBUG
-	for (std::vector<uint8_t> &packet : vPacket)
+	for (const auto &packet : m_vPacket)
 	{
 		if (fpOut) {
-			fpOut.write(reinterpret_cast<char*>(packet.data()), packet.size());
+			fpOut.write(reinterpret_cast<const char*>(packet.data()), packet.size());
 		}
 	}
 #endif
@@ -104,8 +104,6 @@ void VideoEncoderNVENC::Transmit(ID3D11Texture2D *pTexture, uint64_t presentatio
 		}
 	}
 
-	std::vector<std::vector<uint8_t>> vPacket;
-
 	const NvEncInputFrame* encoderInputFrame = m_NvNecoder->GetNextInputFrame();
 
 	ID3D11Texture2D *pInputTexture = reinterpret_cast<ID3D11Texture2D*>(encoderInputFrame->inputPtr);
@@ -116,17 +114,18 @@ void VideoEncoderNVENC::Transmit(ID3D11Texture2D *pTexture, uint64_t presentatio
 		Debug("Inserting IDR frame.\n");
 		picParams.encodePicFlags = NV_ENC_PIC_FLAG_FORCEIDR;
 	}
-	m_NvNecoder->EncodeFrame(vPacket, &picParams);
+	const std::size_t packetCount = m_NvNecoder->EncodeFrame(m_vPacket, &picParams);
 
 	if (m_Listener) {
 		m_Listener->GetStatistics()->EncodeOutput(GetSystemTimestampUs() - presentationTime);
 	}
 
-	for (std::vector<uint8_t> &packet : vPacket)
+	for (std::size_t packetIndex = 0; packetIndex < packetCount; ++packetIndex)
 	{
+		const auto& packet = m_vPacket[packetIndex];
 #ifndef NDEBUG
 		if (fpOut) {
-			fpOut.write(reinterpret_cast<char*>(packet.data()), packet.size());
+			fpOut.write(reinterpret_cast<const char*>(packet.data()), packet.size());
 		}
 #endif
 		if (m_Listener) {
