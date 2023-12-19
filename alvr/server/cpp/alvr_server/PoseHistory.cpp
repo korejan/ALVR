@@ -49,7 +49,8 @@ std::optional<PoseHistory::TrackingHistoryFrame> PoseHistory::GetBestPoseMatch(c
 		// And bottom side and right side of matrix should not be compared, because pPose does not contain that part of matrix.
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
-				distance += pow(it->rotationMatrix.m[j][i] - pose.m[j][i], 2);
+				const float x = it->rotationMatrix.m[j][i] - pose.m[j][i];
+				distance += (x * x);
 			}
 		}
 		//LogDriver("diff %f %llu", distance, it->info.FrameIndex);
