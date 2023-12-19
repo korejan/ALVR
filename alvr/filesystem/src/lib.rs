@@ -209,6 +209,10 @@ impl Layout {
         self.executables_dir.join(exe)
     }
 
+    pub fn launcher_pdb(&self) -> PathBuf {
+        self.executables_dir.join("alvr_launcher.pdb")
+    }
+
     pub fn resources_dir(&self) -> PathBuf {
         self.openvr_driver_root_dir.join("resources")
     }
@@ -265,6 +269,11 @@ impl Layout {
 
         self.openvr_driver_lib_dir()
             .join(format!("driver_alvr_server.{ext}"))
+    }
+
+    pub fn openvr_driver_pdb(&self) -> PathBuf {
+        self.openvr_driver_lib_dir()
+            .join(format!("driver_alvr_server.pdb"))
     }
 
     // path to the manifest file for openVR
