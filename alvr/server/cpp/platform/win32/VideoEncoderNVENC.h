@@ -34,6 +34,8 @@ private:
 	std::shared_ptr<CD3DRender> m_pD3DRender;
 
 	std::shared_ptr<ClientConnection> m_Listener;
+	
+	std::vector<std::vector<uint8_t>> m_vPacket{};
 
 	int m_codec;
 	int m_refreshRate;
