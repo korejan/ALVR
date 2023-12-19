@@ -76,6 +76,12 @@ pub fn remove_build_dir() {
     fs::remove_dir_all(&build_dir).ok();
 }
 
+fn copy_if_windows<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) {
+    if cfg!(windows) {
+        fs::copy(from, to).unwrap();
+    }
+}
+
 pub fn build_server(
     is_release: bool,
     experiments: bool,
@@ -182,7 +188,10 @@ pub fn build_server(
             .into_iter()
             .filter_map(|maybe_entry| maybe_entry.ok())
             .map(|entry| entry.into_path())
-            .filter(|path| path.file_name().unwrap().to_string_lossy().contains(".dll"))
+            .filter(|path| {
+                path.file_name().unwrap().to_string_lossy().contains(".dll")
+                    || path.file_name().unwrap().to_string_lossy().contains(".pdb")
+            })
         {
             fs::copy(dll.clone(), bin_dir.join(dll.file_name().unwrap())).unwrap();
         }
@@ -215,6 +224,10 @@ pub fn build_server(
         layout.openvr_driver_lib(),
     )
     .unwrap();
+    copy_if_windows(
+        artifacts_dir.join("alvr_server.pdb"),
+        layout.openvr_driver_pdb(),
+    );
 
     command::run_in(
         &afs::workspace_dir().join("alvr/launcher"),
@@ -229,6 +242,10 @@ pub fn build_server(
         layout.launcher_exe(),
     )
     .unwrap();
+    copy_if_windows(
+        artifacts_dir.join("alvr_launcher.pdb"),
+        layout.launcher_pdb(),
+    );
 
     if experiments {
         let dir_content = dirx::get_dir_content2(
