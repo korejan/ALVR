@@ -36,7 +36,8 @@ void ClientConnection::FECSend(const uint8_t *buf, uint32_t len, uint64_t target
 	Debug("reed_solomon_new. dataShards=%d totalParityShards=%d totalShards=%d blockSize=%d shardPackets=%d\n"
 		, dataShards, totalParityShards, totalShards, blockSize, shardPackets);
 
-	reed_solomon *rs = reed_solomon_new(dataShards, totalParityShards);
+	reed_solomon rs = {};
+	reed_solomon_new(dataShards, totalParityShards, &rs);
 
 	std::vector<uint8_t *> shards(totalShards);
 
@@ -53,10 +54,10 @@ void ClientConnection::FECSend(const uint8_t *buf, uint32_t len, uint64_t target
 		shards[dataShards + i] = new uint8_t[blockSize];
 	}
 
-	const int ret = reed_solomon_encode(rs, &shards[0], totalShards, blockSize);
+	const int ret = reed_solomon_encode(&rs, &shards[0], totalShards, blockSize);
 	assert(ret == 0);
 
-	reed_solomon_release(rs);
+	reed_solomon_release(&rs);
 
 	thread_local uint8_t packetBuffer[2000];
 	VideoFrame *header = (VideoFrame *)packetBuffer;
