@@ -489,9 +489,8 @@ void NvEncoder::MapResources(uint32_t bfrIdx)
     }
 }
 
-void NvEncoder::EncodeFrame(std::vector<std::vector<uint8_t>> &vPacket, NV_ENC_PIC_PARAMS *pPicParams)
+std::size_t NvEncoder::EncodeFrame(std::vector<std::vector<uint8_t>> &vPacket, NV_ENC_PIC_PARAMS *pPicParams)
 {
-    vPacket.clear();
     if (!IsHWEncoderInitialized())
     {
         NVENC_THROW_ERROR("Encoder device not found", NV_ENC_ERR_NO_ENCODE_DEVICE);
@@ -506,12 +505,13 @@ void NvEncoder::EncodeFrame(std::vector<std::vector<uint8_t>> &vPacket, NV_ENC_P
     if (nvStatus == NV_ENC_SUCCESS || nvStatus == NV_ENC_ERR_NEED_MORE_INPUT)
     {
         m_iToSend++;
-        GetEncodedPacket(m_vBitstreamOutputBuffer, vPacket, true);
+        return GetEncodedPacket(m_vBitstreamOutputBuffer, vPacket, true);
     }
     else
     {
         NVENC_THROW_ERROR("nvEncEncodePicture API failed", nvStatus);
     }
+    return 0;
 }
 
 void NvEncoder::RunMotionEstimation(std::vector<uint8_t> &mvData)
@@ -602,9 +602,9 @@ void NvEncoder::EndEncode(std::vector<std::vector<uint8_t>> &vPacket)
     GetEncodedPacket(m_vBitstreamOutputBuffer, vPacket, false);
 }
 
-void NvEncoder::GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, std::vector<std::vector<uint8_t>> &vPacket, bool bOutputDelay)
+std::size_t NvEncoder::GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, std::vector<std::vector<uint8_t>> &vPacket, bool bOutputDelay)
 {
-    unsigned i = 0;
+    std::size_t i = 0;
     int iEnd = bOutputDelay ? m_iToSend - m_nOutputDelay : m_iToSend;
     for (; m_iGot < iEnd; m_iGot++)
     {
@@ -620,7 +620,7 @@ void NvEncoder::GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, 
             vPacket.push_back(std::vector<uint8_t>());
         }
         vPacket[i].clear();
-       
+        
         if ((m_initializeParams.encodeGUID == NV_ENC_CODEC_AV1_GUID) && (m_bUseIVFContainer))
         {
             if (m_bWriteIVFFileHeader)
@@ -649,6 +649,7 @@ void NvEncoder::GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, 
             m_vMappedRefBuffers[m_iGot % m_nEncoderBuffer] = nullptr;
         }
     }
+    return i;
 }
 
 bool NvEncoder::Reconfigure(const NV_ENC_RECONFIGURE_PARAMS *pReconfigureParams)
