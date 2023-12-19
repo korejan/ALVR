@@ -21,7 +21,7 @@ extern "C" {
 	 * */
 	void reed_solomon_init(void);
 
-	reed_solomon* reed_solomon_new(int data_shards, int parity_shards);
+	int reed_solomon_new(int data_shards, int parity_shards, reed_solomon* rs_out);
 	void reed_solomon_release(reed_solomon* rs);
 
 	/**

@@ -320,9 +320,17 @@ static int invert_mat(gf *src, int k) {
     }
     for (col = k-1 ; col >= 0 ; col-- ) {
         if (indxr[col] <0 || indxr[col] >= k)
+#ifdef NDEBUG
+            continue;
+#else
             fprintf(stderr, "AARGH, indxr[col] %d\n", indxr[col]);
+#endif
         else if (indxc[col] <0 || indxc[col] >= k)
+#ifdef NDEBUG
+            continue;
+#else
             fprintf(stderr, "AARGH, indxc[col] %d\n", indxc[col]);
+#endif
         else
             if (indxr[col] != indxc[col] ) {
                 for (row = 0 ; row < k ; row++ )
@@ -375,16 +383,14 @@ void reed_solomon_init(void) {
     init_mul_table();
 }
 
-reed_solomon* reed_solomon_new(int data_shards, int parity_shards) {
+int reed_solomon_new(int data_shards, int parity_shards, reed_solomon* rs) {
     gf* vm = NULL;
     gf* top = NULL;
     int err = 0;
-    reed_solomon* rs = NULL;
 
     do {
-        rs = (reed_solomon *)malloc(sizeof(reed_solomon));
         if (NULL == rs)
-            return NULL;
+            return -1;
 
         rs->data_shards = data_shards;
         rs->parity_shards = parity_shards;
@@ -440,39 +446,33 @@ reed_solomon* reed_solomon_new(int data_shards, int parity_shards) {
         free(top);
         vm = NULL;
         top = NULL;
-        return rs;
+        return 0;
 
     } while(0);
 
-    fprintf(stderr, "err=%d\n", err);
+    if (err != 0) {
+        fprintf(stderr, "err=%d\n", err);
+    }
+    
     if (NULL != vm)
         free(vm);
-
     if (NULL != top)
         free(top);
 
-    if (NULL != rs) {
-        if (NULL != rs->m)
-            free(rs->m);
-
-        if (NULL != rs->parity)
-            free(rs->parity);
-
-        free(rs);
-    }
-
-    return NULL;
+    reed_solomon_release(rs);
+    return -1;
 }
 
 void reed_solomon_release(reed_solomon* rs) {
-    if (NULL != rs) {
-        if (NULL != rs->m)
-            free(rs->m);
-
-        if (NULL != rs->parity)
-            free(rs->parity);
-
-        free(rs);
+    if (NULL == rs)
+        return ;
+    if (NULL != rs->m) {
+        free(rs->m);
+        rs->m = NULL;
+    }
+    if (NULL != rs->parity) {
+        free(rs->parity);
+        rs->parity = NULL;
     }
 }
 
