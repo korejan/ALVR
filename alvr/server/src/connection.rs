@@ -798,10 +798,11 @@ async fn connection_pipeline() -> StrResult {
             let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
             *VIDEO_SENDER.lock() = Some(data_sender);
 
-            while let Some((header, data)) = data_receiver.recv().await {
-                let mut buffer = socket_sender.new_buffer(&header, data.len())?;
-                buffer.get_mut().extend(data);
-                socket_sender.send_buffer(buffer).await.ok();
+            while let Some(video_frame_packet_buffer) = data_receiver.recv().await {
+                socket_sender
+                    .send_buffer(video_frame_packet_buffer)
+                    .await
+                    .ok();
             }
 
             Ok(())

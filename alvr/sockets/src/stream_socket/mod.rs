@@ -172,32 +172,40 @@ impl<T> StreamSender<T> {
     }
 }
 
+pub fn new_sender_buffer<T: serde::Serialize>(
+    stream_id: StreamId,
+    header: &T,
+    preferred_max_buffer_size: usize,
+) -> StrResult<SenderBuffer<T>> {
+    let header_size = trace_err!(bincode::serialized_size(header))?;
+    // the first two bytes are for the stream ID
+    let offset = 2 + 4 + header_size as usize;
+
+    let mut buffer = BytesMut::with_capacity(offset + preferred_max_buffer_size);
+
+    buffer.put_u16(stream_id);
+
+    // make space for the packet index
+    buffer.put_u32(0);
+
+    let mut buffer_writer = buffer.writer();
+    trace_err!(bincode::serialize_into(&mut buffer_writer, header))?;
+    let buffer = buffer_writer.into_inner();
+
+    Ok(SenderBuffer {
+        inner: buffer,
+        offset,
+        _phantom: PhantomData,
+    })
+}
+
 impl<T: Serialize> StreamSender<T> {
     pub fn new_buffer(
         &self,
         header: &T,
         preferred_max_buffer_size: usize,
     ) -> StrResult<SenderBuffer<T>> {
-        let header_size = trace_err!(bincode::serialized_size(header))?;
-        // the first two bytes are for the stream ID
-        let offset = 2 + 4 + header_size as usize;
-
-        let mut buffer = BytesMut::with_capacity(offset + preferred_max_buffer_size);
-
-        buffer.put_u16(self.stream_id);
-
-        // make space for the packet index
-        buffer.put_u32(0);
-
-        let mut buffer_writer = buffer.writer();
-        trace_err!(bincode::serialize_into(&mut buffer_writer, header))?;
-        let buffer = buffer_writer.into_inner();
-
-        Ok(SenderBuffer {
-            inner: buffer,
-            offset,
-            _phantom: PhantomData,
-        })
+        new_sender_buffer(self.stream_id, &header, preferred_max_buffer_size)
     }
 
     pub async fn send(&mut self, packet: &T) -> StrResult {

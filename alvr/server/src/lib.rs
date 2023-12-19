@@ -42,6 +42,8 @@ use tokio::{
     sync::{Notify, broadcast, mpsc},
 };
 
+type VideoFramePacket = alvr_sockets::SenderBuffer<VideoFrameHeaderPacket>;
+
 lazy_static! {
     // Since ALVR_DIR is needed to initialize logging, if error then just panic
     static ref FILESYSTEM_LAYOUT: Layout =
@@ -51,7 +53,7 @@ lazy_static! {
     static ref RUNTIME: Mutex<Option<Runtime>> = Mutex::new(Runtime::new().ok());
     static ref MAYBE_WINDOW: Mutex<Option<Arc<alcro::UI>>> = Mutex::new(None);
 
-    static ref VIDEO_SENDER: Mutex<Option<mpsc::UnboundedSender<(VideoFrameHeaderPacket, Vec<u8>)>>> =
+    static ref VIDEO_SENDER: Mutex<Option<mpsc::UnboundedSender<VideoFramePacket>>> =
         Mutex::new(None);
     static ref HAPTICS_SENDER: Mutex<Option<mpsc::UnboundedSender<Haptics>>> =
         Mutex::new(None);
@@ -344,14 +346,16 @@ pub unsafe extern "C" fn HmdDriverFactory(
                     }
                 };
 
-                let mut vec_buffer = vec![0; len as _];
+                let mut video_frame_packet_buffer =
+                    alvr_sockets::new_sender_buffer(alvr_sockets::VIDEO, &header, len as _)
+                        .unwrap();
 
-                // use copy_nonoverlapping (aka memcpy) to avoid freeing memory allocated by C++
-                unsafe {
-                    ptr::copy_nonoverlapping(buffer_ptr, vec_buffer.as_mut_ptr(), len as _);
-                }
+                let data_slice = unsafe { std::slice::from_raw_parts(buffer_ptr, len as _) };
+                video_frame_packet_buffer
+                    .get_mut()
+                    .extend_from_slice(data_slice);
 
-                sender.send((header, vec_buffer)).ok();
+                sender.send(video_frame_packet_buffer).ok();
             }
         }
 
