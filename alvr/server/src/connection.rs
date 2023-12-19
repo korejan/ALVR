@@ -1,6 +1,6 @@
 use crate::{
     connection_utils, ClientListAction, EyeFov, TimeSync, TrackingInfo, TrackingInfo_Controller,
-    TrackingQuat, TrackingVector2, TrackingVector3, TrackingPosef, CLIENTS_UPDATED_NOTIFIER,
+    TrackingPosef, TrackingQuat, TrackingVector2, TrackingVector3, CLIENTS_UPDATED_NOTIFIER,
     HAPTICS_SENDER, RESTART_NOTIFIER, SESSION_MANAGER, TIME_SYNC_SENDER, VIDEO_SENDER,
 };
 use alvr_audio::{AudioDevice, AudioDeviceType};
@@ -752,10 +752,11 @@ async fn connection_pipeline() -> StrResult {
             let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
             *VIDEO_SENDER.lock() = Some(data_sender);
 
-            while let Some((header, data)) = data_receiver.recv().await {
-                let mut buffer = socket_sender.new_buffer(&header, data.len())?;
-                buffer.get_mut().extend(data);
-                socket_sender.send_buffer(buffer).await.ok();
+            while let Some(video_frame_packet_buffer) = data_receiver.recv().await {
+                socket_sender
+                    .send_buffer(video_frame_packet_buffer)
+                    .await
+                    .ok();
             }
 
             Ok(())
@@ -869,7 +870,7 @@ async fn connection_pipeline() -> StrResult {
                             ),
                             triggerValue: input.legacy.controllers[0].trigger_value,
                             gripValue: input.legacy.controllers[0].grip_value,
-                            pose: TrackingPosef { 
+                            pose: TrackingPosef {
                                 orientation: to_tracking_quat(left_hand_motion.orientation),
                                 position: to_tracking_vector3(left_hand_motion.position),
                             },
