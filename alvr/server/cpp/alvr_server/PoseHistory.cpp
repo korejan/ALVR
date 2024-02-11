@@ -1,8 +1,12 @@
 #include "PoseHistory.h"
 #include "Utils.h"
 #include "Logger.h"
+#include <limits>
 #include <mutex>
 #include <optional>
+
+#undef max
+#undef min
 
 void PoseHistory::OnPoseUpdated(const TrackingInfo &info) {
 	// Put pose history buffer
@@ -40,7 +44,7 @@ void PoseHistory::OnPoseUpdated(const TrackingInfo &info) {
 std::optional<PoseHistory::TrackingHistoryFrame> PoseHistory::GetBestPoseMatch(const vr::HmdMatrix34_t &pose) const
 {
 	std::shared_lock lock(m_mutex);
-	float minDiff = 100000;
+	float minDiff = std::numeric_limits<float>::max();
 	auto minIt = m_poseBuffer.begin();
 	for (auto it = m_poseBuffer.begin(); it != m_poseBuffer.end(); ++it) {
 		float distance = 0;
@@ -62,7 +66,7 @@ std::optional<PoseHistory::TrackingHistoryFrame> PoseHistory::GetBestPoseMatch(c
 	if (minIt != m_poseBuffer.end()) {
 		return *minIt;
 	}
-	return {};
+	return std::nullopt;
 }
 
 std::optional<PoseHistory::TrackingHistoryFrame> PoseHistory::GetPoseAt(uint64_t client_timestamp_ns) const
@@ -73,5 +77,5 @@ std::optional<PoseHistory::TrackingHistoryFrame> PoseHistory::GetPoseAt(uint64_t
 		if (it->info.targetTimestampNs == client_timestamp_ns)
 			return *it;
 	}
-	return {};
+	return std::nullopt;
 }

@@ -108,6 +108,7 @@ fn main() {
     let mut build = cc::Build::new();
     build
         .cpp(true)
+        .std("c++20")
         .files(source_files_paths)
         .flag_if_supported("-isystemcpp/openvr/headers") // silences many warnings from openvr headers
         .flag_if_supported("-std=c++20")
@@ -119,6 +120,10 @@ fn main() {
         .debug(false) // This is because we cannot link to msvcrtd (see below)
         .flag("/std:c++20")
         .flag("/permissive-")
+        .flag_if_supported("/Oi")
+        .flag_if_supported("/Ob2")
+        .flag_if_supported("/fp:contract")
+        //.flag_if_supported("/GL")
         .define("NOMINMAX", None)
         .define("_WINSOCKAPI_", None)
         .define("_MBCS", None)
