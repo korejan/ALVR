@@ -185,8 +185,8 @@ define([
 
                     switch (target.attr("value")) {
                         case "compatibility":
-                            renderResolutionScale.val(1);
-                            targetResolutionScale.val(1);
+                            renderResolutionScale.val(1.25);
+                            targetResolutionScale.val(1.25);
                             bitrateTarget.val(60);
                             enableFfrTarget.prop("checked", true);
                             adaptiveBitrate.prop("checked", true);
@@ -204,9 +204,9 @@ define([
                             alvrSettings.storeParam(h264CodecTarget);
                             break;
                         case "visual_quality":
-                            renderResolutionScale.val(1);
-                            targetResolutionScale.val(1);
-                            bitrateTarget.val(200);
+                            renderResolutionScale.val(1.4);
+                            targetResolutionScale.val(1.4);
+                            bitrateTarget.val(150);
                             adaptiveBitrate.prop("checked", false);
                             enableFfrTarget.prop("checked", true);
                             preferredFps.val(90);
