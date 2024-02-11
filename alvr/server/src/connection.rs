@@ -41,7 +41,7 @@ const NETWORK_KEEPALIVE_INTERVAL: Duration = Duration::from_secs(1);
 const CLEANUP_PAUSE: Duration = Duration::from_millis(500);
 
 fn align32(value: f32) -> u32 {
-    ((value / 32.).floor() * 32.) as u32
+    ((value / 32.).ceil() * 32.) as u32
 }
 
 fn mbits_to_bytes(value: u64) -> u32 {
