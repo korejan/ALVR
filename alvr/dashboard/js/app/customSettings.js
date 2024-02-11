@@ -31,7 +31,7 @@ define([
 ) {
     return function (alvrSettings) {
         const self = this;
-        const video_scales = [25, 50, 66, 75, 100, 125, 150, 200];
+        const video_scales = [25, 50, 66, 75, 100, 125, 140, 150, 200];
 
         self.setCustomSettings = function () {
             try {
