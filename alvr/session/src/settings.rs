@@ -656,7 +656,7 @@ pub fn session_settings_default() -> SettingsDefault {
             adapter_index: 0,
             render_resolution: FrameSizeDefault {
                 variant: FrameSizeDefaultVariant::Scale,
-                Scale: 1.0,
+                Scale: 1.4,
                 Absolute: FrameSizeAbsoluteDefault {
                     width: 3664,
                     height: 1920,
@@ -664,7 +664,7 @@ pub fn session_settings_default() -> SettingsDefault {
             },
             recommended_target_resolution: FrameSizeDefault {
                 variant: FrameSizeDefaultVariant::Scale,
-                Scale: 1.0,
+                Scale: 1.4,
                 Absolute: FrameSizeAbsoluteDefault {
                     width: 3664,
                     height: 1920,
@@ -684,7 +684,7 @@ pub fn session_settings_default() -> SettingsDefault {
             },
             use_10bit_encoder: true,
             sw_thread_count: 0,
-            encode_bitrate_mbs: 200,
+            encode_bitrate_mbs: 150,
             adaptive_bitrate: SwitchDefault {
                 enabled: false,
                 content: AdaptiveBitrateDescDefault {
@@ -764,12 +764,12 @@ pub fn session_settings_default() -> SettingsDefault {
             foveated_rendering: SwitchDefault {
                 enabled: !cfg!(target_os = "linux"),
                 content: FoveatedRenderingDescDefault {
-                    center_size_x: 0.4,
-                    center_size_y: 0.35,
+                    center_size_x: 0.6,
+                    center_size_y: 0.7,
                     center_shift_x: 0.4,
-                    center_shift_y: 0.1,
-                    edge_ratio_x: 4.,
-                    edge_ratio_y: 5.,
+                    center_shift_y: -0.25,
+                    edge_ratio_x: 7.,
+                    edge_ratio_y: 10.,
                 },
             },
             color_correction: SwitchDefault {
