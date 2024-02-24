@@ -846,7 +846,7 @@ async fn connection_pipeline() -> StrResult {
     };
 
     #[inline(always)]
-    fn to_tracking_quat(quat: Quat) -> TrackingQuat {
+    fn to_tracking_quat(quat: &Quat) -> TrackingQuat {
         TrackingQuat {
             x: quat.x,
             y: quat.y,
@@ -856,12 +856,12 @@ async fn connection_pipeline() -> StrResult {
     }
 
     #[inline(always)]
-    fn to_tracking_vector2(vec: Vec2) -> TrackingVector2 {
+    fn to_tracking_vector2(vec: &Vec2) -> TrackingVector2 {
         TrackingVector2 { x: vec.x, y: vec.y }
     }
 
     #[inline(always)]
-    fn to_tracking_vector3(vec: Vec3) -> TrackingVector3 {
+    fn to_tracking_vector3(vec: &Vec3) -> TrackingVector3 {
         TrackingVector3 {
             x: vec.x,
             y: vec.y,
@@ -899,8 +899,8 @@ async fn connection_pipeline() -> StrResult {
                 let tracking_info = TrackingInfo {
                     targetTimestampNs: input.target_timestamp.as_nanos() as _,
                     headPose: TrackingPosef {
-                        orientation: to_tracking_quat(head_motion.orientation),
-                        position: to_tracking_vector3(head_motion.position),
+                        orientation: to_tracking_quat(&head_motion.orientation),
+                        position: to_tracking_vector3(&head_motion.position),
                     },
                     mounted: input.legacy.mounted,
                     controller: [
@@ -909,52 +909,43 @@ async fn connection_pipeline() -> StrResult {
                             isHand: input.legacy.controllers[0].is_hand,
                             buttons: input.legacy.controllers[0].buttons,
                             joystickPosition: to_tracking_vector2(
-                                input.legacy.controllers[0].joystick_position,
+                                &input.legacy.controllers[0].joystick_position,
                             ),
                             trackpadPosition: to_tracking_vector2(
-                                input.legacy.controllers[0].trackpad_position,
+                                &input.legacy.controllers[0].trackpad_position,
                             ),
                             triggerValue: input.legacy.controllers[0].trigger_value,
                             gripValue: input.legacy.controllers[0].grip_value,
                             pose: TrackingPosef {
-                                orientation: to_tracking_quat(left_hand_motion.orientation),
-                                position: to_tracking_vector3(left_hand_motion.position),
+                                orientation: to_tracking_quat(&left_hand_motion.orientation),
+                                position: to_tracking_vector3(&left_hand_motion.position),
                             },
                             angularVelocity: to_tracking_vector3(
-                                left_hand_motion.angular_velocity.unwrap_or(Vec3::ZERO),
+                                &left_hand_motion.angular_velocity.unwrap_or(Vec3::ZERO),
                             ),
                             linearVelocity: to_tracking_vector3(
-                                left_hand_motion.linear_velocity.unwrap_or(Vec3::ZERO),
+                                &left_hand_motion.linear_velocity.unwrap_or(Vec3::ZERO),
                             ),
                             boneRotations: {
-                                let vec = input.legacy.controllers[0]
-                                    .bone_rotations
-                                    .iter()
-                                    .cloned()
-                                    .map(to_tracking_quat)
-                                    .collect::<Vec<_>>();
-
+                                let bone_rotations = &input.legacy.controllers[0].bone_rotations;
                                 let mut array = [TrackingQuat::default(); 19];
-                                array.copy_from_slice(&vec);
-
+                                for i in 0..array.len() {
+                                    array[i] = to_tracking_quat(&bone_rotations[i]);
+                                }
                                 array
                             },
                             bonePositionsBase: {
-                                let vec = input.legacy.controllers[0]
-                                    .bone_positions_base
-                                    .iter()
-                                    .cloned()
-                                    .map(to_tracking_vector3)
-                                    .collect::<Vec<_>>();
-
+                                let bone_positions =
+                                    &input.legacy.controllers[0].bone_positions_base;
                                 let mut array = [TrackingVector3::default(); 19];
-                                array.copy_from_slice(&vec);
-
+                                for i in 0..array.len() {
+                                    array[i] = to_tracking_vector3(&bone_positions[i]);
+                                }
                                 array
                             },
                             boneRootPose: TrackingPosef {
-                                orientation: to_tracking_quat(left_hand_motion.orientation),
-                                position: to_tracking_vector3(left_hand_motion.position),
+                                orientation: to_tracking_quat(&left_hand_motion.orientation),
+                                position: to_tracking_vector3(&left_hand_motion.position),
                             },
                             handFingerConfidences: input.legacy.controllers[0]
                                 .hand_finger_confience,
@@ -964,52 +955,43 @@ async fn connection_pipeline() -> StrResult {
                             isHand: input.legacy.controllers[1].is_hand,
                             buttons: input.legacy.controllers[1].buttons,
                             joystickPosition: to_tracking_vector2(
-                                input.legacy.controllers[1].joystick_position,
+                                &input.legacy.controllers[1].joystick_position,
                             ),
                             trackpadPosition: to_tracking_vector2(
-                                input.legacy.controllers[1].trackpad_position,
+                                &input.legacy.controllers[1].trackpad_position,
                             ),
                             triggerValue: input.legacy.controllers[1].trigger_value,
                             gripValue: input.legacy.controllers[1].grip_value,
                             pose: TrackingPosef {
-                                orientation: to_tracking_quat(right_hand_motion.orientation),
-                                position: to_tracking_vector3(right_hand_motion.position),
+                                orientation: to_tracking_quat(&right_hand_motion.orientation),
+                                position: to_tracking_vector3(&right_hand_motion.position),
                             },
                             angularVelocity: to_tracking_vector3(
-                                right_hand_motion.angular_velocity.unwrap_or(Vec3::ZERO),
+                                &right_hand_motion.angular_velocity.unwrap_or(Vec3::ZERO),
                             ),
                             linearVelocity: to_tracking_vector3(
-                                right_hand_motion.linear_velocity.unwrap_or(Vec3::ZERO),
+                                &right_hand_motion.linear_velocity.unwrap_or(Vec3::ZERO),
                             ),
                             boneRotations: {
-                                let vec = input.legacy.controllers[1]
-                                    .bone_rotations
-                                    .iter()
-                                    .cloned()
-                                    .map(to_tracking_quat)
-                                    .collect::<Vec<_>>();
-
+                                let bone_rotations = &input.legacy.controllers[1].bone_rotations;
                                 let mut array = [TrackingQuat::default(); 19];
-                                array.copy_from_slice(&vec);
-
+                                for i in 0..array.len() {
+                                    array[i] = to_tracking_quat(&bone_rotations[i]);
+                                }
                                 array
                             },
                             bonePositionsBase: {
-                                let vec = input.legacy.controllers[1]
-                                    .bone_positions_base
-                                    .iter()
-                                    .cloned()
-                                    .map(to_tracking_vector3)
-                                    .collect::<Vec<_>>();
-
+                                let bone_positions =
+                                    &input.legacy.controllers[1].bone_positions_base;
                                 let mut array = [TrackingVector3::default(); 19];
-                                array.copy_from_slice(&vec);
-
+                                for i in 0..array.len() {
+                                    array[i] = to_tracking_vector3(&bone_positions[i]);
+                                }
                                 array
                             },
                             boneRootPose: TrackingPosef {
-                                orientation: to_tracking_quat(right_hand_motion.orientation),
-                                position: to_tracking_vector3(right_hand_motion.position),
+                                orientation: to_tracking_quat(&right_hand_motion.orientation),
+                                position: to_tracking_vector3(&right_hand_motion.position),
                             },
                             handFingerConfidences: input.legacy.controllers[1]
                                 .hand_finger_confience,
