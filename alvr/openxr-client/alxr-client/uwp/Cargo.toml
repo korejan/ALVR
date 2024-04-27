@@ -1,6 +1,6 @@
 [package]
 name = "alxr-client-uwp"
-version = "1.32.0"
+version = "1.33.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 build = ".build/main.rs"

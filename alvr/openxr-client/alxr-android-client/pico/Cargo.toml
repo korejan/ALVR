@@ -1,6 +1,6 @@
 [package]
 name = "alxr-client-pico"
-version = "0.32.0"
+version = "0.33.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 description = "An OpenXR based ALVR client for Pico 4/Neo 3, PUI >= v5.2.x"
@@ -18,7 +18,7 @@ alxr-common = { path = "../../alxr-common", features = ["pico-flavor"] }
 jni = "0.21"
 log = "0.4"
 android_logger = "0.13"
-android-activity = { version="0.5", features = [ "native-activity" ] }
+android-activity = { version="0.6", features = [ "native-activity" ] }
 ndk-context = "0.1"
 libloading = "0.8"
 lazy_static = "1"
