@@ -64,6 +64,16 @@ fn get_build_model<'a>(jvm: &'a jni::JavaVM) -> String {
     get_build_property(&jvm, "MODEL")
 }
 
+fn is_magic_leap<'a>(jvm: &'a jni::JavaVM) -> bool {
+    let model_key = get_build_model(&jvm).to_lowercase();
+    for key in ["magic leap", "magicleap", "ml2"] {
+        if model_key.contains(key) {
+            return true;
+        }
+    }
+    false
+}
+
 #[no_mangle]
 fn android_main(android_app: AndroidApp) {
     let log_level = if cfg!(debug_assertions) {
@@ -226,18 +236,22 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
         return Ok(());
     }
 
-    let window = android_app.native_window().unwrap();
-    log::info!(
-        "alxr-client: window-size={0}x{1}",
-        window.width(),
-        window.height()
-    );
+    log::info!("alxr-client: device-model={}", get_build_model(&vm));
 
-    let (eye_w, eye_h) = ((window.width() / 2) as u32, window.height() as u32);
-    log::info!("alxr-client: Overriding OpeXR recommend eye resolution ({}x{}) with preferred resolution ({eye_w}x{eye_h})",
-                sys_properties.recommendedEyeWidth, sys_properties.recommendedEyeHeight);
-    sys_properties.recommendedEyeWidth = eye_w;
-    sys_properties.recommendedEyeHeight = eye_h;
+    if !is_magic_leap(&vm) {
+        let window = android_app.native_window().unwrap();
+        log::info!(
+            "alxr-client: window-size={0}x{1}",
+            window.width(),
+            window.height()
+        );
+
+        let (eye_w, eye_h) = ((window.width() / 2) as u32, window.height() as u32);
+        log::info!("alxr-client: Overriding OpeXR recommend eye resolution ({}x{}) with preferred resolution ({eye_w}x{eye_h})",
+                    sys_properties.recommendedEyeWidth, sys_properties.recommendedEyeHeight);
+        sys_properties.recommendedEyeWidth = eye_w;
+        sys_properties.recommendedEyeHeight = eye_h;
+    }
 
     init_connections(&sys_properties);
     app_data.sys_properties = Some(sys_properties);
