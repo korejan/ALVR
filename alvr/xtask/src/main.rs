@@ -224,10 +224,10 @@ pub fn build_server(
         layout.openvr_driver_lib(),
     )
     .unwrap();
-    // copy_if_windows(
-    //     artifacts_dir.join("alvr_server.pdb"),
-    //     layout.openvr_driver_pdb(),
-    // );
+    copy_if_windows(
+        artifacts_dir.join("alvr_server.pdb"),
+        layout.openvr_driver_pdb(),
+    );
 
     command::run_in(
         &afs::workspace_dir().join("alvr/launcher"),
@@ -242,10 +242,10 @@ pub fn build_server(
         layout.launcher_exe(),
     )
     .unwrap();
-    // copy_if_windows(
-    //     artifacts_dir.join("alvr_launcher.pdb"),
-    //     layout.launcher_pdb(),
-    // );
+    copy_if_windows(
+        artifacts_dir.join("alvr_launcher.pdb"),
+        layout.launcher_pdb(),
+    );
 
     if experiments {
         let dir_content = dirx::get_dir_content2(
