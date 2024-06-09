@@ -1,7 +1,7 @@
 /*
  * This copyright notice applies to this header file only:
  *
- * Copyright (c) 2010-2023 NVIDIA Corporation
+ * Copyright (c) 2010-2024 NVIDIA Corporation
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -403,7 +403,7 @@ class ConcurrentQueue
 {
     public:
 
-    ConcurrentQueue() {}
+    ConcurrentQueue() : maxSize(0) {}
     ConcurrentQueue(size_t size) : maxSize(size) {}
     ConcurrentQueue(const ConcurrentQueue&) = delete;
     ConcurrentQueue& operator=(const ConcurrentQueue&) = delete;
