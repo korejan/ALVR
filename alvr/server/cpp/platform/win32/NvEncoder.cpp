@@ -1,7 +1,7 @@
 /*
  * This copyright notice applies to this header file only:
  *
- * Copyright (c) 2010-2023 NVIDIA Corporation
+ * Copyright (c) 2010-2024 NVIDIA Corporation
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -179,22 +179,17 @@ void NvEncoder::CreateDefaultEncoderParams(NV_ENC_INITIALIZE_PARAMS* pIntializeP
     }
 #endif
 
-    NV_ENC_PRESET_CONFIG presetConfig = { NV_ENC_PRESET_CONFIG_VER, { NV_ENC_CONFIG_VER } };
-    m_nvenc.nvEncGetEncodePresetConfig(m_hEncoder, codecGuid, presetGuid, &presetConfig);
-    memcpy(pIntializeParams->encodeConfig, &presetConfig.presetCfg, sizeof(NV_ENC_CONFIG));
-    pIntializeParams->encodeConfig->frameIntervalP = 1;
-    pIntializeParams->encodeConfig->gopLength = NVENC_INFINITE_GOPLENGTH;
-
+    pIntializeParams->tuningInfo = tuningInfo;
     pIntializeParams->encodeConfig->rcParams.rateControlMode = NV_ENC_PARAMS_RC_CONSTQP;
 
-    if (!m_bMotionEstimationOnly)
-    {
-        pIntializeParams->tuningInfo = tuningInfo;
-        NV_ENC_PRESET_CONFIG presetConfig = { NV_ENC_PRESET_CONFIG_VER, { NV_ENC_CONFIG_VER } };
-        m_nvenc.nvEncGetEncodePresetConfigEx(m_hEncoder, codecGuid, presetGuid, tuningInfo, &presetConfig);
-        memcpy(pIntializeParams->encodeConfig, &presetConfig.presetCfg, sizeof(NV_ENC_CONFIG));
-    }
-    else
+    //There are changes in the structure layout, therefore users are recommended to be careful while moving their application to the new header. 
+    //Following initialization has changed for the same reason.
+    NV_ENC_PRESET_CONFIG presetConfig = { NV_ENC_PRESET_CONFIG_VER, 0, { NV_ENC_CONFIG_VER } };
+    m_nvenc.nvEncGetEncodePresetConfigEx(m_hEncoder, codecGuid, presetGuid, tuningInfo, &presetConfig);
+    memcpy(pIntializeParams->encodeConfig, &presetConfig.presetCfg, sizeof(NV_ENC_CONFIG));
+
+
+    if(m_bMotionEstimationOnly)
     {
         m_encodeConfig.version = NV_ENC_CONFIG_VER;
         m_encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CONSTQP;
@@ -211,8 +206,8 @@ void NvEncoder::CreateDefaultEncoderParams(NV_ENC_INITIALIZE_PARAMS* pIntializeP
     }
     else if (pIntializeParams->encodeGUID == NV_ENC_CODEC_HEVC_GUID)
     {
-        pIntializeParams->encodeConfig->encodeCodecConfig.hevcConfig.pixelBitDepthMinus8 =
-            (m_eBufferFormat == NV_ENC_BUFFER_FORMAT_YUV420_10BIT || m_eBufferFormat == NV_ENC_BUFFER_FORMAT_YUV444_10BIT ) ? 2 : 0;
+        pIntializeParams->encodeConfig->encodeCodecConfig.hevcConfig.inputBitDepth = pIntializeParams->encodeConfig->encodeCodecConfig.hevcConfig.outputBitDepth =
+            (m_eBufferFormat == NV_ENC_BUFFER_FORMAT_YUV420_10BIT || m_eBufferFormat == NV_ENC_BUFFER_FORMAT_YUV444_10BIT ) ? NV_ENC_BIT_DEPTH_10 : NV_ENC_BIT_DEPTH_8;
         if (m_eBufferFormat == NV_ENC_BUFFER_FORMAT_YUV444 || m_eBufferFormat == NV_ENC_BUFFER_FORMAT_YUV444_10BIT)
         {
             pIntializeParams->encodeConfig->encodeCodecConfig.hevcConfig.chromaFormatIDC = 3;
@@ -221,8 +216,7 @@ void NvEncoder::CreateDefaultEncoderParams(NV_ENC_INITIALIZE_PARAMS* pIntializeP
     }
     else if (pIntializeParams->encodeGUID == NV_ENC_CODEC_AV1_GUID)
     {
-        pIntializeParams->encodeConfig->encodeCodecConfig.av1Config.pixelBitDepthMinus8 = (m_eBufferFormat == NV_ENC_BUFFER_FORMAT_YUV420_10BIT) ? 2 : 0;
-		pIntializeParams->encodeConfig->encodeCodecConfig.av1Config.inputPixelBitDepthMinus8 = (m_eBufferFormat == NV_ENC_BUFFER_FORMAT_YUV420_10BIT) ? 2 : 0;
+		pIntializeParams->encodeConfig->encodeCodecConfig.av1Config.inputBitDepth = (m_eBufferFormat == NV_ENC_BUFFER_FORMAT_YUV420_10BIT) ? NV_ENC_BIT_DEPTH_10 : NV_ENC_BIT_DEPTH_8;
         pIntializeParams->encodeConfig->encodeCodecConfig.av1Config.chromaFormatIDC = 1;
         pIntializeParams->encodeConfig->encodeCodecConfig.av1Config.idrPeriod = pIntializeParams->encodeConfig->gopLength;
         if (m_bOutputInVideoMemory)
@@ -290,7 +284,7 @@ void NvEncoder::CreateEncoder(const NV_ENC_INITIALIZE_PARAMS* pEncoderParams)
     if (pEncoderParams->encodeGUID == NV_ENC_CODEC_HEVC_GUID)
     {
         bool yuv10BitFormat = (m_eBufferFormat == NV_ENC_BUFFER_FORMAT_YUV420_10BIT || m_eBufferFormat == NV_ENC_BUFFER_FORMAT_YUV444_10BIT) ? true : false;
-        if (yuv10BitFormat && pEncoderParams->encodeConfig->encodeCodecConfig.hevcConfig.pixelBitDepthMinus8 != 2)
+        if (yuv10BitFormat && pEncoderParams->encodeConfig->encodeCodecConfig.hevcConfig.inputBitDepth != NV_ENC_BIT_DEPTH_10)
         {
             NVENC_THROW_ERROR("Invalid PixelBitdepth", NV_ENC_ERR_INVALID_PARAM);
         }
@@ -305,7 +299,7 @@ void NvEncoder::CreateEncoder(const NV_ENC_INITIALIZE_PARAMS* pEncoderParams)
     if (pEncoderParams->encodeGUID == NV_ENC_CODEC_AV1_GUID)
     {
         bool yuv10BitFormat = (m_eBufferFormat == NV_ENC_BUFFER_FORMAT_YUV420_10BIT) ? true : false;
-        if (yuv10BitFormat && pEncoderParams->encodeConfig->encodeCodecConfig.av1Config.pixelBitDepthMinus8 != 2)
+        if (yuv10BitFormat && pEncoderParams->encodeConfig->encodeCodecConfig.av1Config.inputBitDepth != NV_ENC_BIT_DEPTH_10)
         {
             NVENC_THROW_ERROR("Invalid PixelBitdepth", NV_ENC_ERR_INVALID_PARAM);
         }
@@ -331,7 +325,9 @@ void NvEncoder::CreateEncoder(const NV_ENC_INITIALIZE_PARAMS* pEncoderParams)
     }
     else
     {
-        NV_ENC_PRESET_CONFIG presetConfig = { NV_ENC_PRESET_CONFIG_VER, { NV_ENC_CONFIG_VER } };
+        //There are changes in the structure layout, therefore users are recommended to be careful while moving their application to the new header. 
+        //Following initialization has changed for the same reason.
+        NV_ENC_PRESET_CONFIG presetConfig = { NV_ENC_PRESET_CONFIG_VER, 0, { NV_ENC_CONFIG_VER } };
         if (!m_bMotionEstimationOnly)
         {
             m_nvenc.nvEncGetEncodePresetConfigEx(m_hEncoder, pEncoderParams->encodeGUID, pEncoderParams->presetGUID, pEncoderParams->tuningInfo, &presetConfig);
@@ -574,6 +570,7 @@ NVENCSTATUS NvEncoder::DoEncode(NV_ENC_INPUT_PTR inputBuffer, NV_ENC_OUTPUT_PTR 
     picParams.bufferFmt = GetPixelFormat();
     picParams.inputWidth = GetEncodeWidth();
     picParams.inputHeight = GetEncodeHeight();
+    picParams.frameIdx = m_iToSend;
     picParams.outputBitstream = outputBuffer;
     picParams.completionEvent = GetCompletionEvent(m_iToSend % m_nEncoderBuffer);
     NVENCSTATUS nvStatus = m_nvenc.nvEncEncodePicture(m_hEncoder, &picParams);
@@ -620,7 +617,7 @@ std::size_t NvEncoder::GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputB
             vPacket.push_back(std::vector<uint8_t>());
         }
         vPacket[i].clear();
-        
+       
         if ((m_initializeParams.encodeGUID == NV_ENC_CODEC_AV1_GUID) && (m_bUseIVFContainer))
         {
             if (m_bWriteIVFFileHeader)
