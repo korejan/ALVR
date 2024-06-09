@@ -235,6 +235,8 @@ enum AMF_VIDEO_ENCODER_AV1_OUTPUT_BUFFER_TYPE_ENUM
 
 // Miscellaneous
 #define AMF_VIDEO_ENCODER_AV1_EXTRA_DATA                            L"Av1ExtraData"                     // AMFInterface* - > AMFBuffer*; buffer to retrieve coded sequence header
+#define AMF_VIDEO_ENCODER_AV1_ENABLE_SMART_ACCESS_VIDEO             L"Av1EnableEncoderSmartAccessVideo" // amf_bool; default = false; true = enables smart access video feature
+#define AMF_VIDEO_ENCODER_AV1_INPUT_QUEUE_SIZE                      L"Av1InputQueueSize"                // amf_int64; default 16; Set amf input queue size
 
 // Tile Output
 #define AMF_VIDEO_ENCODER_AV1_OUTPUT_MODE                           L"AV1OutputMode"                    // amf_int64(AMF_VIDEO_ENCODER_AV1_OUTPUT_MODE_ENUM); default = AMF_VIDEO_ENCODER_AV1_OUTPUT_MODE_FRAME - defines encoder output mode
@@ -257,13 +259,13 @@ enum AMF_VIDEO_ENCODER_AV1_OUTPUT_BUFFER_TYPE_ENUM
 #define AMF_VIDEO_ENCODER_AV1_PEAK_BITRATE                          L"Av1PeakBitrate"                   // amf_int64; default = depends on USAGE; Peak bit rate in bits
 
 #define AMF_VIDEO_ENCODER_AV1_MAX_COMPRESSED_FRAME_SIZE             L"Av1MaxCompressedFrameSize"        // amf_int64; default = 0; Max compressed frame Size in bits. 0 - no limit
-#define AMF_VIDEO_ENCODER_AV1_MIN_Q_INDEX_INTRA                     L"Av1MinQIndex_Intra"               // amf_int64; default = depends on USAGE; Min QIndex for intra frames; range = 0-255
-#define AMF_VIDEO_ENCODER_AV1_MAX_Q_INDEX_INTRA                     L"Av1MaxQIndex_Intra"               // amf_int64; default = depends on USAGE; Max QIndex for intra frames; range = 0-255
-#define AMF_VIDEO_ENCODER_AV1_MIN_Q_INDEX_INTER                     L"Av1MinQIndex_Inter"               // amf_int64; default = depends on USAGE; Min QIndex for inter frames; range = 0-255
-#define AMF_VIDEO_ENCODER_AV1_MAX_Q_INDEX_INTER                     L"Av1MaxQIndex_Inter"               // amf_int64; default = depends on USAGE; Max QIndex for inter frames; range = 0-255
+#define AMF_VIDEO_ENCODER_AV1_MIN_Q_INDEX_INTRA                     L"Av1MinQIndex_Intra"               // amf_int64; default = depends on USAGE; Min QIndex for intra frames; range = 1-255
+#define AMF_VIDEO_ENCODER_AV1_MAX_Q_INDEX_INTRA                     L"Av1MaxQIndex_Intra"               // amf_int64; default = depends on USAGE; Max QIndex for intra frames; range = 1-255
+#define AMF_VIDEO_ENCODER_AV1_MIN_Q_INDEX_INTER                     L"Av1MinQIndex_Inter"               // amf_int64; default = depends on USAGE; Min QIndex for inter frames; range = 1-255
+#define AMF_VIDEO_ENCODER_AV1_MAX_Q_INDEX_INTER                     L"Av1MaxQIndex_Inter"               // amf_int64; default = depends on USAGE; Max QIndex for inter frames; range = 1-255
 
-#define AMF_VIDEO_ENCODER_AV1_Q_INDEX_INTRA                         L"Av1QIndex_Intra"                  // amf_int64; default = depends on USAGE; intra-frame QIndex; range = 0-255
-#define AMF_VIDEO_ENCODER_AV1_Q_INDEX_INTER                         L"Av1QIndex_Inter"                  // amf_int64; default = depends on USAGE; inter-frame QIndex; range = 0-255
+#define AMF_VIDEO_ENCODER_AV1_Q_INDEX_INTRA                         L"Av1QIndex_Intra"                  // amf_int64; default = depends on USAGE; intra-frame QIndex; range = 1-255
+#define AMF_VIDEO_ENCODER_AV1_Q_INDEX_INTER                         L"Av1QIndex_Inter"                  // amf_int64; default = depends on USAGE; inter-frame QIndex; range = 1-255
 
 #define AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_SKIP_FRAME               L"Av1RateControlSkipFrameEnable"    // bool; default = depends on USAGE; If true, rate control may code skip frame when needed; if false, rate control will not code skip frame.
 
@@ -353,8 +355,6 @@ enum AMF_VIDEO_ENCODER_AV1_OUTPUT_BUFFER_TYPE_ENUM
 #define AMF_VIDEO_ENCODER_AV1_CAP_MAX_NUM_TEMPORAL_LAYERS           L"Av1CapMaxNumTemporalLayers"       // amf_int64; default = N/A; The cap of maximum number of temporal layers
 #define AMF_VIDEO_ENCODER_AV1_CAP_MAX_NUM_LTR_FRAMES                L"Av1CapMaxNumLTRFrames"            // amf_int64; default = N/A; The cap of maximum number of LTR frames. This value is calculated based on current value of AMF_VIDEO_ENCODER_AV1_MAX_NUM_TEMPORAL_LAYERS.
 #define AMF_VIDEO_ENCODER_AV1_CAP_SUPPORT_TILE_OUTPUT               L"AV1SupportTileOutput"             // amf_bool; if tile output is supported
-
-#define AMF_VIDEO_ENCODER_AV1_ENABLE_SMART_ACCESS_VIDEO             L"Av1EnableEncoderSmartAccessVideo" // amf_bool; default = false; true = enables smart access video feature
 
 #define AMF_VIDEO_ENCODER_AV1_CAP_SUPPORT_SMART_ACCESS_VIDEO        L"Av1EncoderSupportSmartAccessVideo"    // amf_bool; returns true if system supports SmartAccess Video
 
