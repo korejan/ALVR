@@ -109,7 +109,7 @@ void VideoEncoderNVENC::Transmit(ID3D11Texture2D *pTexture, uint64_t presentatio
 	ID3D11Texture2D *pInputTexture = reinterpret_cast<ID3D11Texture2D*>(encoderInputFrame->inputPtr);
 	m_pD3DRender->GetContext()->CopyResource(pInputTexture, pTexture);
 
-	NV_ENC_PIC_PARAMS picParams = {};
+	NV_ENC_PIC_PARAMS picParams = {NV_ENC_PIC_PARAMS_VER};
 	if (insertIDR) {
 		Debug("Inserting IDR frame.\n");
 		picParams.encodePicFlags = NV_ENC_PIC_FLAG_FORCEIDR;
@@ -220,7 +220,7 @@ void VideoEncoderNVENC::FillEncodeConfig(NV_ENC_INITIALIZE_PARAMS &initializePar
 		config.idrPeriod = gopLength;
 
 		if (Settings::Instance().m_use10bitEncoder) {
-			encodeConfig.encodeCodecConfig.hevcConfig.pixelBitDepthMinus8 = 2;
+			encodeConfig.encodeCodecConfig.hevcConfig.inputBitDepth = encodeConfig.encodeCodecConfig.hevcConfig.outputBitDepth = NV_ENC_BIT_DEPTH_10;
 		}
 
 		if (Settings::Instance().m_fillerData) {
