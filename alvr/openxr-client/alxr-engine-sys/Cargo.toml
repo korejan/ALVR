@@ -1,6 +1,6 @@
 [package]
 name = "alxr-engine-sys"
-version = "0.56.0"
+version = "0.57.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 links = "alxr_engine"
@@ -15,11 +15,11 @@ cuda-interop = []
 bundled-ffmpeg = []
 oculus-ext-headers = []
 # These are for all build types.
-no-decoder =  [] # disables building platform decoders & depeendencies.
+no-decoder = [] # disables building platform decoders & depeendencies.
 
 [build-dependencies]
 cmake = "0.1"
-bindgen = "0.70"
+bindgen = "0.71"
 cc = { version = "1", features = ["parallel"] }
 walkdir = "2"
-target-lexicon = "0.12"
+target-lexicon = "0.13"

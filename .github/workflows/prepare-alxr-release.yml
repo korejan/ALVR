@@ -87,11 +87,11 @@ jobs:
           sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
           # ubuntu-focal cmake package is too old...
-          CMAKE_FILE=cmake-3.31.0-linux-x86_64.sh
-          wget https://github.com/Kitware/CMake/releases/download/v3.31.0/${CMAKE_FILE}
+          CMAKE_FILE=cmake-3.31.2-linux-x86_64.sh
+          wget https://github.com/Kitware/CMake/releases/download/v3.31.2/${CMAKE_FILE}
           chmod +x ${CMAKE_FILE}
           ./${CMAKE_FILE} --skip-license --include-subdir
-          export PATH=${PWD}/cmake-3.31.0-linux-x86_64:$PATH
+          export PATH=${PWD}/cmake-3.31.2-linux-x86_64:$PATH
           
           # ubuntu-focal glslang package is too old...
           wget https://github.com/KhronosGroup/glslang/releases/download/master-tot/glslang-master-linux-Release.zip
@@ -151,11 +151,11 @@ jobs:
           sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
           # ubuntu-focal cmake package is too old...
-          CMAKE_FILE=cmake-3.31.0-linux-x86_64.sh
-          wget https://github.com/Kitware/CMake/releases/download/v3.31.0/${CMAKE_FILE}
+          CMAKE_FILE=cmake-3.31.2-linux-x86_64.sh
+          wget https://github.com/Kitware/CMake/releases/download/v3.31.2/${CMAKE_FILE}
           chmod +x ${CMAKE_FILE}
           ./${CMAKE_FILE} --skip-license --include-subdir
-          export PATH=${PWD}/cmake-3.31.0-linux-x86_64:$PATH
+          export PATH=${PWD}/cmake-3.31.2-linux-x86_64:$PATH
           
           # ubuntu-focal glslang package is too old...
           wget https://github.com/KhronosGroup/glslang/releases/download/master-tot/glslang-master-linux-Release.zip
@@ -313,7 +313,7 @@ jobs:
       RUST_BACKTRACE: 1
       ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/28.0.12674087
       ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.0.12674087
-      ANDROID_CMAKE_BIN: /usr/local/lib/android/sdk/cmake/3.31.0/bin
+      ANDROID_CMAKE_BIN: /usr/local/lib/android/sdk/cmake/3.31.1/bin
       JAVA_HOME: $JAVA_HOME_17_X64
     steps:
       - name: Checkout code
@@ -333,7 +333,7 @@ jobs:
           sudo apt update && sudo apt upgrade -y
           sudo apt install gcc-multilib
           SDK_MANAGER=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager
-          yes | sudo $SDK_MANAGER --install "ndk;28.0.12674087" "platforms;android-29" "cmake;3.31.0"
+          yes | sudo $SDK_MANAGER --install "ndk;28.0.12674087" "platforms;android-29" "cmake;3.31.1"
 
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
           cargo install cargo-apk --git https://github.com/korejan/cargo-apk.git --branch android-manifest-entries
@@ -391,7 +391,7 @@ jobs:
       RUST_BACKTRACE: 1
       ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/28.0.12674087
       ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.0.12674087
-      ANDROID_CMAKE_BIN: /usr/local/lib/android/sdk/cmake/3.31.0/bin
+      ANDROID_CMAKE_BIN: /usr/local/lib/android/sdk/cmake/3.31.1/bin
       JAVA_HOME: $JAVA_HOME_17_X64
     steps:
       - name: Checkout code
@@ -411,7 +411,7 @@ jobs:
           sudo apt update && sudo apt upgrade -y
           sudo apt install gcc-multilib
           SDK_MANAGER=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager
-          yes | sudo $SDK_MANAGER --install "ndk;28.0.12674087" "platforms;android-29" "cmake;3.31.0"
+          yes | sudo $SDK_MANAGER --install "ndk;28.0.12674087" "platforms;android-29" "cmake;3.31.1"
 
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
           cargo install cargo-apk --git https://github.com/korejan/cargo-apk.git --branch android-manifest-entries
