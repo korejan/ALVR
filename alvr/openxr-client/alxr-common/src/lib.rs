@@ -124,6 +124,10 @@ pub struct Options {
     /// Disables all usages of visibility masks
     #[structopt(/*short,*/ long = "disable-visibility-masks")]
     pub no_visibility_masks: bool,
+
+    /// Force disables multi-view rendering support
+    #[structopt(/*short,*/ long = "disable-multi-view")]
+    pub no_multi_view_rendering: bool,
 }
 
 impl Options {
@@ -172,6 +176,7 @@ impl Options {
             simulate_headless: false,
             passthrough_mode: Some(ALXRPassthroughMode::None),
             no_visibility_masks: false,
+            no_multi_view_rendering: false,
         };
 
         let sys_properties = AndroidSystemProperties::new();
@@ -341,6 +346,16 @@ impl Options {
             );
         }
 
+        let property_name = "debug.alxr.no_multiview_rendering";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.no_multi_view_rendering = std::str::FromStr::from_str(value.as_str())
+                .unwrap_or(new_options.no_multi_view_rendering);
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {}",
+                new_options.no_multi_view_rendering
+            );
+        }
+
         new_options
     }
 }
@@ -372,6 +387,7 @@ impl Options {
             simulate_headless: false,
             passthrough_mode: Some(ALXRPassthroughMode::None),
             no_visibility_masks: false,
+            no_multi_view_rendering: false,
         };
         new_options
     }

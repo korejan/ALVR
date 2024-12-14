@@ -88,6 +88,26 @@ fn is_device<'a>(pname: &str, jvm: &'a jni::JavaVM) -> bool {
     false
 }
 
+#[allow(dead_code)]
+fn is_android_emulator<'a>(jvm: &'a jni::JavaVM) -> bool {
+    let device_name = get_build_device(&jvm).to_lowercase();
+    device_name.starts_with("emulator64_")
+}
+
+#[allow(dead_code)]
+fn print_device_info<'a>(jvm: &'a jni::JavaVM) {
+    let model_name = get_build_model(&jvm);
+    let device_name = get_build_device(&jvm);
+    let man_name = get_build_manufacturer(&jvm);
+    let build_id = get_build_property(&jvm, "ID");
+    log::info!(" Device Details");
+    log::info!("=================");
+    log::info!("model:        {0}", model_name);
+    log::info!("device:       {0}", device_name);
+    log::info!("manufacturer: {0}", man_name);
+    log::info!("build-id:     {0}", build_id);
+}
+
 #[no_mangle]
 fn android_main(android_app: AndroidApp) {
     let log_level = if cfg!(debug_assertions) {
@@ -213,6 +233,8 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
     let no_linearize_srgb = APP_CONFIG.no_linearize_srgb || is_device("Lynx", &vm);
     log::info!("alxr-client: Disable shader gamma/sRGB linearization? {no_linearize_srgb}");
 
+    print_device_info(&vm);
+
     let mut eye_tracking_type = APP_CONFIG.eye_tracking.unwrap_or(ALXREyeTrackingType::Auto);
     // quest firmware version 71.0.0.178.498 has a crash bug in `xrSyncActions` when
     // `XR_EXT_eye_gaze_interaction` extension is enabled.
@@ -226,6 +248,8 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
         }
         _ => {}
     };
+
+    let no_multi_view_rendering = APP_CONFIG.no_multi_view_rendering || is_android_emulator(&vm);
 
     let ctx = ALXRClientCtx {
         graphicsApi: APP_CONFIG.graphics_api.unwrap_or(ALXRGraphicsApi::Auto),
@@ -264,6 +288,7 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
             .unwrap_or(ALXRPassthroughMode::None),
         internalDataPath: std::ptr::null(),
         noVisibilityMasks: APP_CONFIG.no_visibility_masks,
+        noMultiviewRendering: no_multi_view_rendering,
     };
     let mut sys_properties = ALXRSystemProperties::new();
     if !alxr_init(&ctx, &mut sys_properties) {

@@ -81,6 +81,7 @@ fn main() {
                     .unwrap_or(ALXRPassthroughMode::None),
                 internalDataPath: std::ptr::null(),
                 noVisibilityMasks: APP_CONFIG.no_visibility_masks,
+                noMultiviewRendering: APP_CONFIG.no_multi_view_rendering,
             };
             let mut sys_properties = ALXRSystemProperties::new();
             if !alxr_init(&ctx, &mut sys_properties) {
