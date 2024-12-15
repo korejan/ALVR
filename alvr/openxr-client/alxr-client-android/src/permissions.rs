@@ -121,9 +121,15 @@ pub fn check_android_permissions<'a>(
     for perm_name in [
         "RECORD_AUDIO",
         "READ_EXTERNAL_STORAGE",
+        "android.permission.EYE_TRACKING",
+        "android.permission.EYE_TRACKING_FINE",
+        "android.permission.FACE_TRACKING",
+        "android.permission.HAND_TRACKING",
+        // "android.permission.SCENE_UNDERSTANDING",
         "com.oculus.permission.EYE_TRACKING",
         "com.oculus.permission.FACE_TRACKING",
         "com.magicleap.permission.EYE_TRACKING",
+        "com.picovr.permission.HAND_TRACKING",
         "com.picovr.permission.EYE_TRACKING",
         // Re-enable when Pico runtime supports it.
         //"com.picovr.permission.FACE_TRACKING",

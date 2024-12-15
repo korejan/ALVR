@@ -1,6 +1,6 @@
 [package]
 name = "alxr-client-pico"
-version = "0.58.0"
+version = "0.59.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 description = "An OpenXR based ALVR client for Pico 4/Neo 3, PUI >= v5.2.x"
@@ -186,6 +186,9 @@ name = "android.permission.ACCESS_WIFI_STATE"
 name = "android.permission.WAKE_LOCK"
 
 [[package.metadata.android.uses_permission]]
+name = "com.picovr.permission.HAND_TRACKING"
+
+[[package.metadata.android.uses_permission]]
 name = "com.picovr.permission.EYE_TRACKING"
 
 # Re-enable when Pico runtime supports it.
@@ -271,9 +274,9 @@ resizeableActivity = "false"
 name = "pvr.app.type"
 value = "vr"
 
-#[[package.metadata.android.application.meta_data]]
-#name = "pvr.sdk.version"
-#value = "XR Platform_2.1.2.4"
+[[package.metadata.android.application.meta_data]]
+name = "pvr.sdk.version"
+value = "OpenXR"
 
 [[package.metadata.android.application.meta_data]]
 name = "rendering_mode"
@@ -298,6 +301,10 @@ value = "1" # 1 == Linear space.
 [[package.metadata.android.application.meta_data]]
 name = "picovr.software.eye_tracking"
 value = "1"
+
+[[package.metadata.android.application.meta_data]]
+name = "eyetracking_calibration"
+value = "true"
 
 # TODO: Re-enable when Pico runtime supports it.
 #[[package.metadata.android.application.meta_data]]

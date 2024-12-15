@@ -1,6 +1,6 @@
 [package]
 name = "alxr-client-android"
-version = "0.58.0"
+version = "0.59.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 description = "An OpenXR based ALVR client for android platorms"
@@ -11,7 +11,9 @@ description = "An OpenXR based ALVR client for android platorms"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-no-decoder =  ["alxr-common/no-decoder"] # disables building platform decoders & depeendencies.
+no-decoder = [
+    "alxr-common/no-decoder",
+] # disables building platform decoders & depeendencies.
 
 [lib]
 crate-type = ["cdylib"]
@@ -21,7 +23,7 @@ alxr-common = { path = "../alxr-common" }
 jni = "0.21"
 log = "0.4"
 android_logger = "0.14"
-android-activity = { version="0.6", features = [ "native-activity" ] }
+android-activity = { version = "0.6", features = ["native-activity"] }
 ndk-context = "0.1"
 libloading = "0.8"
 lazy_static = "1"
@@ -29,7 +31,12 @@ parking_lot = "0.12"
 version-compare = "0.2"
 
 [package.metadata.android]
-build_targets = ["aarch64-linux-android", "armv7-linux-androideabi", "x86_64-linux-android", "i686-linux-android"]
+build_targets = [
+    "aarch64-linux-android",
+    "armv7-linux-androideabi",
+    "x86_64-linux-android",
+    "i686-linux-android",
+]
 
 # Path to your application's resources folder.
 # If not specified, resources will not be included in the APK.
@@ -91,7 +98,7 @@ keystore_password = "android"
 [package.metadata.android.sdk]
 target_sdk_version = 32
 compile_sdk = 35
-min_sdk_version = 29#24 # for offical low-latency medicodec mode to be enabled, min sdk must be >= 30.
+min_sdk_version = 29    #24 # for offical low-latency medicodec mode to be enabled, min sdk must be >= 30.
 
 #[dependencies.android_glue]
 #path = "../../glue"
@@ -115,11 +122,11 @@ min_sdk_version = 29#24 # for offical low-latency medicodec mode to be enabled, 
 # Adds extra arbitrary XML attributes to the <activity> tag in the manifest.
 # See https://developer.android.com/guide/topics/manifest/activity-element.html
 [package.metadata.android.activity_attributes]
-"android:theme" ="@android:style/Theme.Black.NoTitleBar.Fullscreen"
+"android:theme" = "@android:style/Theme.Black.NoTitleBar.Fullscreen"
 "android:launchMode" = "singleTask"
 "android:screenOrientation" = "landscape"
 "android:excludeFromRecents" = "true"
-"android:resizeableActivity"= "false"
+"android:resizeableActivity" = "false"
 "android:configChanges" = "screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode|density"
 #"android:enableVrMode" = "com.google.vr.vrcore/com.google.vr.vrcore.common.VrCoreListenerService"
 #"android:uiOptions" = "none"
@@ -149,6 +156,22 @@ required = true
 name = "android.hardware.vulkan.version"
 version = 0x00401000
 required = true
+
+[[package.metadata.android.uses_feature]]
+name = "android.software.xr.immersive"
+required = true
+
+[[package.metadata.android.uses_feature]]
+name = "android.hardware.xr.input.controller"
+required = false
+
+[[package.metadata.android.uses_feature]]
+name = "android.hardware.xr.input.hand_tracking"
+required = false
+
+[[package.metadata.android.uses_feature]]
+name = "android.hardware.xr.input.eye_tracking"
+required = false
 
 [[package.metadata.android.uses_feature]]
 name = "oculus.software.handtracking"
@@ -212,6 +235,21 @@ name = "android.permission.ACCESS_WIFI_STATE"
 name = "android.permission.WAKE_LOCK"
 
 [[package.metadata.android.uses_permission]]
+name = "android.permission.HAND_TRACKING"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.EYE_TRACKING"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.EYE_TRACKING_FINE"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.FACE_TRACKING"
+
+# [[package.metadata.android.uses_permission]]
+# name = "android.permission.SCENE_UNDERSTANDING"
+
+[[package.metadata.android.uses_permission]]
 name = "com.oculus.permission.WIFI_LOCK"
 
 [[package.metadata.android.uses_permission]]
@@ -245,7 +283,14 @@ name = "com.magicleap.permission.HAND_TRACKING"
 name = "com.magicleap.permission.EYE_TRACKING"
 
 [[package.metadata.android.uses_permission]]
+name = "com.picovr.permission.HAND_TRACKING"
+
+[[package.metadata.android.uses_permission]]
+name = "com.picovr.permission.EYE_TRACKING"
+
+[[package.metadata.android.uses_permission]]
 name = "org.khronos.openxr.permission.OPENXR"
+
 [[package.metadata.android.uses_permission]]
 name = "org.khronos.openxr.permission.OPENXR_SYSTEM"
 
@@ -258,8 +303,8 @@ name = "org.freedesktop.monado.openxr_runtime.out_of_process"
 
 [[package.metadata.android.queries.provider]]
 authorities = "org.khronos.openxr.runtime_broker;org.khronos.openxr.system_runtime_broker"
- # `name` attribute is not to be part of query-provider but cargo-apk uses aapt which throws errors without
- # possibly needs to change to use appt2
+# `name` attribute is not to be part of query-provider but cargo-apk uses aapt which throws errors without
+# possibly needs to change to use appt2
 name = "org.khronos.openxr"
 
 [[package.metadata.android.queries.intent]]
@@ -351,6 +396,38 @@ value = "V2.0"
 name = "com.oculus.handtracking.frequency"
 value = "HIGH"
 
+[[package.metadata.android.application.meta_data]]
+name = "pvr.app.type"
+value = "vr"
+
+[[package.metadata.android.application.meta_data]]
+name = "pvr.sdk.version"
+value = "OpenXR"
+
+[[package.metadata.android.application.meta_data]]
+name = "rendering_mode"
+value = "1" # 0 Multipass, 1 Multview
+
+[[package.metadata.android.application.meta_data]]
+name = "display_rate"
+value = "90" # only the default, can be changed.
+
+[[package.metadata.android.application.meta_data]]
+name = "handtracking"
+value = "1"
+
+[[package.metadata.android.application.meta_data]]
+name = "MRCsupport"
+value = "1"
+
+[[package.metadata.android.application.meta_data]]
+name = "picovr.software.eye_tracking"
+value = "1"
+
+[[package.metadata.android.application.meta_data]]
+name = "eyetracking_calibration"
+value = "true"
+
 #[[package.metadata.android.application.activity.intent_filters]] -- old version of cargo-apk/manifest.rs
 [[package.metadata.android.application.activity.intent_filter]]
 actions = ["android.intent.action.MAIN"]
@@ -360,6 +437,14 @@ categories = [
     "com.oculus.intent.category.VR",
     "com.yvr.intent.category.VR",
 ]
+
+# <property
+#     android:name="android.window.PROPERTY_XR_ACTIVITY_START_MODE"
+#     android:value="XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED" />
+# <activity
+[[package.metadata.android.application.property]]
+name = "android.window.PROPERTY_XR_ACTIVITY_START_MODE"
+value = "XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED"
 
 # See https://developer.android.com/guide/topics/manifest/data-element
 #

@@ -276,14 +276,14 @@ dependencies = [
 
 [[package]]
 name = "alxr-client"
-version = "0.58.0"
+version = "0.59.0"
 dependencies = [
  "alxr-common",
 ]
 
 [[package]]
 name = "alxr-client-android"
-version = "0.58.0"
+version = "0.59.0"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -299,7 +299,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-pico"
-version = "0.58.0"
+version = "0.59.0"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -315,7 +315,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-uwp"
-version = "1.58.0"
+version = "1.59.0"
 dependencies = [
  "alxr-common",
  "toml 0.5.11",
@@ -324,7 +324,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-common"
-version = "0.58.0"
+version = "0.59.0"
 dependencies = [
  "alvr_audio",
  "alvr_common",
@@ -350,7 +350,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-engine-sys"
-version = "0.58.0"
+version = "0.59.0"
 dependencies = [
  "bindgen 0.71.1",
  "cc",
@@ -1195,18 +1195,18 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-channel"
-version = "0.5.13"
+version = "0.5.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33480d6946193aa8033910124896ca395333cae7e2d1113d1fef6c3272217df2"
+checksum = "06ba6d68e24814cb8de6bb986db8222d3a027d15872cabc0d18817bc3c0e4471"
 dependencies = [
  "crossbeam-utils",
 ]
 
 [[package]]
 name = "crossbeam-deque"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "613f8cc01fe9cf1a3eb3d7f488fd2fa8388403e97039e2f73692932e291a770d"
+checksum = "9dd111b7b7f7d55b72c0a6ae361660ee5853c9af73f70c3c2ef6858b950e2e51"
 dependencies = [
  "crossbeam-epoch",
  "crossbeam-utils",
@@ -1223,9 +1223,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.20"
+version = "0.8.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22ec99545bb0ed0ea7bb9b8e1e9122ea386ff8a48c0922e43f36d45ab09e0e80"
+checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "crypto-common"
@@ -1615,9 +1615,9 @@ checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 
 [[package]]
 name = "fern"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69ff9c9d5fb3e6da8ac2f77ab76fe7e8087d512ce095200f8f29ac5b656cf6dc"
+checksum = "4316185f709b23713e41e3195f90edef7fb00c3ed4adc79769cf09cc762a3b29"
 dependencies = [
  "log",
 ]
