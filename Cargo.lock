@@ -276,14 +276,14 @@ dependencies = [
 
 [[package]]
 name = "alxr-client"
-version = "0.59.0"
+version = "0.60.0"
 dependencies = [
  "alxr-common",
 ]
 
 [[package]]
 name = "alxr-client-android"
-version = "0.59.0"
+version = "0.60.0"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -299,7 +299,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-pico"
-version = "0.59.0"
+version = "0.60.0"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -315,7 +315,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-uwp"
-version = "1.59.0"
+version = "1.60.0"
 dependencies = [
  "alxr-common",
  "toml 0.5.11",
@@ -324,7 +324,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-common"
-version = "0.59.0"
+version = "0.60.0"
 dependencies = [
  "alvr_audio",
  "alvr_common",
@@ -350,7 +350,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-engine-sys"
-version = "0.59.0"
+version = "0.60.0"
 dependencies = [
  "bindgen 0.71.1",
  "cc",
@@ -2474,11 +2474,11 @@ checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 
 [[package]]
 name = "home"
-version = "0.5.9"
+version = "0.5.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3d1354bf6b7235cb4a0576c2619fd4ed18183f689b12b006a0ee7329eeff9a5"
+checksum = "589533453244b0995c858700322199b2becb13b627df2851f64a2775d024abcf"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2540,9 +2540,9 @@ checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "hyper"
-version = "0.14.31"
+version = "0.14.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c08302e8fa335b151b788c775ff56e7a03ae64ff85c548ee820fecb70356e85"
+checksum = "41dfc780fdec9373c01bae43289ea34c972e40ee3c9f6b3c8801a35f35586ce7"
 dependencies = [
  "bytes",
  "futures-channel",
@@ -3183,9 +3183,9 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "23.0.0"
+version = "23.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d5941e45a15b53aad4375eedf02033adb7a28931eedc31117faffa52e6a857e"
+checksum = "364f94bc34f61332abebe8cad6f6cd82a5b65cff22c828d05d0968911462ca4f"
 dependencies = [
  "arrayvec 0.7.6",
  "bit-set",

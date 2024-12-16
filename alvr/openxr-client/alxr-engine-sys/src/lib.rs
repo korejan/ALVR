@@ -62,6 +62,7 @@ impl From<&str> for crate::ALXRFacialExpressionType {
             "FB_V2" => crate::ALXRFacialExpressionType::FB_V2,
             "HTC" => crate::ALXRFacialExpressionType::HTC,
             "Pico" => crate::ALXRFacialExpressionType::Pico,
+            "Android" => crate::ALXRFacialExpressionType::Android,
             _ => crate::ALXRFacialExpressionType::Auto,
         }
     }
