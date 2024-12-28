@@ -1,6 +1,6 @@
 [package]
 name = "alxr-client-uwp"
-version = "1.60.1"
+version = "1.60.2"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 build = ".build/main.rs"
@@ -17,11 +17,11 @@ path = "../src/main.rs"
 alxr-common = { path = "../../alxr-common" }
 
 [dependencies.windows-sys]
-version = "0.36.1"
+version = "0.59"
 features = []
 
 [build-dependencies]
-toml = "0.5.8"
+toml = "0.8"
 
 # Metadata driving the build system. Once created, you can freely fill in and change the
 # required entries, and have the build system take it from there.

@@ -674,8 +674,8 @@ jobs:
           # Fetch alxr-engine submodule.
           git submodule update --init --recursive
           Start-Process -FilePath .\alvr\openxr-client\alxr-client\uwp\install_uwp_toolchain.bat -Wait -NoNewWindow
-          rustup toolchain install nightly-2024-07-19
-          rustup component add rust-src --toolchain nightly-2024-07-19-x86_64-pc-windows-msvc
+          rustup toolchain install nightly
+          rustup component add rust-src --toolchain nightly-x86_64-pc-windows-msvc
           rustup update
             
       - name: Build & Package UWP Arm64 Debug (.msix)
@@ -730,8 +730,8 @@ jobs:
           # Fetch alxr-engine submodule.
           git submodule update --init --recursive
           Start-Process -FilePath .\alvr\openxr-client\alxr-client\uwp\install_uwp_toolchain.bat -Wait -NoNewWindow
-          rustup toolchain install nightly-2024-07-19
-          rustup component add rust-src --toolchain nightly-2024-07-19-x86_64-pc-windows-msvc
+          rustup toolchain install nightly
+          rustup component add rust-src --toolchain nightly-x86_64-pc-windows-msvc
           rustup update
       
       - name: Build & Package UWP Arm64 Release (.msix)

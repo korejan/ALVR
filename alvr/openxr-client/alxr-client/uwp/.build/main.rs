@@ -8,7 +8,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use toml::{value::Map, Value};
+use toml::{map::Map, Value};
 
 mod shared;
 use shared::*;
