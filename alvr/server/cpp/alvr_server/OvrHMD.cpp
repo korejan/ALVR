@@ -463,8 +463,8 @@ void OvrHmd::SetHiddenAreaMeshes(const ViewsConfigData &config,
             // ndc verts
             dst_ham_ndc.push_back({{ndc_vert.v[0], ndc_vert.v[1]}});
             // ndc -> viewport space (not screen-space)
-            ndc_vert.v[0] = ((ndc_vert.v[0] + 1.f) * .5f);
-            ndc_vert.v[1] = ((1.f - ndc_vert.v[1]) * .5f);
+            ndc_vert.v[0] = ((1.f + ndc_vert.v[0]) * .5f);
+            ndc_vert.v[1] = ((1.f + ndc_vert.v[1]) * .5f);
             dst_ham_vp.push_back({{ndc_vert.v[0], ndc_vert.v[1]}});
         }
         vr::VRHiddenArea()->SetHiddenArea((vr::EVREye)viewIdx, vr::k_eHiddenAreaMesh_Standard, dst_ham_vp.data(), dst_ham_vp.size());
