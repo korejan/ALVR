@@ -186,6 +186,13 @@ vr::EVRInitError OvrHmd::Activate(vr::TrackedDeviceIndex_t unObjectId) {
         this->prop_container, vr::Prop_DriverDirectModeSendsVsyncEvents_Bool, true);
 #endif
 
+    // workaround-fix to jittery system overlays during low frame-rates,
+    // only workaround as the driver compositor doesn't do warping or 
+    // handle overlay type layers properly.
+    // this setting will become on by default in SteamVR 2.9.6
+    vr::VRProperties()->SetBoolProperty(
+        this->prop_container, vr::Prop_ForceSystemLayerUseAppPoses_Bool, true);
+
     // Set battery as true
     vr::VRProperties()->SetBoolProperty(
         this->prop_container, vr::Prop_DeviceProvidesBatteryStatus_Bool, true);
