@@ -258,14 +258,14 @@ dependencies = [
 
 [[package]]
 name = "alxr-client"
-version = "0.62.0"
+version = "0.63.0"
 dependencies = [
  "alxr-common",
 ]
 
 [[package]]
 name = "alxr-client-android"
-version = "0.62.0"
+version = "0.63.0"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -281,7 +281,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-pico"
-version = "0.62.0"
+version = "0.63.0"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -297,7 +297,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-uwp"
-version = "1.62.0"
+version = "1.63.0"
 dependencies = [
  "alxr-common",
  "toml 0.8.20",
@@ -306,7 +306,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-common"
-version = "0.62.0"
+version = "0.63.0"
 dependencies = [
  "alvr_audio",
  "alvr_common",
@@ -332,12 +332,12 @@ dependencies = [
 
 [[package]]
 name = "alxr-engine-sys"
-version = "0.62.0"
+version = "0.63.0"
 dependencies = [
  "bindgen 0.71.1",
  "cc",
  "cmake",
- "target-lexicon 0.13.1",
+ "target-lexicon 0.13.2",
  "walkdir",
 ]
 
@@ -4990,9 +4990,9 @@ checksum = "61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1"
 
 [[package]]
 name = "target-lexicon"
-version = "0.13.1"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc12939a1c9b9d391e0b7135f72fd30508b73450753e28341fed159317582a77"
+checksum = "e502f78cdbb8ba4718f566c418c52bc729126ffd16baee5baa718cf25dd5a69a"
 
 [[package]]
 name = "tempfile"
