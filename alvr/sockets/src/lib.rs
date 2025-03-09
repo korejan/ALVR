@@ -32,10 +32,10 @@ pub struct PrivateIdentity {
 pub fn create_identity(hostname: Option<String>) -> StrResult<PrivateIdentity> {
     let hostname = hostname.unwrap_or(format!(
         "{}{}{}{}.client.alvr",
-        rand::thread_rng().gen_range(0..10),
-        rand::thread_rng().gen_range(0..10),
-        rand::thread_rng().gen_range(0..10),
-        rand::thread_rng().gen_range(0..10),
+        rand::rng().random_range(0..10),
+        rand::rng().random_range(0..10),
+        rand::rng().random_range(0..10),
+        rand::rng().random_range(0..10),
     ));
 
     #[cfg(target_os = "android")]

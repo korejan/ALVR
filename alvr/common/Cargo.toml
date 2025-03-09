@@ -1,6 +1,6 @@
 [package]
 name = "alvr_common"
-version = "18.17.2"
+version = "18.18.0"
 authors = ["alvr-org", "Riccardo Zaglia <riccardo.zaglia5@gmail.com>"]
 license = "MIT"
 edition = "2021"
@@ -10,7 +10,7 @@ rust-version = "1.58"
 backtrace = "0.3"
 lazy_static = "1"
 log = "0.4"
-glam = { version = "0.29", features = ["serde"] }
+glam = { version = "0.30", features = ["serde"] }
 semver = { version = "1", features = ["serde"] }
 
 [target.'cfg(windows)'.dependencies]
