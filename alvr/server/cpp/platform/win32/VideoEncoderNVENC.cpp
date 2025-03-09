@@ -157,6 +157,7 @@ void VideoEncoderNVENC::FillEncodeConfig(NV_ENC_INITIALIZE_PARAMS &initializePar
 	initializeParams.encodeHeight = initializeParams.darHeight = renderHeight;
 	initializeParams.frameRateNum = refreshRate;
 	initializeParams.frameRateDen = 1;
+	initializeParams.splitEncodeMode = NV_ENC_SPLIT_AUTO_MODE;
 
 	if (Settings::Instance().m_nvencRefreshRate != -1) {
 		initializeParams.frameRateNum = Settings::Instance().m_nvencRefreshRate;
@@ -175,6 +176,18 @@ void VideoEncoderNVENC::FillEncodeConfig(NV_ENC_INITIALIZE_PARAMS &initializePar
 	if (Settings::Instance().m_nvencGopLength != -1) {
 		gopLength = Settings::Instance().m_nvencGopLength;
 	}
+
+	const auto setVUIParameters = [](auto& vuiParams) {
+		const uint32_t colorRangeFull = Settings::Instance().IsColorRangeItuFull();
+		Info("ColorRange-Full: %u", colorRangeFull);
+		vuiParams.videoSignalTypePresentFlag = 1;
+        vuiParams.videoFormat = NV_ENC_VUI_VIDEO_FORMAT_UNSPECIFIED;
+        vuiParams.videoFullRangeFlag = colorRangeFull;
+        vuiParams.colourDescriptionPresentFlag = 1;
+		vuiParams.colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		vuiParams.transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SRGB;
+		vuiParams.colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
+	};
 
 	if (m_codec == ALVR_CODEC_H264) {
 		auto &config = encodeConfig.encodeCodecConfig.h264Config;
@@ -203,6 +216,8 @@ void VideoEncoderNVENC::FillEncodeConfig(NV_ENC_INITIALIZE_PARAMS &initializePar
 		if (Settings::Instance().m_fillerData) {
 			config.enableFillerDataInsertion = Settings::Instance().m_rateControlMode == ALVR_CBR;
 		}
+
+		setVUIParameters(config.h264VUIParameters);
 	} 
 	else {
 		auto &config = encodeConfig.encodeCodecConfig.hevcConfig;
@@ -226,6 +241,8 @@ void VideoEncoderNVENC::FillEncodeConfig(NV_ENC_INITIALIZE_PARAMS &initializePar
 		if (Settings::Instance().m_fillerData) {
 			config.enableFillerDataInsertion = Settings::Instance().m_rateControlMode == ALVR_CBR;
 		}
+
+		setVUIParameters(config.hevcVUIParameters);
 	}
 
 	// Disable automatic IDR insertion by NVENC. We need to manually insert IDR when packet is dropped

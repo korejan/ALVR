@@ -216,6 +216,14 @@ pub struct ColorCorrectionDesc {
     pub sharpening: f32,
 }
 
+#[repr(u32)]
+#[derive(SettingsSchema, Serialize, Deserialize, Clone)]
+#[serde(tag = "type", content = "content")]
+pub enum ColorRange {
+    Full = 0,
+    Limited = 1,
+}
+
 // Note: This enum cannot be converted to camelCase due to a inconsistency between generation and
 // validation: "hevc" vs "hEVC".
 // This is caused by serde and settings-schema using different libraries for casing conversion
@@ -253,6 +261,8 @@ pub struct VideoDesc {
     pub preferred_fps: f32,
 
     pub codec: CodecType,
+
+    pub color_range: ColorRange,
 
     #[schema(advanced)]
     pub rate_control_mode: RateControlMode,
@@ -673,6 +683,9 @@ pub fn session_settings_default() -> SettingsDefault {
             preferred_fps: 90.,
             codec: CodecTypeDefault {
                 variant: CodecTypeDefaultVariant::HEVC,
+            },
+            color_range: ColorRangeDefault {
+                variant: ColorRangeDefaultVariant::Full,
             },
             rate_control_mode: RateControlModeDefault {
                 variant: RateControlModeDefaultVariant::CBR,

@@ -251,6 +251,7 @@ async fn client_handshake(
         aggressive_keyframe_resend: settings.connection.aggressive_keyframe_resend,
         adapter_index: settings.video.adapter_index,
         codec: matches!(settings.video.codec, CodecType::HEVC) as _,
+        color_range: settings.video.color_range as u32,
         rate_control_mode: settings.video.rate_control_mode as u32,
         filler_data: settings.video.filler_data,
         entropy_coding: settings.video.entropy_coding as u32,

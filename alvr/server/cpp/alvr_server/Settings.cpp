@@ -85,6 +85,7 @@ void Settings::Load()
 		m_nAdapterIndex = (int32_t)config.get("adapter_index").get<int64_t>();
 
 		m_codec = (int32_t)config.get("codec").get<int64_t>();
+		m_colorRange = static_cast<ColorRange>(config.get("color_range").get<int64_t>());
 		m_rateControlMode = (uint32_t)config.get("rate_control_mode").get<int64_t>();
 		m_fillerData = config.get("filler_data").get<bool>();
 		m_entropyCoding = (uint32_t)config.get("entropy_coding").get<int64_t>();
