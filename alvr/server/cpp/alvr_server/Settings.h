@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include "ALVR-common/packet_types.h"
 
@@ -62,6 +63,12 @@ public:
 	float m_sharpening;
 
 	int m_codec;
+	enum class ColorRange : std::uint32_t {
+		Full = 0,
+		Limited = 1,
+	};
+	ColorRange m_colorRange { ColorRange::Full };
+	bool IsColorRangeItuFull() const { return m_colorRange == ColorRange::Full; }
 	uint64_t mEncodeBitrateMBs;
 	bool m_enableAdaptiveBitrate;
 	uint64_t m_adaptiveBitrateMaximum;
