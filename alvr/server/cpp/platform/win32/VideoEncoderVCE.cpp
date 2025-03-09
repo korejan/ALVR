@@ -222,6 +222,22 @@ amf::AMFComponentPtr VideoEncoderVCE::MakeEncoder(
 		if (m_hasQueryTimeout) {
 			amfEncoder->SetProperty(AMF_VIDEO_ENCODER_QUERY_TIMEOUT, 1000); // 1s timeout
 		}
+
+		amfEncoder->SetProperty(AMF_VIDEO_ENCODER_FULL_RANGE_COLOR, Settings::Instance().IsColorRangeItuFull());
+
+		amfEncoder->SetProperty(
+			AMF_VIDEO_ENCODER_OUTPUT_COLOR_PROFILE,
+			Settings::Instance().IsColorRangeItuFull()
+				? AMF_VIDEO_CONVERTER_COLOR_PROFILE_FULL_709
+				: AMF_VIDEO_CONVERTER_COLOR_PROFILE_709
+		);
+		amfEncoder->SetProperty(
+			AMF_VIDEO_ENCODER_OUTPUT_TRANSFER_CHARACTERISTIC,
+			AMF_COLOR_TRANSFER_CHARACTERISTIC_IEC61966_2_1
+		);
+		amfEncoder->SetProperty(
+			AMF_VIDEO_ENCODER_OUTPUT_COLOR_PRIMARIES, AMF_COLOR_PRIMARIES_BT709
+		);
 	}
 	else
 	{
@@ -285,6 +301,27 @@ amf::AMFComponentPtr VideoEncoderVCE::MakeEncoder(
 		if (m_hasQueryTimeout) {
 			amfEncoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_QUERY_TIMEOUT, 1000); // 1s timeout
 		}
+
+        amfEncoder->SetProperty(
+            AMF_VIDEO_ENCODER_HEVC_NOMINAL_RANGE,
+            Settings::Instance().IsColorRangeItuFull()
+                ? AMF_VIDEO_ENCODER_HEVC_NOMINAL_RANGE_FULL
+                : AMF_VIDEO_ENCODER_HEVC_NOMINAL_RANGE_STUDIO
+        );
+
+		amfEncoder->SetProperty(
+			AMF_VIDEO_ENCODER_HEVC_OUTPUT_COLOR_PROFILE,
+			Settings::Instance().IsColorRangeItuFull()
+				? AMF_VIDEO_CONVERTER_COLOR_PROFILE_FULL_709
+				: AMF_VIDEO_CONVERTER_COLOR_PROFILE_709
+		);
+		amfEncoder->SetProperty(
+			AMF_VIDEO_ENCODER_HEVC_OUTPUT_TRANSFER_CHARACTERISTIC,
+			AMF_COLOR_TRANSFER_CHARACTERISTIC_IEC61966_2_1
+		);
+		amfEncoder->SetProperty(
+			AMF_VIDEO_ENCODER_HEVC_OUTPUT_COLOR_PRIMARIES, AMF_COLOR_PRIMARIES_BT709
+		);
 	}
 
 	Debug("Configured %s.\n", pCodec);
