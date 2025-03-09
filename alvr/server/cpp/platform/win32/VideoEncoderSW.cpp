@@ -81,6 +81,7 @@ void VideoEncoderSW::Initialize() {
 	m_codecContext->sample_aspect_ratio = AVRational{1, 1};
 	m_codecContext->pix_fmt = Settings::Instance().m_use10bitEncoder ? AV_PIX_FMT_YUV420P10LE : AV_PIX_FMT_YUV420P;
 	m_codecContext->max_b_frames = 0;
+	m_codecContext->color_range = Settings::Instance().IsColorRangeItuFull() ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
 	m_codecContext->gop_size = 0;
 	m_codecContext->bit_rate = Settings::Instance().mEncodeBitrateMBs * 1'000'000L;
 	m_codecContext->rc_buffer_size = m_codecContext->bit_rate / Settings::Instance().m_refreshRate * 1.1;
