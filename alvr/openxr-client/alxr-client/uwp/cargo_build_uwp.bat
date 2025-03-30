@@ -35,5 +35,5 @@ if exist !VCVarsAllBat! (
     )
     @REM cargo +nightly build -Z build-std=std,panic_abort --target !cargoArch!-uwp-windows-msvc %~2
     @REM ^ the above was the old way to build with nightly toolchain before rustup v1.25.
-    rustup run nightly cargo build -Z build-std=std,panic_abort --target !cargoArch!-uwp-windows-msvc %~2
+    rustup run nightly-2025-03-22 cargo build -Z build-std=std,panic_abort --target !cargoArch!-uwp-windows-msvc %~2
 )

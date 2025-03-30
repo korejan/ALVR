@@ -715,9 +715,14 @@ pub fn build_alxr_uwp(root: Option<String>, arch: UWPArch, flags: AlxBuildFlags)
         let find_flags =
             format!("-Z build-std=std,panic_abort --target {target_type} {build_flags}");
         println!("Searching for linked native dependencies, please wait this may take some time.");
-        let linked_paths =
-            find_linked_native_paths(&alxr_client_dir, &find_flags, true, "", uwp_rt_var_path)
-                .unwrap();
+        let linked_paths = find_linked_native_paths(
+            &alxr_client_dir,
+            &find_flags,
+            true,
+            "2025-03-22",
+            uwp_rt_var_path,
+        )
+        .unwrap();
         for linked_path in linked_paths.iter() {
             for linked_depend_file in walkdir::WalkDir::new(linked_path)
                 .into_iter()

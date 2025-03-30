@@ -110,12 +110,12 @@ jobs:
           # Fetch alxr-engine submodule.
           git submodule update --init --recursive
           Start-Process -FilePath .\alvr\openxr-client\alxr-client\uwp\install_uwp_toolchain.bat -Wait -NoNewWindow
-          rustup toolchain install nightly
-          rustup component add rust-src --toolchain nightly-x86_64-pc-windows-msvc
+          rustup toolchain install nightly-2025-03-22
+          rustup component add rust-src --toolchain nightly-2025-03-22-x86_64-pc-windows-msvc
           rustup update
       - name: Build Debug UWP aarch64/arm64
         run: |
-          cargo +nightly build -Z build-std=std,panic_abort -p alxr-client-uwp --target aarch64-uwp-windows-msvc --verbose
+          cargo +nightly-2025-03-22 build -Z build-std=std,panic_abort -p alxr-client-uwp --target aarch64-uwp-windows-msvc --verbose
   
   build_alxr_linux:
     runs-on: ubuntu-22.04
