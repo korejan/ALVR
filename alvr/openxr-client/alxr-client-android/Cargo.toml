@@ -1,6 +1,6 @@
 [package]
 name = "alxr-client-android"
-version = "0.66.0"
+version = "0.66.1"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 description = "An OpenXR based ALVR client for android platorms"
@@ -268,6 +268,15 @@ name = "android.permission.VIBRATE"
 #name = "android.permission.CAMERA"
 
 [[package.metadata.android.uses_permission]]
+name = "horizonos.permission.HAND_TRACKING"
+
+[[package.metadata.android.uses_permission]]
+name = "horizonos.permission.EYE_TRACKING"
+
+[[package.metadata.android.uses_permission]]
+name = "horizonos.permission.FACE_TRACKING"
+
+[[package.metadata.android.uses_permission]]
 name = "com.oculus.permission.HAND_TRACKING"
 
 [[package.metadata.android.uses_permission]]
@@ -383,6 +392,10 @@ resizeableActivity = "false"
 # [[package.metadata.android.application.meta_data]]
 # name = "com.samsung.android.vr.application.mode"
 # value = "vr_only"
+
+[[package.metadata.android.application.meta_data]]
+name = "com.oculus.vr.focusaware"
+value = "true"
 
 [[package.metadata.android.application.meta_data]]
 name = "com.oculus.supportedDevices"

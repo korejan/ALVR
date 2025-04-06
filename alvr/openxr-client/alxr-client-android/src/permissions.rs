@@ -126,6 +126,8 @@ pub fn check_android_permissions<'a>(
         "android.permission.FACE_TRACKING",
         "android.permission.HAND_TRACKING",
         // "android.permission.SCENE_UNDERSTANDING",
+        "horizonos.permission.EYE_TRACKING",
+        "horizonos.permission.FACE_TRACKING",
         "com.oculus.permission.EYE_TRACKING",
         "com.oculus.permission.FACE_TRACKING",
         "com.magicleap.permission.EYE_TRACKING",

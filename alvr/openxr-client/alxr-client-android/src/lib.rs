@@ -241,10 +241,13 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
     match eye_tracking_type {
         ALXREyeTrackingType::Auto | ALXREyeTrackingType::ExtEyeGazeInteraction => {
             let build_id = get_build_property(&vm, "ID");
-            if build_id == "SQ3A.220605.009.A1" {
-                log::debug!("alxr-client: override eye-tracking type workaround enabled.");
-                eye_tracking_type = ALXREyeTrackingType::FBEyeTrackingSocial;
-            }
+            match build_id.as_str() {
+                "UP1A.231005.007.A1" | "SQ3A.220605.009.A1" => {
+                    log::debug!("alxr-client: override eye-tracking type workaround enabled.");
+                    eye_tracking_type = ALXREyeTrackingType::FBEyeTrackingSocial;
+                }
+                _ => {}
+            };
         }
         _ => {}
     };
