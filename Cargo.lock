@@ -264,14 +264,14 @@ dependencies = [
 
 [[package]]
 name = "alxr-client"
-version = "0.66.1"
+version = "0.66.2"
 dependencies = [
  "alxr-common",
 ]
 
 [[package]]
 name = "alxr-client-android"
-version = "0.66.1"
+version = "0.66.2"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -287,7 +287,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-pico"
-version = "0.66.1"
+version = "0.66.2"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -303,7 +303,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-uwp"
-version = "1.66.1"
+version = "1.66.2"
 dependencies = [
  "alxr-common",
  "toml 0.8.20",
@@ -312,7 +312,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-common"
-version = "0.66.1"
+version = "0.66.2"
 dependencies = [
  "alvr_audio",
  "alvr_common",
@@ -338,7 +338,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-engine-sys"
-version = "0.66.1"
+version = "0.66.2"
 dependencies = [
  "bindgen 0.71.1",
  "cc",
@@ -5278,7 +5278,7 @@ dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "winnow 0.7.4",
+ "winnow 0.7.6",
 ]
 
 [[package]]
@@ -6365,9 +6365,9 @@ dependencies = [
 
 [[package]]
 name = "winnow"
-version = "0.7.4"
+version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e97b544156e9bebe1a0ffbc03484fc1ffe3100cbce3ffb17eac35f7cdd7ab36"
+checksum = "63d3fcd9bba44b03821e7d699eeee959f3126dcc4aa8e4ae18ec617c2a5cea10"
 dependencies = [
  "memchr",
 ]
