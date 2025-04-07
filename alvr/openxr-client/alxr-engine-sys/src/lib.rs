@@ -8,12 +8,12 @@ include!(concat!(env!("OUT_DIR"), "/alxr_engine.rs"));
 
 impl From<&str> for crate::ALXRGraphicsApi {
     fn from(input: &str) -> Self {
-        let trimmed = input.trim();
-        match trimmed {
-            "Vulkan2" => crate::ALXRGraphicsApi::Vulkan2,
-            "Vulkan" => crate::ALXRGraphicsApi::Vulkan,
-            "D3D12" => crate::ALXRGraphicsApi::D3D12,
-            "D3D11" => crate::ALXRGraphicsApi::D3D11,
+        let trimmed = input.trim().to_lowercase();
+        match trimmed.as_str() {
+            "vulkan2" => crate::ALXRGraphicsApi::Vulkan2,
+            "vulkan" => crate::ALXRGraphicsApi::Vulkan,
+            "d3d12" => crate::ALXRGraphicsApi::D3D12,
+            "d3d11" => crate::ALXRGraphicsApi::D3D11,
             _ => crate::ALXRGraphicsApi::Auto,
         }
     }
@@ -21,13 +21,14 @@ impl From<&str> for crate::ALXRGraphicsApi {
 
 impl From<&str> for crate::ALXRDecoderType {
     fn from(input: &str) -> Self {
-        let trimmed = input.trim();
-        match trimmed {
-            "D311VA" => crate::ALXRDecoderType::D311VA,
-            "NVDEC" => crate::ALXRDecoderType::NVDEC,
-            "CUVID" => crate::ALXRDecoderType::CUVID,
-            "VAAPI" => crate::ALXRDecoderType::VAAPI,
-            "CPU" => crate::ALXRDecoderType::CPU,
+        let trimmed = input.trim().to_lowercase();
+        match trimmed.as_str() {
+            "d311va" => crate::ALXRDecoderType::D311VA,
+            "nvdec" => crate::ALXRDecoderType::NVDEC,
+            "cuvid" => crate::ALXRDecoderType::CUVID,
+            "vaapi" => crate::ALXRDecoderType::VAAPI,
+            "cpu" => crate::ALXRDecoderType::CPU,
+            "vulkan" => crate::ALXRDecoderType::VULKAN,
             #[cfg(target_os = "windows")]
             _ => crate::ALXRDecoderType::D311VA,
             #[cfg(not(target_os = "windows"))]
