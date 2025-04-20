@@ -61,134 +61,139 @@ jobs:
           draft: true
           prerelease: false
           commitish: ${{ steps.output_ref.outputs.release_ref }}
-  
-  build_alxr_linux_portable_release:
-    runs-on: ubuntu-20.04
-    needs: [prepare_release]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.prepare_release.outputs.release_ref }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+
+  #
+  # ubuntu-20.04 runner has been removed since 15/04/2025
+  #
+  # build_alxr_linux_portable_release:
+  #   runs-on: ubuntu-20.04
+  #   needs: [prepare_release]
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ needs.prepare_release.outputs.release_ref }}
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         override: true
       
-      - name: Build and install dependencies
-        env:
-          RUST_BACKTRACE: 1
-        run: |
-          sudo apt update # && sudo apt upgrade -y
+  #     - name: Build and install dependencies
+  #       env:
+  #         RUST_BACKTRACE: 1
+  #       run: |
+  #         sudo apt update # && sudo apt upgrade -y
 
-          # ALVR/FFMPEG specific depends.
-          sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev
-          # ALXR specific depends.
-          sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
+  #         # ALVR/FFMPEG specific depends.
+  #         sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev
+  #         # ALXR specific depends.
+  #         sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
-          # ubuntu-focal cmake package is too old...
-          CMAKE_FILE=cmake-3.31.6-linux-x86_64.sh
-          wget https://github.com/Kitware/CMake/releases/download/v3.31.6/${CMAKE_FILE}
-          chmod +x ${CMAKE_FILE}
-          ./${CMAKE_FILE} --skip-license --include-subdir
-          export PATH=${PWD}/cmake-3.31.6-linux-x86_64:$PATH
+  #         # ubuntu-focal cmake package is too old...
+  #         CMAKE_FILE=cmake-3.31.6-linux-x86_64.sh
+  #         wget https://github.com/Kitware/CMake/releases/download/v3.31.6/${CMAKE_FILE}
+  #         chmod +x ${CMAKE_FILE}
+  #         ./${CMAKE_FILE} --skip-license --include-subdir
+  #         export PATH=${PWD}/cmake-3.31.6-linux-x86_64:$PATH
           
-          # ubuntu-focal glslang package is too old...
-          wget https://github.com/KhronosGroup/glslang/releases/download/master-tot/glslang-master-linux-Release.zip
-          unzip glslang-master-linux-Release.zip -d glslang
-          export PATH=${PWD}/glslang/bin:$PATH
+  #         # ubuntu-focal glslang package is too old...
+  #         wget https://github.com/KhronosGroup/glslang/releases/download/master-tot/glslang-master-linux-Release.zip
+  #         unzip glslang-master-linux-Release.zip -d glslang
+  #         export PATH=${PWD}/glslang/bin:$PATH
 
-          export CC=/usr/bin/gcc-10
-          export CXX=/usr/bin/g++-10
+  #         export CC=/usr/bin/gcc-10
+  #         export CXX=/usr/bin/g++-10
 
-          # Fetch alxr-engine submodule.
-          git submodule update --init --recursive
+  #         # Fetch alxr-engine submodule.
+  #         git submodule update --init --recursive
           
-          echo "$PATH" >> $GITHUB_PATH
+  #         echo "$PATH" >> $GITHUB_PATH
       
-      - name: Build & Package ALXR-Release (.tar.gz)
-        id: build-release
-        env:
-          CC: /usr/bin/gcc-10
-          CXX: /usr/bin/g++-10
-          RUST_BACKTRACE: 1
-        run: |
-          cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=release/4.4
-          tar -czvf ./build/alxr-client-linux.tar.gz -C ./build/release/alxr_client_linux .
+  #     - name: Build & Package ALXR-Release (.tar.gz)
+  #       id: build-release
+  #       env:
+  #         CC: /usr/bin/gcc-10
+  #         CXX: /usr/bin/g++-10
+  #         RUST_BACKTRACE: 1
+  #       run: |
+  #         cargo xtask build-alxr-client --release --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=release/4.4
+  #         tar -czvf ./build/alxr-client-linux.tar.gz -C ./build/release/alxr_client_linux .
       
-      - name: Upload portable alxr-release for Linux
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alxr-client-linux.tar.gz
-          asset_name: alxr-client-linux.tar.gz
-          asset_content_type: application/gzip
-  
-  build_alxr_linux_portable_debug:
-    runs-on: ubuntu-20.04
-    needs: [prepare_release]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.prepare_release.outputs.release_ref }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+  #     - name: Upload portable alxr-release for Linux
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/alxr-client-linux.tar.gz
+  #         asset_name: alxr-client-linux.tar.gz
+  #         asset_content_type: application/gzip
+  #
+  # ubuntu-20.04 runner has been removed since 15/04/2025
+  #
+  # build_alxr_linux_portable_debug:
+  #   runs-on: ubuntu-20.04
+  #   needs: [prepare_release]
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ needs.prepare_release.outputs.release_ref }}
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         override: true
       
-      - name: Build and install dependencies
-        env:
-          RUST_BACKTRACE: 1
-        run: |
-          sudo apt update # && sudo apt upgrade -y
+  #     - name: Build and install dependencies
+  #       env:
+  #         RUST_BACKTRACE: 1
+  #       run: |
+  #         sudo apt update # && sudo apt upgrade -y
 
-          # ALVR/FFMPEG specific depends.
-          sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev
-          # ALXR specific depends.
-          sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
+  #         # ALVR/FFMPEG specific depends.
+  #         sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev
+  #         # ALXR specific depends.
+  #         sudo apt install git wget gcc-10 g++-10 ninja-build libxxf86vm-dev libxcb-glx0-dev libcjson-dev glslang-dev glslang-tools -y
 
-          # ubuntu-focal cmake package is too old...
-          CMAKE_FILE=cmake-3.31.6-linux-x86_64.sh
-          wget https://github.com/Kitware/CMake/releases/download/v3.31.6/${CMAKE_FILE}
-          chmod +x ${CMAKE_FILE}
-          ./${CMAKE_FILE} --skip-license --include-subdir
-          export PATH=${PWD}/cmake-3.31.6-linux-x86_64:$PATH
+  #         # ubuntu-focal cmake package is too old...
+  #         CMAKE_FILE=cmake-3.31.6-linux-x86_64.sh
+  #         wget https://github.com/Kitware/CMake/releases/download/v3.31.6/${CMAKE_FILE}
+  #         chmod +x ${CMAKE_FILE}
+  #         ./${CMAKE_FILE} --skip-license --include-subdir
+  #         export PATH=${PWD}/cmake-3.31.6-linux-x86_64:$PATH
           
-          # ubuntu-focal glslang package is too old...
-          wget https://github.com/KhronosGroup/glslang/releases/download/master-tot/glslang-master-linux-Release.zip
-          unzip glslang-master-linux-Release.zip -d glslang
-          export PATH=${PWD}/glslang/bin:$PATH
+  #         # ubuntu-focal glslang package is too old...
+  #         wget https://github.com/KhronosGroup/glslang/releases/download/master-tot/glslang-master-linux-Release.zip
+  #         unzip glslang-master-linux-Release.zip -d glslang
+  #         export PATH=${PWD}/glslang/bin:$PATH
 
-          export CC=/usr/bin/gcc-10
-          export CXX=/usr/bin/g++-10
+  #         export CC=/usr/bin/gcc-10
+  #         export CXX=/usr/bin/g++-10
 
-          # Fetch alxr-engine submodule.
-          git submodule update --init --recursive
+  #         # Fetch alxr-engine submodule.
+  #         git submodule update --init --recursive
           
-          echo "$PATH" >> $GITHUB_PATH
+  #         echo "$PATH" >> $GITHUB_PATH
             
-      - name: Build & Package ALXR-Debug (.tar.gz)
-        id: build-debug
-        env:
-          CC: /usr/bin/gcc-10
-          CXX: /usr/bin/g++-10
-          RUST_BACKTRACE: 1
-        run: |
-          cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=release/4.4
-          tar -czvf ./build/alxr-client-linux-debug.tar.gz -C ./build/debug/alxr_client_linux .
+  #     - name: Build & Package ALXR-Debug (.tar.gz)
+  #       id: build-debug
+  #       env:
+  #         CC: /usr/bin/gcc-10
+  #         CXX: /usr/bin/g++-10
+  #         RUST_BACKTRACE: 1
+  #       run: |
+  #         cargo xtask build-alxr-client --bundle-ffmpeg --gpl --no-nvidia --ffmpeg-version=release/4.4
+  #         tar -czvf ./build/alxr-client-linux-debug.tar.gz -C ./build/debug/alxr_client_linux .
             
-      - name: Upload portable alxr-debug for Linux
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alxr-client-linux-debug.tar.gz
-          asset_name: alxr-client-linux-debug.tar.gz
-          asset_content_type: application/gzip
+  #     - name: Upload portable alxr-debug for Linux
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+  #         asset_path: ./build/alxr-client-linux-debug.tar.gz
+  #         asset_name: alxr-client-linux-debug.tar.gz
+  #         asset_content_type: application/gzip
   
   build_alxr_linux_release:
     runs-on: ubuntu-22.04
