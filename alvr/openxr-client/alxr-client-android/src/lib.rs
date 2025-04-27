@@ -31,6 +31,23 @@ fn get_build_property<'a>(jvm: &'a jni::JavaVM, property_name: &str) -> String {
     device_name_raw.to_string_lossy().as_ref().to_owned()
 }
 
+fn get_build_version_property<'a>(jvm: &'a jni::JavaVM, property_name: &str) -> String {
+    let mut env = jvm.attach_current_thread().unwrap();
+
+    let version_prop_name = env
+        .get_static_field(
+            "android/os/Build$VERSION",
+            &property_name,
+            "Ljava/lang/String;",
+        )
+        .unwrap()
+        .l()
+        .unwrap();
+    let version_prop_raw = env.get_string((&version_prop_name).into()).unwrap();
+
+    version_prop_raw.to_string_lossy().as_ref().to_owned()
+}
+
 fn get_firmware_version<'a>(jvm: &'a jni::JavaVM) -> ALXRVersion {
     fn get_version_helper<'a, 'b>(jvm: &'a jni::JavaVM, prop_name: &str) -> Option<[u32; 3]> {
         let value_str = get_build_property(&jvm, &prop_name);
@@ -75,6 +92,13 @@ fn get_build_manufacturer<'a>(jvm: &'a jni::JavaVM) -> String {
 }
 
 #[allow(dead_code)]
+fn get_build_version_no<'a>(jvm: &'a jni::JavaVM) -> u64 {
+    get_build_version_property(&jvm, "INCREMENTAL")
+        .parse()
+        .unwrap_or(0)
+}
+
+#[allow(dead_code)]
 fn is_device<'a>(pname: &str, jvm: &'a jni::JavaVM) -> bool {
     let key = pname.to_lowercase();
     let model_name = get_build_model(&jvm).to_lowercase();
@@ -100,12 +124,14 @@ fn print_device_info<'a>(jvm: &'a jni::JavaVM) {
     let device_name = get_build_device(&jvm);
     let man_name = get_build_manufacturer(&jvm);
     let build_id = get_build_property(&jvm, "ID");
-    log::info!(" Device Details");
-    log::info!("=================");
-    log::info!("model:        {0}", model_name);
-    log::info!("device:       {0}", device_name);
-    log::info!("manufacturer: {0}", man_name);
-    log::info!("build-id:     {0}", build_id);
+    let version_incremental = get_build_version_no(&jvm);
+    log::info!("           Device Details");
+    log::info!("======================================");
+    log::info!("model:                {0}", model_name);
+    log::info!("device:               {0}", device_name);
+    log::info!("manufacturer:         {0}", man_name);
+    log::info!("build-id:             {0}", build_id);
+    log::info!("version-incr:         {0}", version_incremental);
 }
 
 #[no_mangle]
@@ -243,7 +269,7 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
             let build_id = get_build_property(&vm, "ID");
             match build_id.as_str() {
                 "UP1A.231005.007.A1" | "SQ3A.220605.009.A1" => {
-                    log::debug!("alxr-client: override eye-tracking type workaround enabled.");
+                    log::warn!("alxr-client: override eye-tracking type workaround enabled.");
                     eye_tracking_type = ALXREyeTrackingType::FBEyeTrackingSocial;
                 }
                 _ => {}
@@ -253,6 +279,18 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
     };
 
     let no_multi_view_rendering = APP_CONFIG.no_multi_view_rendering || is_android_emulator(&vm);
+
+    let mut no_visibility_masks = APP_CONFIG.no_visibility_masks;
+    // quest firmware v77.0.0.424.319 has a crash bug when using `XR_KHR_visibility_mask`
+    let build_no = get_build_version_no(&vm);
+    match build_no {
+        50801630046600340 => {
+            // quest v77.0.0.424.319
+            log::warn!("alxr-client: force disabling XR_KHR_visibility_mask, quest crash bug workaround for build-no.: {build_no}");
+            no_visibility_masks = true
+        }
+        _ => {}
+    };
 
     let ctx = ALXRClientCtx {
         graphicsApi: APP_CONFIG.graphics_api.unwrap_or(ALXRGraphicsApi::Auto),
@@ -290,7 +328,7 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
             .passthrough_mode
             .unwrap_or(ALXRPassthroughMode::None),
         internalDataPath: std::ptr::null(),
-        noVisibilityMasks: APP_CONFIG.no_visibility_masks,
+        noVisibilityMasks: no_visibility_masks,
         noMultiviewRendering: no_multi_view_rendering,
     };
     let mut sys_properties = ALXRSystemProperties::new();
