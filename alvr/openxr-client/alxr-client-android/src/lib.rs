@@ -281,11 +281,11 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
     let no_multi_view_rendering = APP_CONFIG.no_multi_view_rendering || is_android_emulator(&vm);
 
     let mut no_visibility_masks = APP_CONFIG.no_visibility_masks;
-    // quest firmware v77.0.0.424.319 has a crash bug when using `XR_KHR_visibility_mask`
+    // quest firmware v77.0.0.x has a crash bug when using `XR_KHR_visibility_mask`
     let build_no = get_build_version_no(&vm);
     match build_no {
-        50801630046600340 => {
-            // quest v77.0.0.424.319
+        50801630051100340 | 50801630046600340 => {
+            // quest v77.0.0.x
             log::warn!("alxr-client: force disabling XR_KHR_visibility_mask, quest crash bug workaround for build-no.: {build_no}");
             no_visibility_masks = true
         }
