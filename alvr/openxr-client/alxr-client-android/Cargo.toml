@@ -418,6 +418,10 @@ name = "pvr.sdk.version"
 value = "OpenXR"
 
 [[package.metadata.android.application.meta_data]]
+name = "pxr.sdk.version_code"
+value = "590"
+
+[[package.metadata.android.application.meta_data]]
 name = "rendering_mode"
 value = "1" # 0 Multipass, 1 Multview
 
