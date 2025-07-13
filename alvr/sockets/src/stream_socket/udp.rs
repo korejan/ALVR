@@ -46,7 +46,7 @@ pub async fn bind(
 
     super::set_socket_buffers(&socket, send_buffer_bytes, recv_buffer_bytes).ok();
 
-    socket.set_tos(IPTOS_DSCP_EF).ok();
+    socket.set_tos_v4(IPTOS_DSCP_EF).ok();
 
     UdpSocket::from_std(socket.into()).map_err(err!())
 }

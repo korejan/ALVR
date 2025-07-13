@@ -1,6 +1,6 @@
 [package]
 name = "alvr_server"
-version = "18.18.0"
+version = "18.19.0"
 authors = ["alvr-org", "polygraphene", "Valve Corporation"]
 license = "MIT"
 edition = "2021"
@@ -53,7 +53,7 @@ hyper = { version = "0.14", features = [
     "tcp",
 ] }
 reqwest = "0.11"
-tokio-tungstenite = "0.26"
+tokio-tungstenite = "0.27"
 tokio-util = { version = "0.7", features = ["codec"] }
 # Graphics
 wgpu = "23"
@@ -67,7 +67,7 @@ fern = "0.7"
 
 [build-dependencies]
 alvr_filesystem = { path = "../filesystem" }
-bindgen = "0.71"
+bindgen = "0.72"
 cc = { version = "1", features = ["parallel"] }
 walkdir = "2"
 
