@@ -22,6 +22,7 @@ use std::{
 use tokio::{runtime::Runtime, sync::mpsc, sync::Notify};
 //#[cfg(not(target_os = "android"))]
 use glam::{Quat, Vec2, Vec3};
+use semver::Version;
 use structopt::StructOpt;
 
 #[cfg(target_os = "android")]
@@ -128,6 +129,10 @@ pub struct Options {
     /// Force disables multi-view rendering support
     #[structopt(/*short,*/ long = "disable-multi-view")]
     pub no_multi_view_rendering: bool,
+
+    /// Overrides the OpenXR Api Version used for XR instance creation, an advance option meant for runtime quirk workarounds.
+    #[structopt(long = "xr-api-version")]
+    pub xr_api_version: Option<Version>,
 }
 
 impl Options {
@@ -177,6 +182,7 @@ impl Options {
             passthrough_mode: Some(ALXRPassthroughMode::None),
             no_visibility_masks: false,
             no_multi_view_rendering: false,
+            xr_api_version: None,
         };
 
         let sys_properties = AndroidSystemProperties::new();
@@ -356,6 +362,15 @@ impl Options {
             );
         }
 
+        let property_name = "debug.alxr.xr_api_version";
+        if let Some(value) = sys_properties.get(&property_name) {
+            new_options.xr_api_version = std::str::FromStr::from_str(value.as_str()).ok();
+            println!(
+                "ALXR System Property: {property_name}, input: {value}, parsed-result: {:?}",
+                new_options.xr_api_version
+            );
+        }
+
         new_options
     }
 }
@@ -388,6 +403,7 @@ impl Options {
             passthrough_mode: Some(ALXRPassthroughMode::None),
             no_visibility_masks: false,
             no_multi_view_rendering: false,
+            xr_api_version: None,
         };
         new_options
     }
@@ -417,6 +433,14 @@ lazy_static! {
 #[cfg(any(target_os = "android", target_vendor = "uwp"))]
 lazy_static! {
     pub static ref APP_CONFIG: Options = Options::from_system_properties();
+}
+
+pub fn to_alxr_version(v: &semver::Version) -> ALXRVersion {
+    ALXRVersion {
+        major: v.major as u32,
+        minor: v.minor as u32,
+        patch: v.patch as u32,
+    }
 }
 
 pub fn init_connections(sys_properties: &ALXRSystemProperties) {

@@ -3,9 +3,9 @@
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, battery_send,
     init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
-    time_sync_send, video_error_report_send, views_config_send, ALXRClientCtx, ALXRColorSpace,
-    ALXRDecoderType, ALXREyeTrackingType, ALXRFacialExpressionType, ALXRGraphicsApi,
-    ALXRPassthroughMode, ALXRSystemProperties, ALXRVersion, APP_CONFIG,
+    time_sync_send, to_alxr_version, video_error_report_send, views_config_send, ALXRClientCtx,
+    ALXRColorSpace, ALXRDecoderType, ALXREyeTrackingType, ALXRFacialExpressionType,
+    ALXRGraphicsApi, ALXRPassthroughMode, ALXRSystemProperties, ALXRVersion, APP_CONFIG,
 };
 use std::{thread, time};
 
@@ -40,6 +40,10 @@ fn main() {
     println!("{:?}", *APP_CONFIG);
     let selected_api = APP_CONFIG.graphics_api.unwrap_or(DEFAULT_GRAPHICS_API);
     let selected_decoder = APP_CONFIG.decoder_type.unwrap_or(DEFAULT_DECODER_TYPE);
+    let xr_api_version = APP_CONFIG
+        .xr_api_version
+        .clone()
+        .unwrap_or(semver::Version::new(0, 0, 0));
     unsafe {
         loop {
             let ctx = ALXRClientCtx {
@@ -82,6 +86,7 @@ fn main() {
                 internalDataPath: std::ptr::null(),
                 noVisibilityMasks: APP_CONFIG.no_visibility_masks,
                 noMultiviewRendering: APP_CONFIG.no_multi_view_rendering,
+                xrApiVersion: to_alxr_version(&xr_api_version),
             };
             let mut sys_properties = ALXRSystemProperties::new();
             if !alxr_init(&ctx, &mut sys_properties) {

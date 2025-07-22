@@ -1,6 +1,6 @@
 [package]
 name = "alxr-client"
-version = "0.69.0"
+version = "0.69.1"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 description = "An OpenXR based ALVR client for non-android platorms"
@@ -14,6 +14,7 @@ no-decoder =  ["alxr-common/no-decoder"] # disables building platform decoders &
 
 [dependencies]
 alxr-common = { path = "../alxr-common" }
+semver = "1"
 
 # for building linux AppImages with cargo-appimage: https://crates.io/crates/cargo-appimage
 #[package.metadata.appimage]

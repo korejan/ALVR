@@ -13,9 +13,9 @@ use android_logger;
 use alxr_common::{
     alxr_destroy, alxr_init, alxr_on_pause, alxr_on_resume, alxr_process_frame, battery_send,
     init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
-    time_sync_send, video_error_report_send, views_config_send, ALXRClientCtx, ALXRColorSpace,
-    ALXRDecoderType, ALXREyeTrackingType, ALXRFacialExpressionType, ALXRGraphicsApi,
-    ALXRPassthroughMode, ALXRSystemProperties, ALXRVersion, APP_CONFIG,
+    time_sync_send, to_alxr_version, video_error_report_send, views_config_send, ALXRClientCtx,
+    ALXRColorSpace, ALXRDecoderType, ALXREyeTrackingType, ALXRFacialExpressionType,
+    ALXRGraphicsApi, ALXRPassthroughMode, ALXRSystemProperties, ALXRVersion, APP_CONFIG,
 };
 
 fn get_build_property<'a>(jvm: &'a jni::JavaVM, property_name: &str) -> String {
@@ -292,6 +292,16 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
         _ => {}
     };
 
+    let xr_api_version = if is_device("Quest", &vm) {
+        // Quest bug workaround, if OpenXR apiVersion is >= 1.[0|1].49, controller aim poses are broken.
+        semver::Version::new(1, 0, 48)
+    } else {
+        APP_CONFIG
+            .xr_api_version
+            .clone()
+            .unwrap_or(semver::Version::new(0, 0, 0))
+    };
+
     let ctx = ALXRClientCtx {
         graphicsApi: APP_CONFIG.graphics_api.unwrap_or(ALXRGraphicsApi::Auto),
         decoderType: ALXRDecoderType::NVDEC, // Not used on android.
@@ -330,6 +340,7 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
         internalDataPath: std::ptr::null(),
         noVisibilityMasks: no_visibility_masks,
         noMultiviewRendering: no_multi_view_rendering,
+        xrApiVersion: to_alxr_version(&xr_api_version),
     };
     let mut sys_properties = ALXRSystemProperties::new();
     if !alxr_init(&ctx, &mut sys_properties) {
