@@ -29,7 +29,7 @@ libloading = "0.8"
 lazy_static = "1"
 parking_lot = "0.12"
 version-compare = "0.2"
-semver = "1.0"
+semver = "1"
 
 [package.metadata.android]
 build_targets = [

@@ -300,6 +300,7 @@ dependencies = [
  "log",
  "ndk-context",
  "parking_lot 0.12.4",
+ "semver 1.0.26",
  "version-compare 0.2.0",
 ]
 
@@ -308,6 +309,7 @@ name = "alxr-client-uwp"
 version = "1.69.1"
 dependencies = [
  "alxr-common",
+ "semver 1.0.26",
  "toml 0.8.23",
  "windows-sys 0.59.0",
 ]
