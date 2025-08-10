@@ -3,11 +3,10 @@ name = "client"
 version = "17.0.0-dev.1"
 authors = ["alvr-org", "Riccardo Zaglia <riccardo.zaglia5@gmail.com>"]
 license = "MIT"
-edition = "2021"
-rust-version = "1.58"
+edition = "2024"
 
 [lib]
-crate_type = ["cdylib"]
+crate-type = ["cdylib"]
 
 [features]
 default = [] # ["oculus"]

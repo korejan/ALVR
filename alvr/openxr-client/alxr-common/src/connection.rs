@@ -1,16 +1,16 @@
 use crate::{
+    ALXRTrackingSpace_StageRefSpace, APP_CONFIG, BATTERY_SENDER, INPUT_SENDER, TIME_SYNC_SENDER,
+    TimeSync, VIDEO_ERROR_REPORT_SENDER, VIEWS_CONFIG_SENDER, VideoFrame,
     connection_utils::{self, ConnectionError},
-    ALXRTrackingSpace_StageRefSpace, TimeSync, VideoFrame, APP_CONFIG, BATTERY_SENDER,
-    INPUT_SENDER, TIME_SYNC_SENDER, VIDEO_ERROR_REPORT_SENDER, VIEWS_CONFIG_SENDER,
 };
-use alvr_common::{prelude::*, ALVR_NAME, ALVR_VERSION};
+use alvr_common::{ALVR_NAME, ALVR_VERSION, prelude::*};
 use alvr_session::SessionDesc;
 #[cfg(target_os = "android")]
 use alvr_sockets::AUDIO;
 use alvr_sockets::{
-    spawn_cancelable, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, Haptics,
-    HeadsetInfoPacket, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
-    ServerHandshakePacket, StreamSocketBuilder, VideoFrameHeaderPacket, HAPTICS, INPUT, VIDEO,
+    ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, HAPTICS, Haptics,
+    HeadsetInfoPacket, INPUT, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
+    ServerHandshakePacket, StreamSocketBuilder, VIDEO, VideoFrameHeaderPacket, spawn_cancelable,
 };
 
 use futures::future::BoxFuture;
@@ -20,13 +20,13 @@ use settings_schema::Switch;
 use std::{
     future,
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     },
     time::Duration,
 };
 use tokio::{
-    sync::{mpsc as tmpsc, Mutex},
+    sync::{Mutex, mpsc as tmpsc},
     time::{self, Instant},
 };
 

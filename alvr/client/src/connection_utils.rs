@@ -1,7 +1,7 @@
 use alvr_common::prelude::*;
 use alvr_sockets::{
-    ClientHandshakePacket, HandshakePacket, ServerHandshakePacket, CONTROL_PORT, LOCAL_IP,
-    MAX_HANDSHAKE_PACKET_SIZE_BYTES,
+    CONTROL_PORT, ClientHandshakePacket, HandshakePacket, LOCAL_IP,
+    MAX_HANDSHAKE_PACKET_SIZE_BYTES, ServerHandshakePacket,
 };
 use std::{net::Ipv4Addr, time::Duration};
 use tokio::{net::UdpSocket, time};

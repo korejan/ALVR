@@ -31,7 +31,7 @@ pub fn build_ffmpeg_linux_install(
     if !ffmpeg_path.exists() {
         download_and_extract_zip(
             format!(
-                "https://codeload.github.com/FFmpeg/FFmpeg/zip/{}",
+                "https://github.com/FFmpeg/FFmpeg/archive/refs/heads/{}.zip",
                 version_tag
             )
             .as_str(),
@@ -41,11 +41,7 @@ pub fn build_ffmpeg_linux_install(
 
     #[inline(always)]
     fn enable_if(flag: bool, val: &'static str) -> &'static str {
-        if flag {
-            val
-        } else {
-            ""
-        }
+        if flag { val } else { "" }
     }
 
     let install_prefix = match install_path.to_str() {

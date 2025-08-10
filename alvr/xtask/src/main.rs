@@ -120,7 +120,7 @@ pub fn build_server(
     }
 
     if let Some(root) = root {
-        env::set_var("ALVR_ROOT_DIR", root);
+        unsafe { ("ALVR_ROOT_DIR", root) };
     }
 
     let target_dir = afs::target_dir();
@@ -484,7 +484,7 @@ impl AlxBuildFlags {
 
 pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxBuildFlags) {
     if let Some(root) = root {
-        env::set_var("ALVR_ROOT_DIR", root);
+        unsafe { env::set_var("ALVR_ROOT_DIR", root) };
     }
 
     let build_flags = flags.make_build_string();
@@ -509,10 +509,12 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
         );
 
         assert!(ffmpeg_build_dir.exists());
-        env::set_var(
-            "ALXR_BUNDLE_FFMPEG_INSTALL_PATH",
-            ffmpeg_build_dir.to_str().unwrap(),
-        );
+        unsafe {
+            env::set_var(
+                "ALXR_BUNDLE_FFMPEG_INSTALL_PATH",
+                ffmpeg_build_dir.to_str().unwrap(),
+            )
+        };
 
         fn find_shared_lib(dir: &Path, key: &str) -> Option<std::path::PathBuf> {
             for so_file in walkdir::WalkDir::new(dir)
@@ -645,7 +647,7 @@ fn batch_arch_str(arch: UWPArch) -> &'static str {
 
 pub fn build_alxr_uwp(root: Option<String>, arch: UWPArch, flags: AlxBuildFlags) {
     if let Some(root) = root {
-        env::set_var("ALVR_ROOT_DIR", root);
+        unsafe { env::set_var("ALVR_ROOT_DIR", root) };
     }
 
     let build_flags = flags.make_build_string();
@@ -759,7 +761,9 @@ pub fn build_alxr_app_bundle(is_release: bool) {
     let build_type = if is_release { "release" } else { "debug" };
     let alxr_client_build_dir = afs::alxr_uwp_build_dir(build_type).canonicalize().unwrap();
     if !alxr_client_build_dir.exists() {
-        eprintln!("uwp build directory does not exist, please run `cargo xtask build-alxr-uwp(-(x64|arm64)` first.");
+        eprintln!(
+            "uwp build directory does not exist, please run `cargo xtask build-alxr-uwp(-(x64|arm64)` first."
+        );
         return;
     }
 
@@ -852,14 +856,16 @@ fn _setup_cargo_appimage() {
 
     assert!(ait_dir.exists());
 
-    env::set_var(
-        "PATH",
-        format!(
-            "{}:{}",
-            ait_dir.canonicalize().unwrap().to_str().unwrap(),
-            env::var("PATH").unwrap_or_default()
-        ),
-    );
+    unsafe {
+        env::set_var(
+            "PATH",
+            format!(
+                "{}:{}",
+                ait_dir.canonicalize().unwrap().to_str().unwrap(),
+                env::var("PATH").unwrap_or_default()
+            ),
+        )
+    };
 
     command::run("cargo install cargo-appimage").unwrap();
 }
@@ -920,7 +926,7 @@ pub fn build_alxr_android(
     }
 
     if let Some(root) = root {
-        env::set_var("ALVR_ROOT_DIR", root);
+        unsafe { env::set_var("ALVR_ROOT_DIR", root) };
     }
 
     if flags.fetch_crates {
@@ -1020,7 +1026,7 @@ fn prettier() {
 fn main() {
     let begin_time = Instant::now();
 
-    env::set_var("RUST_BACKTRACE", "1");
+    unsafe { env::set_var("RUST_BACKTRACE", "1") };
 
     let mut args = Arguments::from_env();
 
@@ -1049,11 +1055,12 @@ fn main() {
         let abi_target: Option<String> = args.opt_value_from_str("--target").unwrap();
 
         let default_var = String::from("release/5.1");
-        let mut ffmpeg_version: String =
-            args.opt_value_from_str("--ffmpeg-version").unwrap().map_or(
-                default_var.clone(),
-                |s: String| if s.is_empty() { default_var } else { s },
-            );
+        let mut ffmpeg_version: String = args
+            .opt_value_from_str("--ffmpeg-version")
+            .unwrap()
+            .map_or(default_var.clone(), |s: String| {
+                if s.is_empty() { default_var } else { s }
+            });
         assert!(!ffmpeg_version.is_empty());
 
         if args.finish().is_empty() {

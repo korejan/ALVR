@@ -4,7 +4,7 @@ mod settings;
 pub use events::*;
 pub use settings::*;
 
-use alvr_common::{prelude::*, semver::Version, ALVR_VERSION};
+use alvr_common::{ALVR_VERSION, prelude::*, semver::Version};
 use serde::{Deserialize, Serialize};
 use serde_json as json;
 use settings_schema::SchemaNode;
@@ -655,7 +655,7 @@ impl SessionManager {
         &self.session_desc
     }
 
-    pub fn get_mut(&mut self) -> SessionLock {
+    pub fn get_mut(&mut self) -> SessionLock<'_> {
         SessionLock {
             session_desc: &mut self.session_desc,
             session_path: &self.session_path,

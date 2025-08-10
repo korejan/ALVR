@@ -3,8 +3,7 @@ name = "settings-schema-derive"
 version = "0.3.0"
 authors = ["Riccardo Zaglia <riccardo.zaglia5@gmail.com>"]
 license = "MIT"
-edition = "2021"
-rust-version = "1.58"
+edition = "2024"
 
 [lib]
 proc-macro = true

@@ -3,9 +3,8 @@ use alvr_common::prelude::*;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use futures::{Stream, StreamExt};
 use governor::{
-    clock,
+    Quota, RateLimiter, clock,
     state::{InMemoryState, NotKeyed},
-    Quota, RateLimiter,
 };
 use nonzero_ext::NonZero;
 use std::{
@@ -20,7 +19,7 @@ use std::{
 use tokio::{
     io::ReadBuf,
     net::UdpSocket,
-    sync::{mpsc, Mutex},
+    sync::{Mutex, mpsc},
 };
 
 const INITIAL_RD_CAPACITY: usize = 64 * 1024;

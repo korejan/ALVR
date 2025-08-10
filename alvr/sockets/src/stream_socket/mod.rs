@@ -12,7 +12,7 @@ use alvr_common::prelude::*;
 use alvr_session::{SocketBufferSize, SocketProtocol};
 use bytes::{Buf, BufMut, BytesMut};
 use futures::SinkExt;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::{
     collections::HashMap,
     marker::PhantomData,
@@ -23,7 +23,7 @@ use std::{
 use tcp::{TcpStreamReceiveSocket, TcpStreamSendSocket};
 use throttled_udp::{ThrottledUdpStreamReceiveSocket, ThrottledUdpStreamSendSocket};
 use tokio::net;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{Mutex, mpsc};
 use udp::{UdpStreamReceiveSocket, UdpStreamSendSocket};
 
 // todo: when const_generics reaches stable, convert this to an enum
@@ -129,7 +129,7 @@ impl<T> SenderBuffer<T> {
     // Get the editable part of the buffer (the header part is excluded). The returned buffer can
     // be grown at zero-cost until `preferred_max_buffer_size` (set with send_buffer()) is reached.
     // After that a reallocation will be needed but there will be no other side effects.
-    pub fn get_mut(&mut self) -> SendBufferLock {
+    pub fn get_mut(&mut self) -> SendBufferLock<'_> {
         let buffer_bytes = self.inner.split_off(self.offset);
         SendBufferLock {
             header_bytes: &mut self.inner,

@@ -1,23 +1,23 @@
 use crate::{
-    connection_utils, ClientListAction, EyeFov, TimeSync, TrackingInfo, TrackingInfo_Controller,
-    TrackingQuat, TrackingVector2, TrackingVector3, CLIENTS_UPDATED_NOTIFIER, HAPTICS_SENDER,
-    RESTART_NOTIFIER, SESSION_MANAGER, TIME_SYNC_SENDER, VIDEO_SENDER,
+    CLIENTS_UPDATED_NOTIFIER, ClientListAction, EyeFov, HAPTICS_SENDER, RESTART_NOTIFIER,
+    SESSION_MANAGER, TIME_SYNC_SENDER, TimeSync, TrackingInfo, TrackingInfo_Controller,
+    TrackingQuat, TrackingVector2, TrackingVector3, VIDEO_SENDER, connection_utils,
 };
 use alvr_audio::{AudioDevice, AudioDeviceType};
 use alvr_common::{
+    HEAD_ID, LEFT_HAND_ID, RIGHT_HAND_ID,
     glam::{Mat4, Quat, Vec2, Vec3},
     log,
     prelude::*,
     semver::Version,
-    HEAD_ID, LEFT_HAND_ID, RIGHT_HAND_ID,
 };
 use alvr_session::{
     CodecType, FrameSize, OpenvrConfig, OpenvrPropValue, OpenvrPropertyKey, ServerEvent,
 };
 use alvr_sockets::{
-    spawn_cancelable, ClientConfigPacket, ClientControlPacket, ControlSocketReceiver,
-    ControlSocketSender, HeadsetInfoPacket, Input, PeerType, ProtoControlSocket,
-    ServerControlPacket, StreamSocketBuilder, AUDIO, HAPTICS, INPUT, VIDEO,
+    AUDIO, ClientConfigPacket, ClientControlPacket, ControlSocketReceiver, ControlSocketSender,
+    HAPTICS, HeadsetInfoPacket, INPUT, Input, PeerType, ProtoControlSocket, ServerControlPacket,
+    StreamSocketBuilder, VIDEO, spawn_cancelable,
 };
 use futures::future::{BoxFuture, Either};
 use settings_schema::Switch;
@@ -26,12 +26,12 @@ use std::{
     net::IpAddr,
     process::Command,
     str::FromStr,
-    sync::{mpsc as smpsc, Arc},
+    sync::{Arc, mpsc as smpsc},
     thread,
     time::Duration,
 };
 use tokio::{
-    sync::{mpsc as tmpsc, Mutex},
+    sync::{Mutex, mpsc as tmpsc},
     time,
 };
 

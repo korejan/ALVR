@@ -3,8 +3,7 @@ name = "vrcompositor-wrapper"
 version = "18.21.0"
 authors = ["alvr-org", "Patrick Nicolas <patricknicolas@laposte.net>"]
 license = "MIT"
-edition = "2021"
-rust-version = "1.58"
+edition = "2024"
 
 [dependencies]
 exec = "0.3.1"

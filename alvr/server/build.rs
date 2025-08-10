@@ -15,10 +15,12 @@ fn do_ffmpeg_pkg_config(build: &mut cc::Build) {
     {
         for lib in vec!["libavutil", "libavfilter", "libavcodec", "libswscale"] {
             let path = ffmpeg_path.clone() + lib;
-            env::set_var(
-                "PKG_CONFIG_PATH",
-                env::var("PKG_CONFIG_PATH").map_or(path.clone(), |old| format!("{path}:{old}")),
-            );
+            unsafe {
+                env::set_var(
+                    "PKG_CONFIG_PATH",
+                    env::var("PKG_CONFIG_PATH").map_or(path.clone(), |old| format!("{path}:{old}")),
+                );
+            }
         }
     }
 

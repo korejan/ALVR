@@ -3,8 +3,7 @@ name = "alvr_sockets"
 version = "18.21.0"
 authors = ["alvr-org", "Riccardo Zaglia <riccardo.zaglia5@gmail.com>"]
 license = "MIT"
-edition = "2021"
-rust-version = "1.58"
+edition = "2024"
 
 [dependencies]
 alvr_common = { path = "../common" }

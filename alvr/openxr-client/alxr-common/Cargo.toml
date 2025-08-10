@@ -2,7 +2,7 @@
 name = "alxr-common"
 version = "0.76.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]

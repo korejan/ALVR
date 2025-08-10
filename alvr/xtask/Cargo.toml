@@ -3,14 +3,13 @@ name = "alvr_xtask"
 version = "18.21.0"
 authors = ["alvr-org", "Riccardo Zaglia <riccardo.zaglia5@gmail.com>"]
 license = "MIT"
-edition = "2021"
-rust-version = "1.58"
+edition = "2024"
 
 [dependencies]
 alvr_filesystem = { path = "../filesystem" }
 
 fs_extra = "1"
-pico-args = "0.4"
+pico-args = "0.5"
 walkdir = "2"
 pkg-config = "0.3.9"
 cargo_metadata = "0.14"

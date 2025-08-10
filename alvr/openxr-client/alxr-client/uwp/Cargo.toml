@@ -2,7 +2,7 @@
 name = "alxr-client-uwp"
 version = "1.76.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
-edition = "2021"
+edition = "2024"
 build = ".build/main.rs"
 
 [features]

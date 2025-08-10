@@ -1,11 +1,11 @@
-use super::{Ldc, CONTROL_PORT, LOCAL_IP};
+use super::{CONTROL_PORT, LOCAL_IP, Ldc};
 use alvr_common::prelude::*;
 use bytes::Bytes;
 use futures::{
-    stream::{SplitSink, SplitStream},
     SinkExt, StreamExt,
+    stream::{SplitSink, SplitStream},
 };
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::{marker::PhantomData, net::IpAddr};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::codec::Framed;

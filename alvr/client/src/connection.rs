@@ -1,40 +1,40 @@
 #![allow(clippy::if_same_then_else)]
 
 use crate::{
+    BATTERY_SENDER, INPUT_SENDER, TIME_SYNC_SENDER, TimeSync, VIDEO_ERROR_REPORT_SENDER,
+    VIEWS_CONFIG_SENDER, VideoFrame,
     connection_utils::{self, ConnectionError},
-    TimeSync, VideoFrame, BATTERY_SENDER, INPUT_SENDER, TIME_SYNC_SENDER,
-    VIDEO_ERROR_REPORT_SENDER, VIEWS_CONFIG_SENDER,
 };
 use alvr_common::{
+    ALVR_NAME, ALVR_VERSION,
     glam::{Quat, Vec2, Vec3},
     log,
     prelude::*,
-    ALVR_NAME, ALVR_VERSION,
 };
 use alvr_session::{CodecType, SessionDesc};
 use alvr_sockets::{
-    spawn_cancelable, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, Haptics,
-    HeadsetInfoPacket, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
-    ServerHandshakePacket, StreamSocketBuilder, VideoFrameHeaderPacket, AUDIO, HAPTICS, INPUT,
-    VIDEO,
+    AUDIO, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, HAPTICS, Haptics,
+    HeadsetInfoPacket, INPUT, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
+    ServerHandshakePacket, StreamSocketBuilder, VIDEO, VideoFrameHeaderPacket, spawn_cancelable,
 };
 use futures::future::BoxFuture;
 use jni::{
-    objects::{GlobalRef, JClass},
     JavaVM,
+    objects::{GlobalRef, JClass},
 };
 use serde_json as json;
 use settings_schema::Switch;
 use std::{
     future, mem, ptr, slice,
     sync::{
+        Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc as smpsc, Arc,
+        mpsc as smpsc,
     },
     time::Duration,
 };
 use tokio::{
-    sync::{mpsc as tmpsc, Mutex},
+    sync::{Mutex, mpsc as tmpsc},
     task,
     time::{self, Instant},
 };
@@ -308,19 +308,23 @@ async fn connection_pipeline(
         });
     }
 
-    trace_err!(trace_err!(java_vm.attach_current_thread())?.call_method(
-        &*activity_ref,
-        "onServerConnected",
-        "(FIZLjava/lang/String;)V",
-        &[
-            config_packet.fps.into(),
-            (matches!(settings.video.codec, CodecType::HEVC) as i32).into(),
-            settings.video.client_request_realtime_decoder.into(),
-            trace_err!(trace_err!(java_vm.attach_current_thread())?
-                .new_string(config_packet.dashboard_url))?
-            .into()
-        ],
-    ))?;
+    trace_err!(
+        trace_err!(java_vm.attach_current_thread())?.call_method(
+            &*activity_ref,
+            "onServerConnected",
+            "(FIZLjava/lang/String;)V",
+            &[
+                config_packet.fps.into(),
+                (matches!(settings.video.codec, CodecType::HEVC) as i32).into(),
+                settings.video.client_request_realtime_decoder.into(),
+                trace_err!(
+                    trace_err!(java_vm.attach_current_thread())?
+                        .new_string(config_packet.dashboard_url)
+                )?
+                .into()
+            ],
+        )
+    )?;
 
     let tracking_clientside_prediction = match &settings.headset.controllers {
         Switch::Enabled(controllers) => controllers.clientside_prediction,
