@@ -11,7 +11,7 @@ use parking_lot::Mutex;
 use std::{
     collections::VecDeque,
     mem,
-    sync::{mpsc as smpsc, Arc},
+    sync::{Arc, mpsc as smpsc},
     thread,
 };
 use tokio::sync::mpsc as tmpsc;
@@ -45,20 +45,22 @@ pub async fn record_audio_loop(sample_rate: u32, mut sender: StreamSender<()>) -
     let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
 
     thread::spawn(move || -> StrResult {
-        let mut stream = trace_err!(AudioStreamBuilder::default()
-            .set_shared()
-            .set_performance_mode(PerformanceMode::LowLatency)
-            .set_sample_rate(sample_rate as _)
-            .set_sample_rate_conversion_quality(SampleRateConversionQuality::Fastest)
-            .set_mono()
-            .set_i16()
-            .set_input()
-            .set_usage(Usage::VoiceCommunication)
-            .set_input_preset(InputPreset::VoiceCommunication)
-            .set_callback(RecorderCallback {
-                sender: data_sender
-            })
-            .open_stream())?;
+        let mut stream = trace_err!(
+            AudioStreamBuilder::default()
+                .set_shared()
+                .set_performance_mode(PerformanceMode::LowLatency)
+                .set_sample_rate(sample_rate as _)
+                .set_sample_rate_conversion_quality(SampleRateConversionQuality::Fastest)
+                .set_mono()
+                .set_i16()
+                .set_input()
+                .set_usage(Usage::VoiceCommunication)
+                .set_input_preset(InputPreset::VoiceCommunication)
+                .set_callback(RecorderCallback {
+                    sender: data_sender
+                })
+                .open_stream()
+        )?;
 
         trace_err!(stream.start())?;
 
@@ -121,21 +123,23 @@ pub async fn play_audio_loop(
     thread::spawn({
         let sample_buffer = Arc::clone(&sample_buffer);
         move || -> StrResult {
-            let mut stream = trace_err!(AudioStreamBuilder::default()
-                .set_shared()
-                .set_performance_mode(PerformanceMode::LowLatency)
-                .set_sample_rate(sample_rate as _)
-                .set_sample_rate_conversion_quality(SampleRateConversionQuality::Fastest)
-                .set_stereo()
-                .set_f32()
-                .set_frames_per_callback(batch_frames_count as _)
-                .set_output()
-                .set_usage(Usage::Game)
-                .set_callback(PlayerCallback {
-                    sample_buffer,
-                    batch_frames_count,
-                })
-                .open_stream())?;
+            let mut stream = trace_err!(
+                AudioStreamBuilder::default()
+                    .set_shared()
+                    .set_performance_mode(PerformanceMode::LowLatency)
+                    .set_sample_rate(sample_rate as _)
+                    .set_sample_rate_conversion_quality(SampleRateConversionQuality::Fastest)
+                    .set_stereo()
+                    .set_f32()
+                    .set_frames_per_callback(batch_frames_count as _)
+                    .set_output()
+                    .set_usage(Usage::Game)
+                    .set_callback(PlayerCallback {
+                        sample_buffer,
+                        batch_frames_count,
+                    })
+                    .open_stream()
+            )?;
 
             trace_err!(stream.start())?;
 

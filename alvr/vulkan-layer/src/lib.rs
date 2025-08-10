@@ -12,7 +12,7 @@ use bindings::*;
 use std::ffi::CString;
 use std::os::raw::c_char;
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn vkGetInstanceProcAddr(
     instance: VkInstance,
     p_name: *const c_char,
@@ -29,7 +29,7 @@ pub unsafe extern "C" fn vkGetInstanceProcAddr(
     bindings::wsi_layer_vkGetInstanceProcAddr(instance, p_name)
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn vkGetDeviceProcAddr(
     instance: VkDevice,
     p_name: *const c_char,

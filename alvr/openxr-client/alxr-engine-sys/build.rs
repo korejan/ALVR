@@ -1,7 +1,7 @@
 use cmake::Config;
 use core::str::FromStr;
+use std::ffi::OsStr;
 use std::{env, path::PathBuf};
-use std::{ffi::OsStr, process::Command};
 use target_lexicon::{Architecture, ArmArchitecture, Environment, OperatingSystem, Triple};
 use walkdir::DirEntry;
 
@@ -46,11 +46,7 @@ fn is_feature_enabled(feature_name: &str) -> bool {
 }
 
 fn cmake_option_from_bool(flag: bool) -> &'static str {
-    if flag {
-        "ON"
-    } else {
-        "OFF"
-    }
+    if flag { "ON" } else { "OFF" }
 }
 
 fn cmake_option_from_feature(feature_name: &str) -> &'static str {

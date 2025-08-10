@@ -1,7 +1,7 @@
 use heck::{MixedCase, SnakeCase};
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use std::string::ToString;
 use syn::{
     Attribute, Data, DeriveInput, Error, Fields, FieldsNamed, GenericArgument, Ident, Lit, Meta,
@@ -529,7 +529,7 @@ fn schema(input: DeriveInput) -> Result<TokenStream2, TokenStream> {
                     schema_root_code_ts = fields_data.schema_code_ts;
                 }
                 Fields::Unnamed(fields_block) => {
-                    return error("Unnamed fields not supported", fields_block)
+                    return error("Unnamed fields not supported", fields_block);
                 }
                 Fields::Unit => return error("Unit structs not supported", default_ty_ident),
             };

@@ -1,11 +1,11 @@
 use super::StreamId;
-use crate::{Ldc, LOCAL_IP};
+use crate::{LOCAL_IP, Ldc};
 use alvr_common::prelude::*;
 use alvr_session::SocketBufferSize;
 use bytes::{Buf, Bytes, BytesMut};
 use futures::{
-    stream::{SplitSink, SplitStream},
     StreamExt,
+    stream::{SplitSink, SplitStream},
 };
 use std::{
     collections::HashMap,
@@ -14,7 +14,7 @@ use std::{
 };
 use tokio::{
     net::UdpSocket,
-    sync::{mpsc, Mutex},
+    sync::{Mutex, mpsc},
 };
 use tokio_util::udp::UdpFramed;
 

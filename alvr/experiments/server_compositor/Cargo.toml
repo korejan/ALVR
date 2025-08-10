@@ -3,8 +3,7 @@ name = "server_compositor"
 version = "0.1.0"
 authors = ["alvr-org"]
 license = "MIT"
-edition = "2021"
-rust-version = "1.58"
+edition = "2024"
 
 [dependencies]
 alvr_common = { path = "../../common" }

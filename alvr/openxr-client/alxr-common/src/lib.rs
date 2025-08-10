@@ -4,7 +4,7 @@ mod connection_utils;
 #[cfg(target_os = "android")]
 mod audio;
 
-use alvr_common::{prelude::*, ALVR_VERSION, HEAD_ID, LEFT_HAND_ID, RIGHT_HAND_ID};
+use alvr_common::{ALVR_VERSION, HEAD_ID, LEFT_HAND_ID, RIGHT_HAND_ID, prelude::*};
 use alvr_session::Fov;
 use alvr_sockets::{
     BatteryPacket, HeadsetInfoPacket, HiddenAreaMesh, Input, LegacyController, LegacyInput,
@@ -19,7 +19,7 @@ use std::{
     slice,
     sync::atomic::{AtomicBool, Ordering},
 };
-use tokio::{runtime::Runtime, sync::mpsc, sync::Notify};
+use tokio::{runtime::Runtime, sync::Notify, sync::mpsc};
 //#[cfg(not(target_os = "android"))]
 use glam::{Quat, Vec2, Vec3};
 use semver::Version;
@@ -502,7 +502,7 @@ pub fn shutdown() {
 }
 
 pub unsafe extern "C" fn path_string_to_hash(path: *const ::std::os::raw::c_char) -> u64 {
-    alvr_common::hash_string(CStr::from_ptr(path).to_str().unwrap())
+    unsafe { alvr_common::hash_string(CStr::from_ptr(path).to_str().unwrap()) }
 }
 
 pub extern "C" fn input_send(data_ptr: *const TrackingInfo) {

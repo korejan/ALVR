@@ -1,24 +1,24 @@
 #![cfg_attr(target_vendor = "uwp", windows_subsystem = "windows")]
 
 use alxr_common::{
+    ALXRClientCtx, ALXRColorSpace, ALXRDecoderType, ALXREyeTrackingType, ALXRFacialExpressionType,
+    ALXRGraphicsApi, ALXRPassthroughMode, ALXRSystemProperties, ALXRVersion, APP_CONFIG,
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, battery_send,
     init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
-    time_sync_send, to_alxr_version, video_error_report_send, views_config_send, ALXRClientCtx,
-    ALXRColorSpace, ALXRDecoderType, ALXREyeTrackingType, ALXRFacialExpressionType,
-    ALXRGraphicsApi, ALXRPassthroughMode, ALXRSystemProperties, ALXRVersion, APP_CONFIG,
+    time_sync_send, to_alxr_version, video_error_report_send, views_config_send,
 };
 use std::{thread, time};
 
 // http://developer.download.nvidia.com/devzone/devcenter/gamegraphics/files/OptimusRenderingPolicies.pdf
 #[cfg(target_os = "windows")]
 #[allow(non_upper_case_globals)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub static mut NvOptimusEnablement: i32 = 1;
 
 // https://gpuopen.com/learn/amdpowerxpressrequesthighperformance/
 #[cfg(target_os = "windows")]
 #[allow(non_upper_case_globals)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub static mut AmdPowerXpressRequestHighPerformance: i32 = 1;
 
 const SLEEP_TIME: time::Duration = time::Duration::from_millis(250);

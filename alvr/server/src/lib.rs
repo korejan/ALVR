@@ -16,7 +16,7 @@ mod bindings {
 }
 use bindings::*;
 
-use alvr_common::{lazy_static, log, prelude::*, ALVR_VERSION};
+use alvr_common::{ALVR_VERSION, lazy_static, log, prelude::*};
 use alvr_filesystem::{self as afs, Layout};
 use alvr_session::{
     ClientConnectionDesc, OpenvrPropValue, OpenvrPropertyKey, ServerEvent, SessionManager,
@@ -25,21 +25,21 @@ use alvr_sockets::{Haptics, TimeSyncPacket, VideoFrameHeaderPacket};
 use graphics_info::GpuVendor;
 use parking_lot::Mutex;
 use std::{
-    collections::{hash_map::Entry, HashSet},
-    ffi::{c_void, CStr, CString},
+    collections::{HashSet, hash_map::Entry},
+    ffi::{CStr, CString, c_void},
     net::IpAddr,
     os::raw::c_char,
     ptr,
     sync::{
-        atomic::{AtomicUsize, Ordering},
         Arc, Once,
+        atomic::{AtomicUsize, Ordering},
     },
     thread,
     time::Duration,
 };
 use tokio::{
     runtime::Runtime,
-    sync::{broadcast, mpsc, Notify},
+    sync::{Notify, broadcast, mpsc},
 };
 
 lazy_static! {
@@ -280,164 +280,176 @@ fn init() {
 }
 
 /// # Safety
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn HmdDriverFactory(
     interface_name: *const c_char,
     return_code: *mut i32,
 ) -> *mut c_void {
-    static INIT_ONCE: Once = Once::new();
-    INIT_ONCE.call_once(init);
+    unsafe {
+        static INIT_ONCE: Once = Once::new();
+        INIT_ONCE.call_once(init);
 
-    FRAME_RENDER_VS_CSO_PTR = FRAME_RENDER_VS_CSO.as_ptr();
-    FRAME_RENDER_VS_CSO_LEN = FRAME_RENDER_VS_CSO.len() as _;
-    FRAME_RENDER_PS_CSO_PTR = FRAME_RENDER_PS_CSO.as_ptr();
-    FRAME_RENDER_PS_CSO_LEN = FRAME_RENDER_PS_CSO.len() as _;
-    QUAD_SHADER_CSO_PTR = QUAD_SHADER_CSO.as_ptr();
-    QUAD_SHADER_CSO_LEN = QUAD_SHADER_CSO.len() as _;
-    COMPRESS_AXIS_ALIGNED_CSO_PTR = COMPRESS_AXIS_ALIGNED_CSO.as_ptr();
-    COMPRESS_AXIS_ALIGNED_CSO_LEN = COMPRESS_AXIS_ALIGNED_CSO.len() as _;
-    COLOR_CORRECTION_CSO_PTR = COLOR_CORRECTION_CSO.as_ptr();
-    COLOR_CORRECTION_CSO_LEN = COLOR_CORRECTION_CSO.len() as _;
+        FRAME_RENDER_VS_CSO_PTR = FRAME_RENDER_VS_CSO.as_ptr();
+        FRAME_RENDER_VS_CSO_LEN = FRAME_RENDER_VS_CSO.len() as _;
+        FRAME_RENDER_PS_CSO_PTR = FRAME_RENDER_PS_CSO.as_ptr();
+        FRAME_RENDER_PS_CSO_LEN = FRAME_RENDER_PS_CSO.len() as _;
+        QUAD_SHADER_CSO_PTR = QUAD_SHADER_CSO.as_ptr();
+        QUAD_SHADER_CSO_LEN = QUAD_SHADER_CSO.len() as _;
+        COMPRESS_AXIS_ALIGNED_CSO_PTR = COMPRESS_AXIS_ALIGNED_CSO.as_ptr();
+        COMPRESS_AXIS_ALIGNED_CSO_LEN = COMPRESS_AXIS_ALIGNED_CSO.len() as _;
+        COLOR_CORRECTION_CSO_PTR = COLOR_CORRECTION_CSO.as_ptr();
+        COLOR_CORRECTION_CSO_LEN = COLOR_CORRECTION_CSO.len() as _;
 
-    unsafe extern "C" fn log_error(string_ptr: *const c_char) {
-        alvr_common::show_e(CStr::from_ptr(string_ptr).to_string_lossy());
-    }
-
-    unsafe fn log(level: log::Level, string_ptr: *const c_char) {
-        log::log!(level, "{}", CStr::from_ptr(string_ptr).to_string_lossy());
-    }
-
-    unsafe extern "C" fn log_warn(string_ptr: *const c_char) {
-        log(log::Level::Warn, string_ptr);
-    }
-
-    unsafe extern "C" fn log_info(string_ptr: *const c_char) {
-        log(log::Level::Info, string_ptr);
-    }
-
-    unsafe extern "C" fn log_debug(string_ptr: *const c_char) {
-        log(log::Level::Debug, string_ptr);
-    }
-
-    extern "C" fn video_send(header: VideoFrame, buffer_ptr: *mut u8, len: i32) {
-        if let Some(sender) = &*VIDEO_SENDER.lock() {
-            let header = VideoFrameHeaderPacket {
-                packet_counter: header.packetCounter,
-                tracking_frame_index: header.trackingFrameIndex,
-                video_frame_index: header.videoFrameIndex,
-                sent_time: header.sentTime,
-                frame_byte_size: header.frameByteSize,
-                fec_index: header.fecIndex,
-                fec_percentage: header.fecPercentage,
-            };
-
-            let mut vec_buffer = vec![0; len as _];
-
-            // use copy_nonoverlapping (aka memcpy) to avoid freeing memory allocated by C++
+        unsafe extern "C" fn log_error(string_ptr: *const c_char) {
             unsafe {
-                ptr::copy_nonoverlapping(buffer_ptr, vec_buffer.as_mut_ptr(), len as _);
+                alvr_common::show_e(CStr::from_ptr(string_ptr).to_string_lossy());
             }
-
-            sender.send((header, vec_buffer)).ok();
         }
-    }
 
-    extern "C" fn haptics_send(path: u64, duration_s: f32, frequency: f32, amplitude: f32) {
-        if let Some(sender) = &*HAPTICS_SENDER.lock() {
-            let haptics = Haptics {
-                path,
-                duration: Duration::from_secs_f32(duration_s),
-                frequency,
-                amplitude,
-            };
-
-            sender.send(haptics).ok();
+        unsafe fn log(level: log::Level, string_ptr: *const c_char) {
+            unsafe {
+                log::log!(level, "{}", CStr::from_ptr(string_ptr).to_string_lossy());
+            }
         }
-    }
 
-    extern "C" fn time_sync_send(data: TimeSync) {
-        if let Some(sender) = &*TIME_SYNC_SENDER.lock() {
-            let time_sync = TimeSyncPacket {
-                mode: data.mode,
-                server_time: data.serverTime,
-                client_time: data.clientTime,
-                packets_lost_total: data.packetsLostTotal,
-                packets_lost_in_second: data.packetsLostInSecond,
-                average_send_latency: data.averageSendLatency,
-                average_transport_latency: data.averageTransportLatency,
-                average_decode_latency: data.averageDecodeLatency,
-                idle_time: data.idleTime,
-                fec_failure: data.fecFailure,
-                fec_failure_in_second: data.fecFailureInSecond,
-                fec_failure_total: data.fecFailureTotal,
-                fps: data.fps,
-                server_total_latency: data.serverTotalLatency,
-                tracking_recv_frame_index: data.trackingRecvFrameIndex,
-            };
-
-            sender.send(time_sync).ok();
+        unsafe extern "C" fn log_warn(string_ptr: *const c_char) {
+            unsafe {
+                log(log::Level::Warn, string_ptr);
+            }
         }
-    }
 
-    pub extern "C" fn driver_ready_idle(set_default_chap: bool) {
-        alvr_common::show_err(alvr_commands::apply_driver_paths_backup(
-            FILESYSTEM_LAYOUT.openvr_driver_root_dir.clone(),
-        ));
+        unsafe extern "C" fn log_info(string_ptr: *const c_char) {
+            unsafe {
+                log(log::Level::Info, string_ptr);
+            }
+        }
 
-        if let Some(runtime) = &mut *RUNTIME.lock() {
-            runtime.spawn(async move {
-                if set_default_chap {
-                    // call this when inside a new tokio thread. Calling this on the parent thread will
-                    // crash SteamVR
-                    unsafe { SetChaperone(2.0, 2.0) };
+        unsafe extern "C" fn log_debug(string_ptr: *const c_char) {
+            unsafe {
+                log(log::Level::Debug, string_ptr);
+            }
+        }
+
+        extern "C" fn video_send(header: VideoFrame, buffer_ptr: *mut u8, len: i32) {
+            if let Some(sender) = &*VIDEO_SENDER.lock() {
+                let header = VideoFrameHeaderPacket {
+                    packet_counter: header.packetCounter,
+                    tracking_frame_index: header.trackingFrameIndex,
+                    video_frame_index: header.videoFrameIndex,
+                    sent_time: header.sentTime,
+                    frame_byte_size: header.frameByteSize,
+                    fec_index: header.fecIndex,
+                    fec_percentage: header.fecPercentage,
+                };
+
+                let mut vec_buffer = vec![0; len as _];
+
+                // use copy_nonoverlapping (aka memcpy) to avoid freeing memory allocated by C++
+                unsafe {
+                    ptr::copy_nonoverlapping(buffer_ptr, vec_buffer.as_mut_ptr(), len as _);
                 }
-                tokio::select! {
-                    _ = connection::connection_lifecycle_loop() => (),
-                    _ = SHUTDOWN_NOTIFIER.notified() => (),
-                }
-            });
+
+                sender.send((header, vec_buffer)).ok();
+            }
         }
-    }
 
-    extern "C" fn _shutdown_runtime() {
-        shutdown_runtime();
-    }
+        extern "C" fn haptics_send(path: u64, duration_s: f32, frequency: f32, amplitude: f32) {
+            if let Some(sender) = &*HAPTICS_SENDER.lock() {
+                let haptics = Haptics {
+                    path,
+                    duration: Duration::from_secs_f32(duration_s),
+                    frequency,
+                    amplitude,
+                };
 
-    unsafe extern "C" fn path_string_to_hash(path: *const c_char) -> u64 {
-        alvr_common::hash_string(CStr::from_ptr(path).to_str().unwrap())
-    }
-
-    LogError = Some(log_error);
-    LogWarn = Some(log_warn);
-    LogInfo = Some(log_info);
-    LogDebug = Some(log_debug);
-    DriverReadyIdle = Some(driver_ready_idle);
-    VideoSend = Some(video_send);
-    HapticsSend = Some(haptics_send);
-    TimeSyncSend = Some(time_sync_send);
-    ShutdownRuntime = Some(_shutdown_runtime);
-    PathStringToHash = Some(path_string_to_hash);
-
-    // cast to usize to allow the variables to cross thread boundaries
-    let interface_name_usize = interface_name as usize;
-    let return_code_usize = return_code as usize;
-
-    lazy_static! {
-        static ref MAYBE_PTR_USIZE: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
-        static ref NUM_TRIALS: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
-    }
-
-    thread::spawn(move || {
-        NUM_TRIALS.fetch_add(1, Ordering::Relaxed);
-        if NUM_TRIALS.load(Ordering::Relaxed) <= 1 {
-            MAYBE_PTR_USIZE.store(
-                CppEntryPoint(interface_name_usize as _, return_code_usize as _) as _,
-                Ordering::Relaxed,
-            );
+                sender.send(haptics).ok();
+            }
         }
-    })
-    .join()
-    .ok();
 
-    MAYBE_PTR_USIZE.load(Ordering::Relaxed) as _
+        extern "C" fn time_sync_send(data: TimeSync) {
+            if let Some(sender) = &*TIME_SYNC_SENDER.lock() {
+                let time_sync = TimeSyncPacket {
+                    mode: data.mode,
+                    server_time: data.serverTime,
+                    client_time: data.clientTime,
+                    packets_lost_total: data.packetsLostTotal,
+                    packets_lost_in_second: data.packetsLostInSecond,
+                    average_send_latency: data.averageSendLatency,
+                    average_transport_latency: data.averageTransportLatency,
+                    average_decode_latency: data.averageDecodeLatency,
+                    idle_time: data.idleTime,
+                    fec_failure: data.fecFailure,
+                    fec_failure_in_second: data.fecFailureInSecond,
+                    fec_failure_total: data.fecFailureTotal,
+                    fps: data.fps,
+                    server_total_latency: data.serverTotalLatency,
+                    tracking_recv_frame_index: data.trackingRecvFrameIndex,
+                };
+
+                sender.send(time_sync).ok();
+            }
+        }
+
+        pub extern "C" fn driver_ready_idle(set_default_chap: bool) {
+            alvr_common::show_err(alvr_commands::apply_driver_paths_backup(
+                FILESYSTEM_LAYOUT.openvr_driver_root_dir.clone(),
+            ));
+
+            if let Some(runtime) = &mut *RUNTIME.lock() {
+                runtime.spawn(async move {
+                    if set_default_chap {
+                        // call this when inside a new tokio thread. Calling this on the parent thread will
+                        // crash SteamVR
+                        unsafe { SetChaperone(2.0, 2.0) };
+                    }
+                    tokio::select! {
+                        _ = connection::connection_lifecycle_loop() => (),
+                        _ = SHUTDOWN_NOTIFIER.notified() => (),
+                    }
+                });
+            }
+        }
+
+        extern "C" fn _shutdown_runtime() {
+            shutdown_runtime();
+        }
+
+        unsafe extern "C" fn path_string_to_hash(path: *const c_char) -> u64 {
+            unsafe { alvr_common::hash_string(CStr::from_ptr(path).to_str().unwrap()) }
+        }
+
+        LogError = Some(log_error);
+        LogWarn = Some(log_warn);
+        LogInfo = Some(log_info);
+        LogDebug = Some(log_debug);
+        DriverReadyIdle = Some(driver_ready_idle);
+        VideoSend = Some(video_send);
+        HapticsSend = Some(haptics_send);
+        TimeSyncSend = Some(time_sync_send);
+        ShutdownRuntime = Some(_shutdown_runtime);
+        PathStringToHash = Some(path_string_to_hash);
+
+        // cast to usize to allow the variables to cross thread boundaries
+        let interface_name_usize = interface_name as usize;
+        let return_code_usize = return_code as usize;
+
+        lazy_static! {
+            static ref MAYBE_PTR_USIZE: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+            static ref NUM_TRIALS: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+        }
+
+        thread::spawn(move || {
+            NUM_TRIALS.fetch_add(1, Ordering::Relaxed);
+            if NUM_TRIALS.load(Ordering::Relaxed) <= 1 {
+                MAYBE_PTR_USIZE.store(
+                    CppEntryPoint(interface_name_usize as _, return_code_usize as _) as _,
+                    Ordering::Relaxed,
+                );
+            }
+        })
+        .join()
+        .ok();
+
+        MAYBE_PTR_USIZE.load(Ordering::Relaxed) as _
+    }
 }

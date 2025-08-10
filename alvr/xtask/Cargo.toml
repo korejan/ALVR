@@ -4,7 +4,6 @@ version = "18.19.0"
 authors = ["alvr-org", "Riccardo Zaglia <riccardo.zaglia5@gmail.com>"]
 license = "MIT"
 edition = "2021"
-rust-version = "1.58"
 
 [dependencies]
 alvr_filesystem = { path = "../filesystem" }

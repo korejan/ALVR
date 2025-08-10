@@ -2,15 +2,15 @@ use alvr_common::{lazy_static, prelude::*};
 use alvr_session::{AudioConfig, AudioDeviceId, LinuxAudioBackend};
 use alvr_sockets::{StreamReceiver, StreamSender};
 use cpal::{
-    traits::{DeviceTrait, HostTrait, StreamTrait},
     BufferSize, Device, Sample, SampleFormat, SampleRate, StreamConfig,
+    traits::{DeviceTrait, HostTrait, StreamTrait},
 };
 use parking_lot::Mutex;
 use rodio::{OutputStream, Source};
 use serde::Serialize;
 use std::{
     collections::VecDeque,
-    sync::{mpsc as smpsc, Arc},
+    sync::{Arc, mpsc as smpsc},
     thread,
 };
 use tokio::sync::mpsc as tmpsc;
@@ -21,21 +21,21 @@ use std::ptr;
 use widestring::U16CStr;
 #[cfg(windows)]
 use winapi::{
+    Class, Interface,
     shared::{winerror::FAILED, wtypes::VT_LPWSTR},
     um::{
-        combaseapi::{CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_ALL},
+        combaseapi::{CLSCTX_ALL, CoCreateInstance, CoInitializeEx, CoTaskMemFree},
         coml2api::STGM_READ,
         endpointvolume::IAudioEndpointVolume,
         functiondiscoverykeys_devpkey::PKEY_Device_FriendlyName,
         mmdeviceapi::{
-            eAll, IMMDevice, IMMDeviceCollection, IMMDeviceEnumerator, MMDeviceEnumerator,
-            DEVICE_STATE_ACTIVE,
+            DEVICE_STATE_ACTIVE, IMMDevice, IMMDeviceCollection, IMMDeviceEnumerator,
+            MMDeviceEnumerator, eAll,
         },
         objbase::COINIT_MULTITHREADED,
-        propidl::{PropVariantClear, PROPVARIANT},
+        propidl::{PROPVARIANT, PropVariantClear},
         propsys::IPropertyStore,
     },
-    Class, Interface,
 };
 #[cfg(windows)]
 use wio::com::ComPtr;

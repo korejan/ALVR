@@ -31,7 +31,7 @@ pub fn build_ffmpeg_linux_install(
     if !ffmpeg_path.exists() {
         download_and_extract_zip(
             format!(
-                "https://codeload.github.com/FFmpeg/FFmpeg/zip/{}",
+                "https://github.com/FFmpeg/FFmpeg/archive/refs/heads/{}.zip",
                 version_tag
             )
             .as_str(),
