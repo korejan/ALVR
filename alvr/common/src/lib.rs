@@ -18,7 +18,7 @@ pub const ALVR_NAME: &str = "ALXR";
 
 pub mod prelude {
     pub use crate::{
-        err, fmt_e, logging::*, trace_err, trace_err_dbg, trace_none, trace_str, StrResult,
+        StrResult, err, fmt_e, logging::*, trace_err, trace_err_dbg, trace_none, trace_str,
     };
     pub use log::{debug, error, info, warn};
 }

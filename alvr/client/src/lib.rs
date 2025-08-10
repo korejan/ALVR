@@ -10,10 +10,10 @@ mod audio;
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 use alvr_common::{
+    ALVR_VERSION, HEAD_ID, LEFT_HAND_ID, RIGHT_HAND_ID,
     glam::{Quat, Vec2, Vec3},
     lazy_static,
     prelude::*,
-    ALVR_VERSION, HEAD_ID, LEFT_HAND_ID, RIGHT_HAND_ID,
 };
 use alvr_session::Fov;
 use alvr_sockets::{
@@ -21,8 +21,8 @@ use alvr_sockets::{
     PrivateIdentity, TimeSyncPacket, ViewsConfig,
 };
 use jni::{
-    objects::{JClass, JObject, JString},
     JNIEnv,
+    objects::{JClass, JObject, JString},
 };
 use parking_lot::Mutex;
 use std::{
@@ -31,12 +31,12 @@ use std::{
     os::raw::c_char,
     ptr, slice,
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     },
     time::Duration,
 };
-use tokio::{runtime::Runtime, sync::mpsc, sync::Notify};
+use tokio::{runtime::Runtime, sync::Notify, sync::mpsc};
 
 lazy_static! {
     static ref RUNTIME: Mutex<Option<Runtime>> = Mutex::new(None);

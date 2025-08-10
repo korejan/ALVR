@@ -1,16 +1,16 @@
 use super::StreamId;
-use crate::{Ldc, LOCAL_IP};
+use crate::{LOCAL_IP, Ldc};
 use alvr_common::prelude::*;
 use alvr_session::SocketBufferSize;
 use bytes::{Buf, Bytes, BytesMut};
 use futures::{
-    stream::{SplitSink, SplitStream},
     StreamExt,
+    stream::{SplitSink, SplitStream},
 };
 use std::{collections::HashMap, net::IpAddr, sync::Arc};
 use tokio::{
     net::{TcpListener, TcpStream},
-    sync::{mpsc, Mutex},
+    sync::{Mutex, mpsc},
 };
 use tokio_util::codec::Framed;
 

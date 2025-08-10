@@ -5,11 +5,11 @@ mod commands;
 use alvr_common::prelude::*;
 use alvr_filesystem as afs;
 use druid::{
+    AppDelegate, AppLauncher, Color, Command, Data, DelegateCtx, Env, ExtEventSink, FontDescriptor,
+    Handled, Screen, Selector, Target, Widget, WindowDesc, WindowId,
     commands::CLOSE_WINDOW,
     theme,
     widget::{Button, CrossAxisAlignment, Flex, FlexParams, Label, LineBreaking, ViewSwitcher},
-    AppDelegate, AppLauncher, Color, Command, Data, DelegateCtx, Env, ExtEventSink, FontDescriptor,
-    Handled, Screen, Selector, Target, Widget, WindowDesc, WindowId,
 };
 use std::{env, thread, time::Duration};
 

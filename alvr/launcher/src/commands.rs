@@ -126,11 +126,11 @@ pub fn maybe_register_alvr_driver() -> StrResult {
             Ok(paths) => paths,
             Err(e) => {
                 return fmt_e!(
-                "{}\n{}\n\n({})",
-                "Failed to load registered drivers.",
-                "Please reset the drivers installation with the apposite button on the launcher.",
-                e
-            )
+                    "{}\n{}\n\n({})",
+                    "Failed to load registered drivers.",
+                    "Please reset the drivers installation with the apposite button on the launcher.",
+                    e
+                );
             }
         };
 

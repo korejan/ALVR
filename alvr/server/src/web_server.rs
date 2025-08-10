@@ -1,18 +1,19 @@
-use crate::{graphics_info, ClientListAction, FILESYSTEM_LAYOUT, SESSION_MANAGER};
-use alvr_common::{prelude::*, ALVR_VERSION};
+use crate::{ClientListAction, FILESYSTEM_LAYOUT, SESSION_MANAGER, graphics_info};
+use alvr_common::{ALVR_VERSION, prelude::*};
 use alvr_session::ServerEvent;
 use bytes::Buf;
 use futures::SinkExt;
 use headers::HeaderMapExt;
 use hyper::{
-    header::{self, HeaderValue, ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL, CONTENT_TYPE},
-    service, Body, Request, Response, StatusCode,
+    Body, Request, Response, StatusCode,
+    header::{self, ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL, CONTENT_TYPE, HeaderValue},
+    service,
 };
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use serde_json as json;
 use std::{env::consts::OS, fs, io::Write, net::SocketAddr, path::PathBuf};
 use tokio::sync::broadcast::{self, error::RecvError};
-use tokio_tungstenite::{tungstenite::protocol, WebSocketStream};
+use tokio_tungstenite::{WebSocketStream, tungstenite::protocol};
 use tokio_util::codec::{BytesCodec, FramedRead};
 
 pub const WS_BROADCAST_CAPACITY: usize = 256;
@@ -22,9 +23,11 @@ fn reply(code: StatusCode) -> StrResult<Response<Body>> {
 }
 
 fn reply_json<T: Serialize>(obj: &T) -> StrResult<Response<Body>> {
-    trace_err!(Response::builder()
-        .header(header::CONTENT_TYPE, "application/json")
-        .body(trace_err!(json::to_string(obj))?.into()))
+    trace_err!(
+        Response::builder()
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(trace_err!(json::to_string(obj))?.into())
+    )
 }
 
 async fn from_request_body<T: DeserializeOwned>(request: Request<Body>) -> StrResult<T> {
@@ -68,9 +71,11 @@ async fn text_websocket(
             }
         });
 
-        let mut response = trace_err!(Response::builder()
-            .status(StatusCode::SWITCHING_PROTOCOLS)
-            .body(Body::empty()))?;
+        let mut response = trace_err!(
+            Response::builder()
+                .status(StatusCode::SWITCHING_PROTOCOLS)
+                .body(Body::empty())
+        )?;
 
         let h = response.headers_mut();
         h.typed_insert(headers::Upgrade::websocket());

@@ -1,4 +1,4 @@
-use crate::{graphics_info, MAYBE_WINDOW, SESSION_MANAGER};
+use crate::{MAYBE_WINDOW, SESSION_MANAGER, graphics_info};
 use alvr_common::prelude::*;
 use std::{fs, sync::Arc};
 
@@ -24,27 +24,29 @@ pub fn ui_thread() -> StrResult {
         temp_dir.path().join("FirstLaunchAfterInstallation")
     ))?;
 
-    let window = Arc::new(trace_err!(alcro::UIBuilder::new()
-        .content(alcro::Content::Url("http://127.0.0.1:8082"))
-        .user_data_dir(user_data_dir)
-        .size(WINDOW_WIDTH as _, WINDOW_HEIGHT as _)
-        .custom_args(&[
-            "--disk-cache-size=1",
-            &format!("--window-position={pos_left},{pos_top}"),
-            if SESSION_MANAGER
-                .lock()
-                .get()
-                .session_settings
-                .extra
-                .patches
-                .remove_sync_popup
-            {
-                "--enable-automation"
-            } else {
-                ""
-            },
-        ])
-        .run())?);
+    let window = Arc::new(trace_err!(
+        alcro::UIBuilder::new()
+            .content(alcro::Content::Url("http://127.0.0.1:8082"))
+            .user_data_dir(user_data_dir)
+            .size(WINDOW_WIDTH as _, WINDOW_HEIGHT as _)
+            .custom_args(&[
+                "--disk-cache-size=1",
+                &format!("--window-position={pos_left},{pos_top}"),
+                if SESSION_MANAGER
+                    .lock()
+                    .get()
+                    .session_settings
+                    .extra
+                    .patches
+                    .remove_sync_popup
+                {
+                    "--enable-automation"
+                } else {
+                    ""
+                },
+            ])
+            .run()
+    )?);
 
     *MAYBE_WINDOW.lock() = Some(Arc::clone(&window));
 
