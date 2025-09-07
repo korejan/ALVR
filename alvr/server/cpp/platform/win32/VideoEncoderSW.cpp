@@ -59,10 +59,10 @@ void VideoEncoderSW::Initialize() {
 	av_dict_set(&opt, "tune", "zerolatency", 0);
 	switch (m_codec) {
 		case ALVR_CODEC_H264:
-			m_codecContext->profile = Settings::Instance().m_use10bitEncoder ? FF_PROFILE_H264_HIGH_10 : FF_PROFILE_H264_HIGH;
+			m_codecContext->profile = Settings::Instance().m_use10bitEncoder ? AV_PROFILE_H264_HIGH_10 : AV_PROFILE_H264_HIGH;
 			break;
 		case ALVR_CODEC_H265:
-			m_codecContext->profile = Settings::Instance().m_use10bitEncoder ? FF_PROFILE_HEVC_MAIN_10 : FF_PROFILE_HEVC_MAIN;
+			m_codecContext->profile = Settings::Instance().m_use10bitEncoder ? AV_PROFILE_HEVC_MAIN_10 : AV_PROFILE_HEVC_MAIN;
 			break;
 	}
 
