@@ -7,7 +7,7 @@ for /f "usebackq delims=" %%i in (`%toolpath% -latest -property installationPath
 )
 
 if exist !VCVarsAllBat! (
-    call !VCVarsAllBat! x64 uwp 10.0.20348.0
+    call !VCVarsAllBat! x64 uwp
     set BundleApp=alxr-client-uwp_%2_%1.msixbundle
     echo Building App-bundle: !BundleApp!
     makeappx bundle /v /o /bv %2 /f %3 /p !BundleApp!
