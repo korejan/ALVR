@@ -66,8 +66,8 @@ jobs:
     needs: [prepare_release]
     env:
       # For bindgen to find libclang.dll, we need to give it the path to the Visual Studio package.
-      # This is specific to the GitHub windows-2019 runner.
-      LIBCLANG_PATH: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\x64\bin'
+      # This is specific to the GitHub windows-2022 runner.
+      LIBCLANG_PATH: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise/VC/Tools/Llvm/x64/bin'
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
