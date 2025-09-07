@@ -264,7 +264,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client"
-version = "0.72.0"
+version = "0.72.1"
 dependencies = [
  "alxr-common",
  "semver 1.0.26",
@@ -272,7 +272,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-android"
-version = "0.72.0"
+version = "0.72.1"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -289,7 +289,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-pico"
-version = "0.72.0"
+version = "0.72.1"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -306,7 +306,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-uwp"
-version = "1.72.0"
+version = "1.72.1"
 dependencies = [
  "alxr-common",
  "semver 1.0.26",
@@ -316,7 +316,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-common"
-version = "0.72.0"
+version = "0.72.1"
 dependencies = [
  "alvr_audio",
  "alvr_common",
@@ -342,7 +342,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-engine-sys"
-version = "0.72.0"
+version = "0.72.1"
 dependencies = [
  "bindgen 0.72.1",
  "cc",

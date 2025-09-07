@@ -1,6 +1,6 @@
 [package]
 name = "alxr-client-android"
-version = "0.72.0"
+version = "0.72.1"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 description = "An OpenXR based ALVR client for android platorms"
@@ -156,6 +156,14 @@ required = true
 [[package.metadata.android.uses_feature]]
 name = "android.hardware.vulkan.version"
 version = 0x00401000
+required = true
+
+# <uses-feature android:name="android.software.xr.api.openxr"
+#     android:version="0x00010001"
+#     android:required="true" />
+[[package.metadata.android.uses_feature]]
+name = "android.software.xr.api.openxr"
+version = 0x00010000
 required = true
 
 [[package.metadata.android.uses_feature]]
@@ -456,6 +464,11 @@ categories = [
     "com.yvr.intent.category.VR",
 ]
 
+# <uses-native-library android:name="libopenxr.google.so" android:required="false" />
+[[package.metadata.android.application.uses_native_library]]
+name = "libopenxr.google.so"
+required = false
+
 # <property
 #     android:name="android.window.PROPERTY_XR_ACTIVITY_START_MODE"
 #     android:value="XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED" />
@@ -463,6 +476,13 @@ categories = [
 [[package.metadata.android.application.property]]
 name = "android.window.PROPERTY_XR_ACTIVITY_START_MODE"
 value = "XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED"
+
+# <property
+#     android:name="android.window.PROPERTY_XR_BOUNDARY_TYPE_RECOMMENDED"
+#     android:value="XR_BOUNDARY_TYPE_LARGE" />
+[[package.metadata.android.application.property]]
+name = "android.window.PROPERTY_XR_BOUNDARY_TYPE_RECOMMENDED"
+value = "XR_BOUNDARY_TYPE_LARGE"
 
 # See https://developer.android.com/guide/topics/manifest/data-element
 #
