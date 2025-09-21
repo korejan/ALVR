@@ -1,6 +1,6 @@
 [package]
 name = "alxr-common"
-version = "0.72.2"
+version = "0.72.3"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 
