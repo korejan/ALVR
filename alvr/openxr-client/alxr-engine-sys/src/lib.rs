@@ -75,7 +75,7 @@ impl From<&str> for crate::ALXREyeTrackingType {
             "None" => crate::ALXREyeTrackingType::None,
             "FBEyeTrackingSocial" => crate::ALXREyeTrackingType::FBEyeTrackingSocial,
             "ExtEyeGazeInteraction" => crate::ALXREyeTrackingType::ExtEyeGazeInteraction,
-            "AndroidAvatarEyes" => crate::ALXREyeTrackingType::AndroidAvatarEyes,
+            "AndroidEyeTracking" => crate::ALXREyeTrackingType::AndroidEyeTracking,
             _ => crate::ALXREyeTrackingType::Auto,
         }
     }
