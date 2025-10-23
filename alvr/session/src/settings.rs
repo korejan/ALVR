@@ -816,7 +816,7 @@ pub fn session_settings_default() -> SettingsDefault {
                 },
             },
             microphone: SwitchDefault {
-                enabled: false,
+                enabled: true,
                 content: MicrophoneDescDefault {
                     input_device_id: AudioDeviceIdDefault {
                         variant: AudioDeviceIdDefaultVariant::Default,
