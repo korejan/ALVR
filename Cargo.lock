@@ -76,7 +76,7 @@ dependencies = [
 
 [[package]]
 name = "alvr_audio"
-version = "18.20.0"
+version = "18.21.0"
 dependencies = [
  "alvr_common",
  "alvr_session",
@@ -93,7 +93,7 @@ dependencies = [
 
 [[package]]
 name = "alvr_client"
-version = "18.20.0"
+version = "18.21.0"
 dependencies = [
  "alvr_audio",
  "alvr_common",
@@ -118,7 +118,7 @@ dependencies = [
 
 [[package]]
 name = "alvr_commands"
-version = "18.20.0"
+version = "18.21.0"
 dependencies = [
  "alvr_common",
  "alvr_filesystem",
@@ -132,7 +132,7 @@ dependencies = [
 
 [[package]]
 name = "alvr_common"
-version = "18.20.0"
+version = "18.21.0"
 dependencies = [
  "backtrace",
  "glam",
@@ -145,7 +145,7 @@ dependencies = [
 
 [[package]]
 name = "alvr_filesystem"
-version = "18.20.0"
+version = "18.21.0"
 dependencies = [
  "dirs",
  "lazy_static",
@@ -154,7 +154,7 @@ dependencies = [
 
 [[package]]
 name = "alvr_launcher"
-version = "18.20.0"
+version = "18.21.0"
 dependencies = [
  "alvr_commands",
  "alvr_common",
@@ -171,7 +171,7 @@ dependencies = [
 
 [[package]]
 name = "alvr_server"
-version = "18.20.0"
+version = "18.21.0"
 dependencies = [
  "alcro",
  "alvr_audio",
@@ -207,7 +207,7 @@ dependencies = [
 
 [[package]]
 name = "alvr_session"
-version = "18.20.0"
+version = "18.21.0"
 dependencies = [
  "alvr_common",
  "bytemuck",
@@ -219,7 +219,7 @@ dependencies = [
 
 [[package]]
 name = "alvr_sockets"
-version = "18.20.0"
+version = "18.21.0"
 dependencies = [
  "alvr_common",
  "alvr_session",
@@ -238,7 +238,7 @@ dependencies = [
 
 [[package]]
 name = "alvr_vulkan-layer"
-version = "18.20.0"
+version = "18.21.0"
 dependencies = [
  "alvr_filesystem",
  "bindgen 0.72.1",
@@ -249,7 +249,7 @@ dependencies = [
 
 [[package]]
 name = "alvr_xtask"
-version = "18.20.0"
+version = "18.21.0"
 dependencies = [
  "alvr_filesystem",
  "camino",
@@ -264,7 +264,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client"
-version = "0.75.1"
+version = "0.76.0"
 dependencies = [
  "alxr-common",
  "semver 1.0.27",
@@ -272,7 +272,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-android"
-version = "0.75.1"
+version = "0.76.0"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -289,7 +289,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-pico"
-version = "0.75.1"
+version = "0.76.0"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -306,7 +306,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-uwp"
-version = "1.75.1"
+version = "1.76.0"
 dependencies = [
  "alxr-common",
  "semver 1.0.27",
@@ -316,7 +316,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-common"
-version = "0.75.1"
+version = "0.76.0"
 dependencies = [
  "alvr_audio",
  "alvr_common",
@@ -342,7 +342,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-engine-sys"
-version = "0.75.1"
+version = "0.76.0"
 dependencies = [
  "bindgen 0.72.1",
  "cc",
@@ -5569,7 +5569,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vrcompositor-wrapper"
-version = "18.20.0"
+version = "18.21.0"
 dependencies = [
  "exec",
 ]

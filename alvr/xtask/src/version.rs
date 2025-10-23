@@ -151,7 +151,7 @@ pub fn bump_version(maybe_version: Option<String>, is_nightly: bool) {
     ] {
         bump_cargo_version(dir_name, &version);
     }
-    bump_client_gradle_version(&version, is_nightly);
+    //bump_client_gradle_version(&version, is_nightly);
     bump_rpm_spec_version(&version, is_nightly);
     bump_deb_control_version(&version);
 

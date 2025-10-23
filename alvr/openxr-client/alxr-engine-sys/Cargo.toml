@@ -1,6 +1,6 @@
 [package]
 name = "alxr-engine-sys"
-version = "0.75.1"
+version = "0.76.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2021"
 links = "alxr_engine"
