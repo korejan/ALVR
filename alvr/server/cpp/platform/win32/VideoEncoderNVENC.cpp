@@ -73,7 +73,7 @@ void VideoEncoderNVENC::Shutdown()
 	for (const auto &packet : m_vPacket)
 	{
 		if (fpOut) {
-			fpOut.write(reinterpret_cast<const char*>(packet.data()), packet.size());
+			fpOut.write(reinterpret_cast<const char*>(packet.frame.data()), packet.frame.size());
 		}
 	}
 #endif
@@ -122,7 +122,7 @@ void VideoEncoderNVENC::Transmit(ID3D11Texture2D *pTexture, uint64_t presentatio
 
 	for (std::size_t packetIndex = 0; packetIndex < packetCount; ++packetIndex)
 	{
-		const auto& packet = m_vPacket[packetIndex];
+		const auto& packet = m_vPacket[packetIndex].frame;
 #ifndef NDEBUG
 		if (fpOut) {
 			fpOut.write(reinterpret_cast<const char*>(packet.data()), packet.size());
