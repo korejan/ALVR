@@ -40,11 +40,18 @@
 
 #include "Component.h"
 
+#if defined(__cplusplus)
 extern "C"
 {
+    using namespace amf;
+#endif // defined(__cplusplus)
+
     // To create capture component with Desktop Duplication API use this function
-    AMF_RESULT AMF_CDECL_CALL AMFCreateComponentDisplayCapture(amf::AMFContext* pContext, void* reserved, amf::AMFComponent** ppComponent);
+    AMF_RESULT AMF_CDECL_CALL AMFCreateComponentDisplayCapture(AMFContext* pContext, void* reserved, AMFComponent** ppComponent);
+
+#if defined(__cplusplus)
 }
+#endif // defined(__cplusplus)
 
 // To create AMD Direct Capture component use this component ID with AMFFactory::CreateComponent()
 #define AMFDisplayCapture L"AMFDisplayCapture"
@@ -75,6 +82,8 @@ typedef enum AMF_DISPLAYCAPTURE_MODE_ENUM
 #define AMF_DISPLAYCAPTURE_DIRTY_RECTS              L"DirtyRects"               // AMFInterface*(AMFBuffer*) - array of AMFRect(s)
 #define AMF_DISPLAYCAPTURE_FRAME_INDEX              L"FrameIndex"               // amf_int64; default = 0, index of presented frame since capture started
 #define AMF_DISPLAYCAPTURE_FRAME_FLIP_TIMESTAMP     L"FlipTimesamp"             // amf_int64; default = 0, flip timestmap of presented frame
+#define AMF_DISPLAY_CAPTURE_DCC	                    L"DisplayCaptureDCC"        // bool, default false, DCC is enabled on the surface when set to true
+
 // see Surface.h
 //#define AMF_SURFACE_ROTATION         L"Rotation"    // amf_int64(AMF_ROTATION_ENUM); default = AMF_ROTATION_NONE, can be set on surfaces - the same value as AMF_DISPLAYCAPTURE_ROTATION
 

@@ -132,16 +132,16 @@ namespace amf
     static AMF_INLINE const AMFRatio&      AMF_STD_CALL AMFVariantGetRatio(const AMFVariantStruct* _variant) { return (_variant)->ratioValue; }
     static AMF_INLINE const AMFColor&      AMF_STD_CALL AMFVariantGetColor(const AMFVariantStruct* _variant) { return (_variant)->colorValue; }
 #else // #if defined(__cplusplus)
-    static AMF_INLINE const AMFRect        AMF_STD_CALL AMFVariantGetRect (const AMFVariantStruct* _variant) { return (_variant)->rectValue; }
-    static AMF_INLINE const AMFSize        AMF_STD_CALL AMFVariantGetSize (const AMFVariantStruct* _variant) { return (_variant)->sizeValue; }
-    static AMF_INLINE const AMFPoint       AMF_STD_CALL AMFVariantGetPoint(const AMFVariantStruct* _variant) { return (_variant)->pointValue; }
-    static AMF_INLINE const AMFFloatSize  AMF_STD_CALL AMFVariantGetFloatSize(const AMFVariantStruct* _variant) { return (_variant)->floatSizeValue; }
-    static AMF_INLINE const AMFFloatPoint2D  AMF_STD_CALL AMFVariantGetFloatPoint2D(const AMFVariantStruct* _variant) { return (_variant)->floatPoint2DValue; }
-    static AMF_INLINE const AMFFloatPoint3D  AMF_STD_CALL AMFVariantGetFloatPoint3D(const AMFVariantStruct* _variant) { return (_variant)->floatPoint3DValue; }
-    static AMF_INLINE const AMFFloatVector4D  AMF_STD_CALL AMFVariantGetFloatVector4D(const AMFVariantStruct* _variant) { return (_variant)->floatVector4DValue; }
-    static AMF_INLINE const AMFRate        AMF_STD_CALL AMFVariantGetRate (const AMFVariantStruct* _variant) { return (_variant)->rateValue; }
-    static AMF_INLINE const AMFRatio       AMF_STD_CALL AMFVariantGetRatio(const AMFVariantStruct* _variant) { return (_variant)->ratioValue; }
-    static AMF_INLINE const AMFColor       AMF_STD_CALL AMFVariantGetColor(const AMFVariantStruct* _variant) { return (_variant)->colorValue; }
+    static AMF_INLINE AMFRect              AMF_STD_CALL AMFVariantGetRect (const AMFVariantStruct* _variant) { return (_variant)->rectValue; }
+    static AMF_INLINE AMFSize              AMF_STD_CALL AMFVariantGetSize (const AMFVariantStruct* _variant) { return (_variant)->sizeValue; }
+    static AMF_INLINE AMFPoint             AMF_STD_CALL AMFVariantGetPoint(const AMFVariantStruct* _variant) { return (_variant)->pointValue; }
+    static AMF_INLINE AMFFloatSize         AMF_STD_CALL AMFVariantGetFloatSize(const AMFVariantStruct* _variant) { return (_variant)->floatSizeValue; }
+    static AMF_INLINE AMFFloatPoint2D      AMF_STD_CALL AMFVariantGetFloatPoint2D(const AMFVariantStruct* _variant) { return (_variant)->floatPoint2DValue; }
+    static AMF_INLINE AMFFloatPoint3D      AMF_STD_CALL AMFVariantGetFloatPoint3D(const AMFVariantStruct* _variant) { return (_variant)->floatPoint3DValue; }
+    static AMF_INLINE AMFFloatVector4D     AMF_STD_CALL AMFVariantGetFloatVector4D(const AMFVariantStruct* _variant) { return (_variant)->floatVector4DValue; }
+    static AMF_INLINE AMFRate              AMF_STD_CALL AMFVariantGetRate (const AMFVariantStruct* _variant) { return (_variant)->rateValue; }
+    static AMF_INLINE AMFRatio             AMF_STD_CALL AMFVariantGetRatio(const AMFVariantStruct* _variant) { return (_variant)->ratioValue; }
+    static AMF_INLINE AMFColor             AMF_STD_CALL AMFVariantGetColor(const AMFVariantStruct* _variant) { return (_variant)->colorValue; }
 #endif // #if defined(__cplusplus)
 
 
@@ -365,7 +365,7 @@ namespace amf
             operator=(p_other);
         }
 
-#if (__cplusplus == 201103L) || defined(__GXX_EXPERIMENTAL_CXX0X) || (_MSC_VER >= 1600)
+#if (__cplusplus == 201103L) || defined(__GXX_EXPERIMENTAL_CXX0X) || (defined(_MSC_VER) && _MSC_VER >= 1600)
 #pragma warning (push)
 #pragma warning (disable : 26439) //This kind of function may not throw. Declare it 'noexcept'.
         String(String&& p_other) : m_Str(nullptr)
@@ -393,7 +393,7 @@ namespace amf
             m_Str = AMFVariantDuplicateString(p_other.m_Str);
             return *this;
         }
-#if (__cplusplus == 201103L) || defined(__GXX_EXPERIMENTAL_CXX0X) || (_MSC_VER >= 1600)
+#if (__cplusplus == 201103L) || defined(__GXX_EXPERIMENTAL_CXX0X) || (defined(_MSC_VER) && _MSC_VER >= 1600)
         String& operator=(String&& p_other)
         {
             Free();
@@ -475,7 +475,7 @@ namespace amf
         {
             operator=(p_other);
         }
-#if (__cplusplus == 201103L) || defined(__GXX_EXPERIMENTAL_CXX0X) || (_MSC_VER >= 1600)
+#if (__cplusplus == 201103L) || defined(__GXX_EXPERIMENTAL_CXX0X) || (defined(_MSC_VER) && _MSC_VER >= 1600)
         WString(WString&& p_other) : m_Str(nullptr)
         {
             operator=(p_other);
@@ -492,7 +492,7 @@ namespace amf
             m_Str = AMFVariantDuplicateWString(p_other.m_Str);
             return *this;
         }
-#if (__cplusplus == 201103L) || defined(__GXX_EXPERIMENTAL_CXX0X) || (_MSC_VER >= 1600)
+#if (__cplusplus == 201103L) || defined(__GXX_EXPERIMENTAL_CXX0X) || (defined(_MSC_VER) && _MSC_VER >= 1600)
         WString& operator=(WString&& p_other)
         {
             Free();
@@ -587,6 +587,7 @@ namespace amf
     static AMF_INLINE AMF_RESULT AMF_CDECL_CALL AMFVariantInit(AMFVariantStruct* pVariant)
     {
         AMF_VARIANT_RETURN_IF_INVALID_POINTER(pVariant);
+        memset(pVariant, 0, sizeof(AMFVariantStruct));
         pVariant->type = AMF_VARIANT_EMPTY;
         return AMF_OK;
     }
@@ -872,14 +873,14 @@ namespace amf
     {
         res = AMF_OK;
         char buff[0xFF];
-        sprintf(buff, "%" AMFPRId64, (long long)value);
+        sprintf(buff, "%" AMFPRId64, value);
         return buff;
     }
     static AMF_INLINE AMFVariant::WString AMFConvertInt64ToWString(amf_int64 value, AMF_RESULT& res)
     {
         res = AMF_OK;
         wchar_t buff[0xFF];
-        swprintf(buff, 0xFF, L"%" LPRId64, (long long)value);
+        swprintf(buff, 0xFF, L"%" LPRId64, value);
         return buff;
     }
 
@@ -938,7 +939,7 @@ namespace amf
     static AMF_INLINE amf_int64 AMFConvertStringToInt64(const AMFVariant::String& value, AMF_RESULT& res)
     {
         res = AMF_OK;
-        long long tmp = 0;
+        amf_int64 tmp = 0;
         int readElements = 0;
 
         if (value.size() > 2 && ( value.c_str()[0] == '0') && ( value.c_str()[1] == 'x') )
@@ -2062,7 +2063,7 @@ namespace amf
     AMF_INLINE void AMFVariant::Attach(AMFVariantStruct& pVariant)
     {
         Clear();
-        memcpy(this, &pVariant, sizeof(pVariant));
+        memcpy(static_cast<void*>(this), &pVariant, sizeof(pVariant));
         AMFVariantGetType(&pVariant) = AMF_VARIANT_EMPTY;
     }
     //-------------------------------------------------------------------------------------------------
