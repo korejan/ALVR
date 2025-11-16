@@ -9,7 +9,7 @@ edition = "2024"
 alvr_filesystem = { path = "../filesystem" }
 
 fs_extra = "1"
-pico-args = "0.5"
+pico-args = "0.4"
 walkdir = "2"
 pkg-config = "0.3.9"
 cargo_metadata = "0.14"
