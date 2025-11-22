@@ -7,7 +7,7 @@ use std::time::Duration;
 use version_compare::{Part, Version};
 use wifi_manager::{acquire_wifi_lock, release_wifi_lock};
 
-use android_activity::{AndroidApp, MainEvent, PollEvent};
+use android_activity::{AndroidApp, InputStatus, MainEvent, PollEvent};
 use android_logger;
 
 use alxr_common::{
@@ -203,6 +203,11 @@ impl AppData {
                     self.resume();
                 }
                 MainEvent::Destroy => self.destroy_requested = true,
+                MainEvent::InputAvailable => {
+                    if let Ok(mut iter) = android_app.input_events_iter() {
+                        while iter.next(|_| InputStatus::Unhandled) {}
+                    }
+                }
                 _ => (),
             },
             //PollEvent::Wake  => { log::info!("alxr-client: received wake event."); },
