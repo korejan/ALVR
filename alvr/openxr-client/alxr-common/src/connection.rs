@@ -5,10 +5,8 @@ use crate::{
 };
 use alvr_common::{ALVR_NAME, ALVR_VERSION, prelude::*};
 use alvr_session::SessionDesc;
-#[cfg(target_os = "android")]
-use alvr_sockets::AUDIO;
 use alvr_sockets::{
-    ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, HAPTICS, Haptics,
+    AUDIO, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, HAPTICS, Haptics,
     HeadsetInfoPacket, INPUT, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
     ServerHandshakePacket, StreamSocketBuilder, VIDEO, VideoFrameHeaderPacket, spawn_cancelable,
 };
@@ -30,7 +28,6 @@ use tokio::{
     time::{self, Instant},
 };
 
-#[cfg(target_os = "android")]
 use crate::audio;
 
 const INITIAL_MESSAGE: &str = "Searching for server...\n(open ALVR on your PC)";
@@ -163,6 +160,13 @@ async fn connection_pipeline(
             }
         } => pair
     };
+
+    let mut headset_info = headset_info.clone();
+    headset_info.microphone_sample_rate = audio::get_input_sample_rate().unwrap_or(0);
+    println!(
+        "Microphone sample rate: {}",
+        headset_info.microphone_sample_rate
+    );
 
     trace_err!(proto_socket.send(&(headset_info, server_ip)).await)?;
     let config_packet = trace_err!(proto_socket.recv::<ClientConfigPacket>().await)?;
@@ -538,7 +542,6 @@ async fn connection_pipeline(
     };
 
     let game_audio_loop: BoxFuture<_> = if let Switch::Enabled(_desc) = settings.audio.game_audio {
-        #[cfg(target_os = "android")]
         if config_packet.game_audio_sample_rate < 8000 {
             // The server is using a sample rate that won't work and will likely crash us
             // We can't report errors clearly yet, so skip running audio so people who
@@ -553,24 +556,14 @@ async fn connection_pipeline(
                 game_audio_receiver,
             ))
         }
-        #[cfg(not(target_os = "android"))]
-        Box::pin(future::pending())
     } else {
         Box::pin(future::pending())
     };
 
     let microphone_loop: BoxFuture<_> = if let Switch::Enabled(_config) = settings.audio.microphone
     {
-        #[cfg(target_os = "android")]
-        {
-            let microphone_sender = stream_socket.request_stream(AUDIO).await?;
-            Box::pin(audio::record_audio_loop(
-                _config.sample_rate,
-                microphone_sender,
-            ))
-        }
-        #[cfg(not(target_os = "android"))]
-        Box::pin(future::pending())
+        let microphone_sender = stream_socket.request_stream(AUDIO).await?;
+        Box::pin(audio::record_audio_loop(microphone_sender))
     } else {
         Box::pin(future::pending())
     };

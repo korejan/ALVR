@@ -1,11 +1,12 @@
 mod connection;
 mod connection_utils;
 
-#[cfg(target_os = "android")]
 mod audio;
 
 use alvr_common::{ALVR_VERSION, HEAD_ID, LEFT_HAND_ID, RIGHT_HAND_ID, prelude::*};
 use alvr_session::Fov;
+#[cfg(target_os = "linux")]
+use alvr_session::LinuxAudioBackend;
 use alvr_sockets::{
     BatteryPacket, HeadsetInfoPacket, HiddenAreaMesh, Input, LegacyController, LegacyInput,
     MotionData, TimeSyncPacket, ViewsConfig,
@@ -133,6 +134,11 @@ pub struct Options {
     /// Overrides the OpenXR Api Version used for XR instance creation, an advance option meant for runtime quirk workarounds.
     #[structopt(long = "xr-api-version")]
     pub xr_api_version: Option<Version>,
+
+    #[cfg(target_os = "linux")]
+    /// Specify which audio backend to use on Linux (PipeWire, Alsa, Jack). Default is PipeWire.
+    #[structopt(long, parse(from_str), default_value = "pipewire")]
+    pub audio_backend: LinuxAudioBackend,
 }
 
 impl Options {
@@ -462,6 +468,7 @@ pub fn init_connections(sys_properties: &ALXRSystemProperties) {
             recommended_eye_height: sys_properties.recommendedEyeHeight as _,
             available_refresh_rates,
             preferred_refresh_rate,
+            microphone_sample_rate: 44100, // real value will be set later during connection
             reserved: format!("{}", *ALVR_VERSION),
         };
 

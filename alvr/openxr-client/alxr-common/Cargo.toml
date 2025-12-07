@@ -1,6 +1,6 @@
 [package]
 name = "alxr-common"
-version = "0.77.1"
+version = "0.78.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2024"
 
@@ -21,6 +21,7 @@ alxr-engine-sys = { path = "../alxr-engine-sys" }
 alvr_common = { path = "../../common" }
 alvr_session = { path = "../../session" }
 alvr_sockets = { path = "../../sockets" }
+alvr_audio = { path = "../../audio" }
 settings-schema = { path = "../../settings-schema", features = ["rename_camel_case"] }
 # Basic utilities
 lazy_static = "1"
@@ -39,7 +40,6 @@ structopt = "0.3"
 glam = { version = "0.30", features = ["serde"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
-alvr_audio = { path = "../../audio" }
 libc = "0.2"
-oboe = "0.4" # Note: cannot use feature "java-interface" to query audio info
+oboe = "0.6" # Note: cannot use feature "java-interface" to query audio info
 android_system_properties = "0.1"

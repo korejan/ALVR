@@ -1,6 +1,6 @@
 [package]
 name = "alvr_server"
-version = "18.22.0"
+version = "18.23.0"
 authors = ["alvr-org", "polygraphene", "Valve Corporation"]
 license = "MIT"
 edition = "2024"
@@ -52,14 +52,14 @@ hyper = { version = "0.14", features = [
     "tcp",
 ] }
 reqwest = "0.11"
-tokio-tungstenite = "0.27"
+tokio-tungstenite = "0.28"
 tokio-util = { version = "0.7", features = ["codec"] }
 # Graphics
-wgpu = "23"
-winit = "0.26" # needed to get the screen size
+wgpu = "27"
+winit = "0.30" # needed to get the screen size
 # Browser interop
 tempfile = "3"
-alcro = "0.5.4"
+alcro = { git = "https://github.com/korejan/alcro", branch = "dep-updates" }
 webbrowser = "1" # this is just for opening links in the default browser
 # Miscellaneous
 fern = "0.7"

@@ -1,6 +1,6 @@
 [package]
 name = "alxr-client-android"
-version = "0.77.1"
+version = "0.78.0"
 authors = ["korejan <64199710+korejan@users.noreply.github.com>"]
 edition = "2024"
 description = "An OpenXR based ALVR client for android platorms"

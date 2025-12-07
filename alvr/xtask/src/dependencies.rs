@@ -16,7 +16,70 @@ fn download_and_extract_zip(url: &str, destination: &Path) {
     fs::remove_file(zip_file).unwrap();
 }
 
-pub fn build_ffmpeg_linux_install(
+fn download_and_extract_tarxz(url: &str, destination: &Path) {
+    let tar_file = afs::deps_dir().join("temp_download.tar.xz");
+
+    fs::remove_file(&tar_file).ok();
+    fs::create_dir_all(afs::deps_dir()).unwrap();
+    command::download(url, &tar_file).unwrap();
+
+    fs::remove_dir_all(&destination).ok();
+    fs::create_dir_all(&destination).unwrap();
+
+    std::process::Command::new("tar")
+        .args([
+            "-xJf",
+            &tar_file.to_string_lossy(),
+            "-C",
+            &destination.to_string_lossy(),
+        ])
+        .status()
+        .expect("Failed to extract tar.xz archive");
+
+    fs::remove_file(tar_file).unwrap();
+}
+
+/// Patch rpath of all shared libraries in a directory to include $ORIGIN
+/// This ensures libraries can find their dependencies in the same directory
+fn patch_rpath(lib_dir: &Path) {
+    for entry in walkdir::WalkDir::new(lib_dir)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .map(|e| e.into_path())
+        .filter(|p| {
+            p.file_name()
+                .map(|n| n.to_string_lossy().contains(".so"))
+                .unwrap_or(false)
+        })
+    {
+        // Use patchelf to set rpath to $ORIGIN so libs find each other
+        let status = std::process::Command::new("patchelf")
+            .args(["--set-rpath", "$ORIGIN", &entry.to_string_lossy()])
+            .status();
+
+        match status {
+            Ok(s) if s.success() => {
+                println!("Patched rpath for: {}", entry.display());
+            }
+            Ok(s) => {
+                eprintln!(
+                    "Warning: patchelf returned non-zero for {}: {}",
+                    entry.display(),
+                    s
+                );
+            }
+            Err(e) => {
+                eprintln!(
+                    "Warning: Failed to run patchelf on {}: {}",
+                    entry.display(),
+                    e
+                );
+            }
+        }
+    }
+}
+
+pub fn _build_ffmpeg_linux_install(
     nvenc_flag: bool,
     version_tag: &str,
     enable_decoders: bool,
@@ -124,8 +187,8 @@ pub fn build_ffmpeg_linux_install(
     ffmpeg_path
 }
 
-pub fn build_ffmpeg_linux(nvenc_flag: bool) -> std::path::PathBuf {
-    build_ffmpeg_linux_install(
+pub fn _build_ffmpeg_linux(nvenc_flag: bool) -> std::path::PathBuf {
+    _build_ffmpeg_linux_install(
         nvenc_flag,
         "release/5.1",
         /*enable_decoders=*/ true,
@@ -138,13 +201,47 @@ pub fn extract_ffmpeg_windows() -> std::path::PathBuf {
     let ffmpeg_path = download_path.join("ffmpeg-n8.0-latest-win64-gpl-shared-8.0");
     if !ffmpeg_path.exists() {
         download_and_extract_zip(
-            //"https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n6.0-latest-win64-gpl-shared-6.0.zip",
             "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.0-latest-win64-gpl-shared-8.0.zip",
             &download_path,
         );
     }
 
     ffmpeg_path
+}
+
+pub fn extract_ffmpeg_linux(version: &str, gpl: bool) -> std::path::PathBuf {
+    let arch = if cfg!(target_arch = "x86_64") {
+        "64"
+    } else if cfg!(target_arch = "aarch64") {
+        "arm64"
+    } else {
+        panic!("Unsupported architecture")
+    };
+
+    let base_filename = format!(
+        "ffmpeg-n{}-latest-linux{}-{}-shared-{}",
+        version,
+        arch,
+        if gpl { "gpl" } else { "lgpl" },
+        version
+    );
+
+    let url = format!(
+        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/{}.tar.xz",
+        base_filename
+    );
+
+    let download_path = afs::deps_dir().join("linux");
+    let mut ffmpeg_path = download_path.join(&base_filename);
+    if !ffmpeg_path.exists() {
+        download_and_extract_tarxz(&url, &download_path);
+        assert!(ffmpeg_path.exists(), "FFmpeg extraction failed");
+        ffmpeg_path = dunce::canonicalize(ffmpeg_path).unwrap();
+        // Patch rpath to $ORIGIN so libraries find each other at runtime
+        patch_rpath(&ffmpeg_path.join("lib"));
+    }
+    assert!(ffmpeg_path.exists(), "FFmpeg deps path does not exist!");
+    dunce::canonicalize(ffmpeg_path).unwrap()
 }
 
 fn get_oculus_openxr_mobile_loader() {

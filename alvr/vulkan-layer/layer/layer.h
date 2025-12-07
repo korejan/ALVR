@@ -1,6 +1,17 @@
 #pragma once
 
 #include <vulkan/vk_layer.h>
+#include <vulkan/vulkan.h>
+
+#ifndef VK_LAYER_EXPORT
+#if defined(__GNUC__) && __GNUC__ >= 4
+#define VK_LAYER_EXPORT __attribute__((visibility("default")))
+#elif defined(_WIN32)
+#define VK_LAYER_EXPORT __declspec(dllexport)
+#else
+#define VK_LAYER_EXPORT
+#endif
+#endif
 
 extern "C" const char *g_sessionPath;
 

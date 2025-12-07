@@ -1,6 +1,6 @@
 [package]
 name = "alvr_audio"
-version = "18.22.0"
+version = "18.23.0"
 authors = ["alvr-org", "Riccardo Zaglia <riccardo.zaglia5@gmail.com>"]
 license = "MIT"
 edition = "2024"
@@ -10,30 +10,26 @@ alvr_common = { path = "../common" }
 alvr_session = { path = "../session" }
 alvr_sockets = { path = "../sockets" }
 
-cpal = "0.14"
 parking_lot = "0.12"
-rodio = "0.16"
 serde = "1"
 tokio = "1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-cpal = { version = "0.14", features = ["jack"] }
+cpal = { version = "0.16", features = ["jack"] }
+rodio = "0.21"
+pipewire = "0.9"
 
-[target.'cfg(not(target_os = "linux"))'.dependencies]
-cpal = "0.14"
+[target.'cfg(not(any(target_os = "linux", target_os = "android")))'.dependencies]
+cpal = "0.16"
+rodio = "0.21"
 
 [target.'cfg(windows)'.dependencies]
-widestring = "1"
-winapi = { version = "0.3", features = [
-    "impl-default",
-    "combaseapi",
-    "coml2api",
-    "endpointvolume",
-    "functiondiscoverykeys_devpkey",
-    "mmdeviceapi",
-    "objbase",
-    "propidl",
-    "propsys",
-    "wtypes",
+windows = { version = "0.62", features = [
+    "Win32_Devices_FunctionDiscovery",
+    "Win32_Media_Audio",
+    "Win32_Media_Audio_Endpoints",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_UI_Shell_PropertiesSystem",
+    "Win32_System_Variant",
 ] }
-wio = "0.2"

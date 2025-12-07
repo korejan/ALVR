@@ -238,11 +238,23 @@ pub struct MicrophoneDesc {
     pub config: AudioConfig,
 }
 
-#[derive(SettingsSchema, Serialize, Deserialize, Clone, Copy)]
+#[derive(SettingsSchema, Serialize, Deserialize, Clone, Copy, Debug)]
 #[serde(rename_all = "camelCase", tag = "type", content = "content")]
 pub enum LinuxAudioBackend {
     Alsa,
     Jack,
+    PipeWire,
+}
+
+impl From<&str> for LinuxAudioBackend {
+    fn from(input: &str) -> Self {
+        let trimmed = input.trim().to_lowercase();
+        match trimmed.as_str() {
+            "alsa" => LinuxAudioBackend::Alsa,
+            "jack" => LinuxAudioBackend::Jack,
+            "pipewire" | _ => LinuxAudioBackend::PipeWire,
+        }
+    }
 }
 
 #[derive(SettingsSchema, Serialize, Deserialize)]
@@ -633,7 +645,7 @@ pub fn session_settings_default() -> SettingsDefault {
         },
         audio: AudioSectionDefault {
             linux_backend: LinuxAudioBackendDefault {
-                variant: LinuxAudioBackendDefaultVariant::Alsa,
+                variant: LinuxAudioBackendDefaultVariant::PipeWire,
             },
             game_audio: SwitchDefault {
                 enabled: !cfg!(target_os = "linux"),

@@ -1,6 +1,6 @@
 [package]
 name = "alvr_xtask"
-version = "18.22.0"
+version = "18.23.0"
 authors = ["alvr-org", "Riccardo Zaglia <riccardo.zaglia5@gmail.com>"]
 license = "MIT"
 edition = "2024"
@@ -8,6 +8,7 @@ edition = "2024"
 [dependencies]
 alvr_filesystem = { path = "../filesystem" }
 
+dunce = "1"
 fs_extra = "1"
 pico-args = "0.4"
 walkdir = "2"

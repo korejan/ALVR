@@ -146,7 +146,7 @@ pub fn build_server(
 
     if bundle_ffmpeg {
         let nvenc_flag = !no_nvidia;
-        let ffmpeg_path = dependencies::build_ffmpeg_linux(nvenc_flag);
+        let ffmpeg_path = dependencies::extract_ffmpeg_linux("8.0", gpl);
         let lib_dir = afs::server_build_dir().join("lib64").join("alvr");
         let mut libavcodec_so = std::path::PathBuf::new();
         fs::create_dir_all(lib_dir.clone()).unwrap();
@@ -497,53 +497,23 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
     fs::create_dir_all(&alxr_client_build_dir).unwrap();
 
     let bundle_ffmpeg_enabled = cfg!(target_os = "linux") && flags.bundle_ffmpeg;
-    if bundle_ffmpeg_enabled {
-        assert!(!ffmpeg_version.is_empty(), "ffmpeg-version is empty!");
-
-        let ffmpeg_build_dir = &alxr_client_build_dir;
-        dependencies::build_ffmpeg_linux_install(
-            /*nvenc_flag=*/ !flags.no_nvidia,
-            ffmpeg_version,
-            /*enable_decoders=*/ true,
-            &ffmpeg_build_dir,
+    let ffmpeg_build_dir = if bundle_ffmpeg_enabled {
+        let ffmpeg_dir = dependencies::extract_ffmpeg_linux(
+            ffmpeg_version.split('/').last().unwrap(),
+            /*gpl=*/ true,
         );
 
-        assert!(ffmpeg_build_dir.exists());
+        assert!(ffmpeg_dir.exists());
         unsafe {
             env::set_var(
                 "ALXR_BUNDLE_FFMPEG_INSTALL_PATH",
-                ffmpeg_build_dir.to_str().unwrap(),
+                ffmpeg_dir.to_str().unwrap(),
             )
         };
-
-        fn find_shared_lib(dir: &Path, key: &str) -> Option<std::path::PathBuf> {
-            for so_file in walkdir::WalkDir::new(dir)
-                .into_iter()
-                .filter_map(|maybe_entry| maybe_entry.ok())
-                .map(|entry| entry.into_path())
-                .filter(|path| afs::is_dynlib_file(&path))
-            {
-                let so_filename = so_file.file_name().unwrap();
-                if so_filename.to_string_lossy().starts_with(&key) {
-                    return Some(so_file.canonicalize().unwrap());
-                }
-            }
-            None
-        }
-
-        let lib_dir = alxr_client_build_dir.join("lib").canonicalize().unwrap();
-        if let Some(libavcodec_so) = find_shared_lib(&lib_dir, "libavcodec.so") {
-            for solib in ["libx264.so", "libx265.so"] {
-                let src_libs = dependencies::find_resolved_so_paths(&libavcodec_so, solib);
-                if !src_libs.is_empty() {
-                    let src_lib = src_libs.first().unwrap();
-                    let dst_lib = lib_dir.join(src_lib.file_name().unwrap());
-                    println!("Copying {src_lib:?} to {dst_lib:?}");
-                    fs::copy(src_lib, dst_lib).unwrap();
-                }
-            }
-        }
-    }
+        Some(ffmpeg_dir)
+    } else {
+        None
+    };
 
     if flags.fetch_crates {
         command::run("cargo update").unwrap();
@@ -590,10 +560,36 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
         return false;
     }
 
+    let workspace_target = dunce::canonicalize(afs::target_dir()).unwrap();
+
+    // Build list of allowed path prefixes (our build artifacts + explicitly added paths)
+    let mut allowed_prefixes = vec![workspace_target.clone()];
+    if let Some(ref ffmpeg_dir) = ffmpeg_build_dir {
+        allowed_prefixes.push(ffmpeg_dir.clone());
+    }
+
     println!("Searching for linked native dependencies, please wait this may take some time.");
-    let linked_paths =
+    let mut linked_paths =
         find_linked_native_paths(&alxr_client_dir, &build_flags, false, "", None).unwrap();
+
+    // Add (Linux) FFmpeg lib directory (not discovered by find_linked_native_paths since it's in deps/)
+    if let Some(ref ffmpeg_dir) = ffmpeg_build_dir {
+        linked_paths.insert(Utf8PathBuf::from(
+            ffmpeg_dir.join("lib").to_string_lossy().as_ref(),
+        ));
+    }
+
     for linked_path in linked_paths.iter() {
+        // Only include paths under allowed prefixes
+        if !allowed_prefixes
+            .iter()
+            .any(|p| linked_path.starts_with(p.to_string_lossy().as_ref()))
+        {
+            continue;
+        }
+
+        //println!("Found linked native path: {}", linked_path);
+
         for linked_depend_file in walkdir::WalkDir::new(linked_path)
             .into_iter()
             .filter_map(|maybe_entry| maybe_entry.ok())
@@ -1054,7 +1050,7 @@ fn main() {
         let root: Option<String> = args.opt_value_from_str("--root").unwrap();
         let abi_target: Option<String> = args.opt_value_from_str("--target").unwrap();
 
-        let default_var = String::from("release/5.1");
+        let default_var = String::from("release/8.0");
         let mut ffmpeg_version: String = args
             .opt_value_from_str("--ffmpeg-version")
             .unwrap()
@@ -1207,10 +1203,20 @@ fn main() {
                     },
                 ),
                 "build-ffmpeg-linux" => {
-                    dependencies::build_ffmpeg_linux(true);
+                    let ffmpeg_path = dependencies::extract_ffmpeg_linux(
+                        ffmpeg_version.split('/').last().unwrap(),
+                        gpl,
+                    );
+                    println!("{}", ffmpeg_path.display());
+                    return;
                 }
                 "build-ffmpeg-linux-no-nvidia" => {
-                    dependencies::build_ffmpeg_linux(false);
+                    let ffmpeg_path = dependencies::extract_ffmpeg_linux(
+                        ffmpeg_version.split('/').last().unwrap(),
+                        gpl,
+                    );
+                    println!("{}", ffmpeg_path.display());
+                    return;
                 }
                 "publish-server" => packaging::publish_server(is_nightly, root, reproducible, gpl),
                 "publish-client" => packaging::publish_client(is_nightly),
