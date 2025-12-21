@@ -8,7 +8,7 @@ lazy_static! {
             ..Default::default()
         });
 
-        instance.enumerate_adapters(wgpu::Backends::PRIMARY)
+        futures::executor::block_on(instance.enumerate_adapters(wgpu::Backends::PRIMARY))
     };
 }
 
