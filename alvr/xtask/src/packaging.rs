@@ -1,4 +1,4 @@
-use crate::{build_client, build_server, command, version};
+use crate::{build_server, command, version};
 use alvr_filesystem as afs;
 use std::{env, fs, path::PathBuf};
 
@@ -173,9 +173,4 @@ pub fn publish_server(is_nightly: bool, root: Option<String>, reproducible: bool
             println!("No WiX toolset installation found, skipping installer.");
         }
     }
-}
-
-pub fn publish_client(is_nightly: bool) {
-    build_client(!is_nightly, is_nightly, false);
-    build_client(!is_nightly, is_nightly, true);
 }

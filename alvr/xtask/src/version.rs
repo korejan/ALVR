@@ -41,34 +41,6 @@ pub fn alxr_version() -> String {
     version_from_dir("openxr-client/alxr-common")
 }
 
-fn bump_client_gradle_version(new_version: &str, is_nightly: bool) {
-    if new_version.is_empty() {
-        return;
-    }
-    let gradle_file_path = afs::workspace_dir()
-        .join("alvr/client/android/app")
-        .join("build.gradle");
-    let file_content = fs::read_to_string(&gradle_file_path).unwrap();
-
-    // Replace versionName
-    let (file_start, _, file_end) = split_string(&file_content, "versionName \"", '\"');
-    let file_content = format!("{file_start}{new_version}{file_end}");
-
-    let file_content = if !is_nightly {
-        // Replace versionCode
-        let (file_start, old_version_code_string, file_end) =
-            split_string(&file_content, "versionCode ", '\n');
-        format!(
-            "{file_start}{}{file_end}",
-            old_version_code_string.parse::<usize>().unwrap() + 1,
-        )
-    } else {
-        file_content
-    };
-
-    fs::write(gradle_file_path, file_content).unwrap();
-}
-
 fn bump_cargo_version(crate_dir_name: &str, new_version: &str) {
     let manifest_path = packages_dir().join(crate_dir_name).join("Cargo.toml");
 
@@ -151,7 +123,6 @@ pub fn bump_version(maybe_version: Option<String>, is_nightly: bool) {
     ] {
         bump_cargo_version(dir_name, &version);
     }
-    //bump_client_gradle_version(&version, is_nightly);
     bump_rpm_spec_version(&version, is_nightly);
     bump_deb_control_version(&version);
 

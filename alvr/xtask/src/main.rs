@@ -25,7 +25,6 @@ SUBCOMMANDS:
     build-windows-deps  Download and compile external dependencies for Windows
     build-android-deps  Download and compile external dependencies for Android
     build-server        Build server driver, then copy binaries to build folder
-    build-client        Build client, then copy binaries to build folder
     build-alxr-client   Build OpenXR based client (non-android platforms only), then copy binaries to build folder
     build-alxr-uwp      Build OpenXR based client for Windows UWP/Store (.msixbundle - self-signed app-bundle with x64+arm64)
     build-alxr-uwp-x64  Build OpenXR based client for Windows UWP/Store (x64 .msix app-package), then copy binaries to build folder
@@ -37,7 +36,6 @@ SUBCOMMANDS:
     build-alxr-pico     Build OpenXR based client for Pico 4/Neo 3 PUI >= 5.2.x (same as `build-alxr-android --pico`), then copy binaries to build folder
     build-ffmpeg-linux  Build FFmpeg with VAAPI, NvEnc and Vulkan support. Only for CI
     publish-server      Build server in release mode, make portable version and installer
-    publish-client      Build client for all headsets
     clean               Removes build folder
     kill-oculus         Kill all Oculus processes
     bump-versions       Bump server and client package versions
@@ -151,7 +149,6 @@ pub fn build_server(
     .unwrap();
 
     if bundle_ffmpeg {
-        let nvenc_flag = !no_nvidia;
         let ffmpeg_path = dependencies::extract_ffmpeg_linux("8.0", gpl);
         let lib_dir = afs::server_build_dir().join("lib64").join("alvr");
         let mut libavcodec_so = std::path::PathBuf::new();
@@ -324,52 +321,6 @@ pub fn build_server(
         )
         .unwrap();
     }
-}
-
-pub fn build_client(is_release: bool, is_nightly: bool, for_oculus_go: bool) {
-    let headset_name = if for_oculus_go {
-        "oculus_go"
-    } else {
-        "oculus_quest"
-    };
-
-    let headset_type = if for_oculus_go {
-        "OculusGo"
-    } else {
-        "OculusQuest"
-    };
-    let package_type = if is_nightly { "Nightly" } else { "Stable" };
-    let build_type = if is_release { "release" } else { "debug" };
-
-    let build_task = format!("assemble{headset_type}{package_type}{build_type}");
-
-    let client_dir = afs::workspace_dir().join("alvr/client/android");
-    let command_name = if cfg!(not(windows)) {
-        "./gradlew"
-    } else {
-        "gradlew.bat"
-    };
-
-    let artifact_name = format!("alvr_client_{headset_name}");
-    fs::create_dir_all(&afs::build_dir().join(&artifact_name)).unwrap();
-
-    env::set_current_dir(&client_dir).unwrap();
-    command::run(&format!("{command_name} {build_task}")).unwrap();
-    env::set_current_dir(afs::workspace_dir()).unwrap();
-
-    fs::copy(
-        client_dir
-            .join("app/build/outputs/apk")
-            .join(format!("{headset_type}{package_type}"))
-            .join(build_type)
-            .join(format!(
-                "app-{headset_type}-{package_type}-{build_type}.apk",
-            )),
-        afs::build_dir()
-            .join(&artifact_name)
-            .join(format!("{artifact_name}.apk")),
-    )
-    .unwrap();
 }
 
 type PathSet = HashSet<Utf8PathBuf>;
@@ -1052,8 +1003,6 @@ fn main() {
         let version: Option<String> = args.opt_value_from_str("--version").unwrap();
         let is_nightly = args.contains("--nightly");
         // android flavours
-        let for_oculus_quest = args.contains("--oculus-quest");
-        let for_oculus_go = args.contains("--oculus-go");
         let for_generic = args.contains("--generic");
         let for_pico = args.contains("--pico");
         let for_all_flavors = args.contains("--all-flavors");
@@ -1068,7 +1017,7 @@ fn main() {
         let abi_target: Option<String> = args.opt_value_from_str("--target").unwrap();
 
         let default_var = String::from("release/8.0");
-        let mut ffmpeg_version: String = args
+        let ffmpeg_version: String = args
             .opt_value_from_str("--ffmpeg-version")
             .unwrap()
             .map_or(default_var.clone(), |s: String| {
@@ -1090,15 +1039,6 @@ fn main() {
                     root,
                     reproducible,
                 ),
-                "build-client" => {
-                    if (for_oculus_quest && for_oculus_go) || (!for_oculus_quest && !for_oculus_go)
-                    {
-                        build_client(is_release, false, false);
-                        build_client(is_release, false, true);
-                    } else {
-                        build_client(is_release, false, for_oculus_go);
-                    }
-                }
                 "build-alxr-client" => build_alxr_client(
                     root,
                     &ffmpeg_version,
@@ -1236,7 +1176,6 @@ fn main() {
                     return;
                 }
                 "publish-server" => packaging::publish_server(is_nightly, root, reproducible, gpl),
-                "publish-client" => packaging::publish_client(is_nightly),
                 "clean" => remove_build_dir(),
                 "kill-oculus" => kill_oculus_processes(),
                 "bump-versions" => version::bump_version(version, is_nightly),

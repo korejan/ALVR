@@ -9,7 +9,6 @@ members = [
     "alvr/session",
     "alvr/sockets",
     "alvr/audio",
-    "alvr/client",
     "alvr/server",
     "alvr/launcher",
     "alvr/vrcompositor-wrapper",

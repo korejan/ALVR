@@ -93,10 +93,7 @@ fn main() {
     let alxr_engine_dir = project_dir.join("cpp/ALVR-OpenXR-Engine");
     let alxr_engine_src_dir = alxr_engine_dir.join("src");
 
-    let android_dir = project_dir.join("android");
-    let alvr_client_dir = project_dir.join("../../client");
-    let alvr_common_cpp_dir = alvr_client_dir.join("android/ALVR-common");
-
+    let alvr_common_cpp_dir = alxr_engine_src_dir.join("alxr_engine/alvr_common");
     let file_filters = vec!["CMakeLists.txt", "AndroidManifest.xml"];
     let file_ext_filters = vec![
         "h",
@@ -118,10 +115,8 @@ fn main() {
     .map(OsStr::new)
     .collect::<Vec<_>>();
 
-    let cpp_paths = walkdir::WalkDir::new(&alvr_common_cpp_dir)
+    let cpp_paths = walkdir::WalkDir::new(&alxr_engine_dir)
         .into_iter()
-        .chain(walkdir::WalkDir::new(&android_dir).into_iter())
-        .chain(walkdir::WalkDir::new(&alxr_engine_dir).into_iter())
         .filter_map(|maybe_entry| maybe_entry.ok())
         .filter(|dir_entry| {
             let path = dir_entry.path();
@@ -241,7 +236,7 @@ fn main() {
     } else {
         ""
     };
-    let tracking_binding_path = alvr_client_dir.join("android/app/src/main/cpp");
+    let tracking_binding_path = alvr_common_cpp_dir;
     let binding_file = alxr_engine_src_dir.join("alxr_engine/alxr_engine.h");
     bindgen::builder()
         .clang_arg("-xc++")
