@@ -8,6 +8,7 @@ mod tcp;
 mod throttled_udp;
 mod udp;
 
+use crate::BINCODE_CONFIG;
 use alvr_common::prelude::*;
 use alvr_session::{SocketBufferSize, SocketProtocol};
 use bytes::{Buf, BufMut, BytesMut};
@@ -16,6 +17,7 @@ use serde::{Serialize, de::DeserializeOwned};
 use std::{
     collections::HashMap,
     marker::PhantomData,
+    mem::MaybeUninit,
     net::IpAddr,
     ops::{Deref, DerefMut},
     sync::Arc,
@@ -172,14 +174,23 @@ impl<T> StreamSender<T> {
     }
 }
 
+const MAX_HEADER_SIZE: usize = 1500;
+
 pub fn new_sender_buffer<T: serde::Serialize>(
     stream_id: StreamId,
     header: &T,
     preferred_max_buffer_size: usize,
 ) -> StrResult<SenderBuffer<T>> {
-    let header_size = trace_err!(bincode::serialized_size(header))?;
-    // the first two bytes are for the stream ID
-    let offset = 2 + 4 + header_size as usize;
+    let mut header_buf: MaybeUninit<[u8; MAX_HEADER_SIZE]> = MaybeUninit::uninit();
+
+    let header_size = trace_err!(bincode::serde::encode_into_slice(
+        header,
+        unsafe { &mut *header_buf.as_mut_ptr() },
+        BINCODE_CONFIG
+    ))?;
+
+    // the first two bytes are for the stream ID, next 4 for packet index
+    let offset = 2 + 4 + header_size;
 
     let mut buffer = BytesMut::with_capacity(offset + preferred_max_buffer_size);
 
@@ -188,9 +199,9 @@ pub fn new_sender_buffer<T: serde::Serialize>(
     // make space for the packet index
     buffer.put_u32(0);
 
-    let mut buffer_writer = buffer.writer();
-    trace_err!(bincode::serialize_into(&mut buffer_writer, header))?;
-    let buffer = buffer_writer.into_inner();
+    buffer.put_slice(unsafe {
+        std::slice::from_raw_parts(header_buf.as_ptr() as *const u8, header_size)
+    });
 
     Ok(SenderBuffer {
         inner: buffer,
@@ -205,7 +216,7 @@ impl<T: Serialize> StreamSender<T> {
         header: &T,
         preferred_max_buffer_size: usize,
     ) -> StrResult<SenderBuffer<T>> {
-        new_sender_buffer(self.stream_id, &header, preferred_max_buffer_size)
+        new_sender_buffer(self.stream_id, header, preferred_max_buffer_size)
     }
 
     pub async fn send(&mut self, packet: &T) -> StrResult {
@@ -241,14 +252,15 @@ impl<T: DeserializeOwned> StreamReceiver<T> {
         let had_packet_loss = packet_index != self.next_packet_index;
         self.next_packet_index = packet_index + 1;
 
-        let mut bytes_reader = bytes.reader();
-        let header = trace_err!(bincode::deserialize_from(&mut bytes_reader))?;
-        let buffer = bytes_reader.into_inner();
+        let (header, bytes_read) =
+            trace_err!(bincode::serde::decode_from_slice(&bytes, BINCODE_CONFIG))?;
+        // Advance past the header bytes
+        bytes.advance(bytes_read);
 
-        // At this point, "buffer" does not include the header anymore
+        // At this point, "bytes" does not include the header anymore
         Ok(ReceivedPacket {
             header,
-            buffer,
+            buffer: bytes,
             had_packet_loss,
         })
     }

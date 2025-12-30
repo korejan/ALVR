@@ -10,7 +10,7 @@ alvr_common = { path = "../common" }
 alvr_session = { path = "../session" }
 
 # Serialization
-bincode = "1"
+bincode = { version = "2", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 # Async and networking
 bytes = "1"

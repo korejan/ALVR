@@ -28,7 +28,7 @@ settings-schema = { path = "../settings-schema", features = [
 chrono = "0.4"
 parking_lot = "0.12"
 # Serialization
-bincode = "1"
+bincode = { version = "2", features = ["serde"] }
 serde = "1"
 serde_json = "1"
 # Async

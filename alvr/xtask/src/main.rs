@@ -1017,12 +1017,12 @@ fn main() {
         let abi_target: Option<String> = args.opt_value_from_str("--target").unwrap();
 
         let default_var = String::from("release/8.0");
-        let ffmpeg_version: String = args
-            .opt_value_from_str("--ffmpeg-version")
-            .unwrap()
-            .map_or(default_var.clone(), |s: String| {
+        let ffmpeg_version: String = args.opt_value_from_str("--ffmpeg-version").unwrap().map_or(
+            default_var.clone(),
+            |s: String| {
                 if s.is_empty() { default_var } else { s }
-            });
+            },
+        );
         assert!(!ffmpeg_version.is_empty());
 
         if args.finish().is_empty() {

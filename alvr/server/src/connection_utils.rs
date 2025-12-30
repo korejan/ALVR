@@ -1,7 +1,7 @@
 use alvr_common::{ALVR_NAME, prelude::*};
 use alvr_session::ServerEvent;
 use alvr_sockets::{
-    CONTROL_PORT, ClientHandshakePacket, HandshakePacket, LOCAL_IP,
+    BINCODE_CONFIG, CONTROL_PORT, ClientHandshakePacket, HandshakePacket, LOCAL_IP,
     MAX_HANDSHAKE_PACKET_SIZE_BYTES, ServerHandshakePacket,
 };
 use std::{future::Future, net::IpAddr};
@@ -25,9 +25,11 @@ pub async fn search_client_loop<F: Future<Output = bool>>(
                 }
             };
 
-        let handshake_packet = if let Ok(HandshakePacket::Client(packet)) =
-            bincode::deserialize(&packet_buffer[..handshake_packet_size])
-        {
+        let handshake_packet = if let Ok((HandshakePacket::Client(packet), _)) =
+            bincode::serde::decode_from_slice(
+                &packet_buffer[..handshake_packet_size],
+                BINCODE_CONFIG,
+            ) {
             packet
         } else if &packet_buffer[..5] == b"\x01ALVR" {
             alvr_session::log_event(ServerEvent::ClientFoundWrongVersion(
@@ -50,9 +52,10 @@ pub async fn search_client_loop<F: Future<Output = bool>>(
         }
 
         if !alvr_common::is_version_compatible(&handshake_packet.version) {
-            let response_bytes = trace_err!(bincode::serialize(&HandshakePacket::Server(
-                ServerHandshakePacket::IncompatibleVersions
-            )))?;
+            let response_bytes = trace_err!(bincode::serde::encode_to_vec(
+                HandshakePacket::Server(ServerHandshakePacket::IncompatibleVersions),
+                BINCODE_CONFIG
+            ))?;
             handshake_socket
                 .send_to(&response_bytes, client_address)
                 .await
@@ -65,9 +68,10 @@ pub async fn search_client_loop<F: Future<Output = bool>>(
         }
 
         if !client_found_cb(handshake_packet.clone()).await {
-            let response_bytes = trace_err!(bincode::serialize(&HandshakePacket::Server(
-                ServerHandshakePacket::ClientUntrusted
-            )))?;
+            let response_bytes = trace_err!(bincode::serde::encode_to_vec(
+                HandshakePacket::Server(ServerHandshakePacket::ClientUntrusted),
+                BINCODE_CONFIG
+            ))?;
 
             handshake_socket
                 .send_to(&response_bytes, client_address)

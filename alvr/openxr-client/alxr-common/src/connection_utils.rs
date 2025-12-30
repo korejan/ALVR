@@ -1,7 +1,7 @@
 use crate::APP_CONFIG;
 use alvr_common::prelude::*;
 use alvr_sockets::{
-    CONTROL_PORT, ClientHandshakePacket, HandshakePacket, LOCAL_IP,
+    BINCODE_CONFIG, CONTROL_PORT, ClientHandshakePacket, HandshakePacket, LOCAL_IP,
     MAX_HANDSHAKE_PACKET_SIZE_BYTES, ServerHandshakePacket,
 };
 use std::{net::Ipv4Addr, time::Duration};
@@ -28,9 +28,10 @@ pub async fn announce_client_loop(
     let mut handshake_socket = trace_err!(UdpSocket::bind((LOCAL_IP, control_port)).await)?;
     trace_err!(handshake_socket.set_broadcast(true))?;
 
-    let client_handshake_packet = trace_err!(bincode::serialize(&HandshakePacket::Client(
-        handshake_packet
-    )))?;
+    let client_handshake_packet = trace_err!(bincode::serde::encode_to_vec(
+        HandshakePacket::Client(handshake_packet),
+        BINCODE_CONFIG
+    ))?;
 
     loop {
         let broadcast_result = handshake_socket
@@ -55,8 +56,11 @@ pub async fn announce_client_loop(
                             .await
                     )?;
 
-                    if let Ok(HandshakePacket::Server(handshake_packet)) =
-                        bincode::deserialize(&server_response_buffer[..packet_size])
+                    if let Ok((HandshakePacket::Server(handshake_packet), _)) =
+                        bincode::serde::decode_from_slice(
+                            &server_response_buffer[..packet_size],
+                            BINCODE_CONFIG,
+                        )
                     {
                         warn!("received packet {:?}", &handshake_packet);
                         println!("received packet {:?}", &handshake_packet);

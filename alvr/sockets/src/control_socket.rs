@@ -1,4 +1,4 @@
-use super::{CONTROL_PORT, LOCAL_IP, Ldc};
+use super::{BINCODE_CONFIG, CONTROL_PORT, LOCAL_IP, Ldc};
 use alvr_common::prelude::*;
 use bytes::Bytes;
 use futures::{
@@ -17,7 +17,7 @@ pub struct ControlSocketSender<T> {
 
 impl<S: Serialize> ControlSocketSender<S> {
     pub async fn send(&mut self, packet: &S) -> StrResult {
-        let packet_bytes = trace_err!(bincode::serialize(packet))?;
+        let packet_bytes = trace_err!(bincode::serde::encode_to_vec(packet, BINCODE_CONFIG))?;
         trace_err!(self.inner.send(packet_bytes.into()).await)
     }
 }
@@ -30,7 +30,11 @@ pub struct ControlSocketReceiver<T> {
 impl<R: DeserializeOwned> ControlSocketReceiver<R> {
     pub async fn recv(&mut self) -> StrResult<R> {
         let packet_bytes = trace_err!(trace_none!(self.inner.next().await)?)?;
-        trace_err!(bincode::deserialize(&packet_bytes))
+        let (packet, _) = trace_err!(bincode::serde::decode_from_slice(
+            &packet_bytes,
+            BINCODE_CONFIG
+        ))?;
+        Ok(packet)
     }
 }
 
@@ -70,13 +74,17 @@ impl ProtoControlSocket {
     }
 
     pub async fn send<S: Serialize>(&mut self, packet: &S) -> StrResult {
-        let packet_bytes = trace_err!(bincode::serialize(packet))?;
+        let packet_bytes = trace_err!(bincode::serde::encode_to_vec(packet, BINCODE_CONFIG))?;
         trace_err!(self.inner.send(packet_bytes.into()).await)
     }
 
     pub async fn recv<R: DeserializeOwned>(&mut self) -> StrResult<R> {
         let packet_bytes = trace_err!(trace_none!(self.inner.next().await)?)?;
-        trace_err!(bincode::deserialize(&packet_bytes))
+        let (packet, _) = trace_err!(bincode::serde::decode_from_slice(
+            &packet_bytes,
+            BINCODE_CONFIG
+        ))?;
+        Ok(packet)
     }
 
     pub fn split<S: Serialize, R: DeserializeOwned>(
