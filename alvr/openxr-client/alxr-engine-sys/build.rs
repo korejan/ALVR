@@ -1,9 +1,29 @@
+use bindgen::callbacks::{DeriveInfo, ParseCallbacks, TypeKind};
 use cmake::Config;
 use core::str::FromStr;
 use std::ffi::OsStr;
 use std::{env, path::PathBuf};
 use target_lexicon::{Architecture, ArmArchitecture, Environment, OperatingSystem, Triple};
 use walkdir::DirEntry;
+
+#[derive(Debug)]
+struct PodDerive;
+
+impl ParseCallbacks for PodDerive {
+    fn add_derives(&self, info: &DeriveInfo<'_>) -> Vec<String> {
+        let pod_types = [
+            "TrackingVector2",
+            "TrackingVector3",
+            "TrackingQuat",
+            "ALXRPosef",
+        ];
+        if info.kind == TypeKind::Struct && pod_types.contains(&info.name) {
+            vec!["bytemuck::Pod".into(), "bytemuck::Zeroable".into()]
+        } else {
+            vec![]
+        }
+    }
+}
 
 const BUNDLE_FFMPEG_INSTALL_DIR_VAR: &'static str = "ALXR_BUNDLE_FFMPEG_INSTALL_PATH";
 const CMAKE_PREFIX_PATH_VAR: &'static str = "CMAKE_PREFIX_PATH";
@@ -246,6 +266,7 @@ fn main() {
         .clang_arg(format!("-I{0}", tracking_binding_path.to_string_lossy()))
         .header(binding_file.to_string_lossy())
         .derive_default(true)
+        .parse_callbacks(Box::new(PodDerive))
         .rustified_enum("ALXRGraphicsApi")
         .rustified_enum("ALXRDecoderType")
         .rustified_enum("ALXRColorSpace")

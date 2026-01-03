@@ -6,12 +6,71 @@ use alvr_common::{
     semver::Version,
 };
 use alvr_session::Fov;
+use bytemuck::{Pod, Zeroable};
+use half::{f16, slice::HalfFloatSliceExt};
 use serde::{Deserialize, Serialize};
 
 pub const INPUT: StreamId = 0; // tracking and buttons
 pub const HAPTICS: StreamId = 1;
 pub const AUDIO: StreamId = 2;
 pub const VIDEO: StreamId = 3;
+
+#[repr(C)]
+#[derive(Serialize, Deserialize, Default, Copy, Clone, Pod, Zeroable)]
+pub struct Vec3F16 {
+    pub x: f16,
+    pub y: f16,
+    pub z: f16,
+}
+
+#[repr(C)]
+#[derive(Serialize, Deserialize, Copy, Clone, Pod, Zeroable)]
+pub struct QuatF16 {
+    pub x: f16,
+    pub y: f16,
+    pub z: f16,
+    pub w: f16,
+}
+
+impl Vec3F16 {
+    #[inline(always)]
+    pub fn convert_from_f32_slice(dst: &mut [Vec3F16], src: &[f32]) {
+        let dst_f16: &mut [f16] = bytemuck::cast_slice_mut(dst);
+        dst_f16.convert_from_f32_slice(src)
+    }
+
+    #[inline(always)]
+    pub fn convert_to_f32_slice(src: &[Vec3F16], dst: &mut [f32]) {
+        let src_f16: &[f16] = bytemuck::cast_slice(src);
+        src_f16.convert_to_f32_slice(dst)
+    }
+}
+
+impl Default for QuatF16 {
+    #[inline(always)]
+    fn default() -> Self {
+        Self {
+            x: f16::ZERO,
+            y: f16::ZERO,
+            z: f16::ZERO,
+            w: f16::ONE,
+        }
+    }
+}
+
+impl QuatF16 {
+    #[inline(always)]
+    pub fn convert_from_f32_slice(dst: &mut [QuatF16], src: &[f32]) {
+        let dst_f16: &mut [f16] = bytemuck::cast_slice_mut(dst);
+        dst_f16.convert_from_f32_slice(src)
+    }
+
+    #[inline(always)]
+    pub fn convert_to_f32_slice(src: &[QuatF16], dst: &mut [f32]) {
+        let src_f16: &[f16] = bytemuck::cast_slice(src);
+        src_f16.convert_to_f32_slice(dst)
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ClientHandshakePacket {
@@ -118,10 +177,10 @@ pub enum ClientControlPacket {
 // legacy video packet
 #[derive(Serialize, Deserialize, Clone)]
 pub struct VideoFrameHeaderPacket {
-    pub packet_counter: u32,
     pub tracking_frame_index: u64,
     pub video_frame_index: u64,
     pub sent_time: u64,
+    pub packet_counter: u32,
     pub frame_byte_size: u32,
     pub fec_index: u32,
     pub fec_percentage: u16,
@@ -130,21 +189,21 @@ pub struct VideoFrameHeaderPacket {
 // legacy time sync packet
 #[derive(Serialize, Deserialize, Default)]
 pub struct TimeSyncPacket {
-    pub mode: u32,
     pub server_time: u64,
     pub client_time: u64,
+    pub tracking_recv_frame_index: u64,
     pub packets_lost_total: u64,
     pub packets_lost_in_second: u64,
-    pub average_send_latency: u32,
-    pub average_transport_latency: u32,
     pub average_decode_latency: u64,
-    pub idle_time: u32,
-    pub fec_failure: u32,
     pub fec_failure_in_second: u64,
     pub fec_failure_total: u64,
-    pub fps: f32,
+    pub fec_failure: u32,
+    pub average_send_latency: u32,
+    pub average_transport_latency: u32,
     pub server_total_latency: u32,
-    pub tracking_recv_frame_index: u64,
+    pub mode: u32,
+    pub idle_time: u32,
+    pub fps: f32,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -169,8 +228,8 @@ pub struct HandTrackingInput {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct LegacyController {
-    pub bone_rotations: [Quat; 19],
-    pub bone_positions_base: [Vec3; 19],
+    pub bone_rotations: [QuatF16; 19],
+    pub bone_positions_base: [Vec3F16; 19],
     pub joystick_position: Vec2,
     pub trackpad_position: Vec2,
     pub buttons: u64,
@@ -190,17 +249,14 @@ pub struct LegacyInput {
 #[derive(Serialize, Deserialize)]
 pub struct Input {
     pub legacy: LegacyInput,
-    pub device_motions: Vec<(u64, MotionData)>,
+    pub device_motions: [(MotionData, u64); 3],
     pub target_timestamp: Duration,
-    // pub left_hand_tracking: Option<HandTrackingInput>, // unused for now
-    // pub right_hand_tracking: Option<HandTrackingInput>, // unused for now
-    // pub button_values: HashMap<u64, ButtonValue>,      // unused for now
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Haptics {
-    pub path: u64,
     pub duration: Duration,
+    pub path: u64,
     pub frequency: f32,
     pub amplitude: f32,
 }

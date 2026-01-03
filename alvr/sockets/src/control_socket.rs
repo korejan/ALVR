@@ -16,6 +16,7 @@ pub struct ControlSocketSender<T> {
 }
 
 impl<S: Serialize> ControlSocketSender<S> {
+    #[inline]
     pub async fn send(&mut self, packet: &S) -> StrResult {
         let packet_bytes = trace_err!(bincode::serde::encode_to_vec(packet, BINCODE_CONFIG))?;
         trace_err!(self.inner.send(packet_bytes.into()).await)
@@ -28,6 +29,7 @@ pub struct ControlSocketReceiver<T> {
 }
 
 impl<R: DeserializeOwned> ControlSocketReceiver<R> {
+    #[inline]
     pub async fn recv(&mut self) -> StrResult<R> {
         let packet_bytes = trace_err!(trace_none!(self.inner.next().await)?)?;
         let (packet, _) = trace_err!(bincode::serde::decode_from_slice(
@@ -73,11 +75,13 @@ impl ProtoControlSocket {
         Ok((Self { inner: socket }, peer_ip))
     }
 
+    #[inline]
     pub async fn send<S: Serialize>(&mut self, packet: &S) -> StrResult {
         let packet_bytes = trace_err!(bincode::serde::encode_to_vec(packet, BINCODE_CONFIG))?;
         trace_err!(self.inner.send(packet_bytes.into()).await)
     }
 
+    #[inline]
     pub async fn recv<R: DeserializeOwned>(&mut self) -> StrResult<R> {
         let packet_bytes = trace_err!(trace_none!(self.inner.next().await)?)?;
         let (packet, _) = trace_err!(bincode::serde::decode_from_slice(
@@ -87,6 +91,7 @@ impl ProtoControlSocket {
         Ok(packet)
     }
 
+    #[inline]
     pub fn split<S: Serialize, R: DeserializeOwned>(
         self,
     ) -> (ControlSocketSender<S>, ControlSocketReceiver<R>) {

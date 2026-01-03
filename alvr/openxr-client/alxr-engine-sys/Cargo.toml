@@ -17,6 +17,9 @@ oculus-ext-headers = []
 # These are for all build types.
 no-decoder = [] # disables building platform decoders & depeendencies.
 
+[dependencies]
+bytemuck = "1"
+
 [build-dependencies]
 cmake = "0.1"
 bindgen = "0.72"

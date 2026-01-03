@@ -1,7 +1,22 @@
 use alvr_filesystem as afs;
+use bindgen::callbacks::{DeriveInfo, ParseCallbacks, TypeKind};
 #[cfg(target_os = "linux")]
 use pkg_config;
 use std::{env, path::PathBuf};
+
+#[derive(Debug)]
+struct PodDerive;
+
+impl ParseCallbacks for PodDerive {
+    fn add_derives(&self, info: &DeriveInfo<'_>) -> Vec<String> {
+        let pod_types = ["TrackingVector2", "TrackingVector3", "TrackingQuat"];
+        if info.kind == TypeKind::Struct && pod_types.contains(&info.name) {
+            vec!["bytemuck::Pod".into(), "bytemuck::Zeroable".into()]
+        } else {
+            vec![]
+        }
+    }
+}
 
 // this code must be executed BEFORE the actual cpp build when using bundled ffmpeg,
 // as it adds definitions and include flags
@@ -153,6 +168,7 @@ fn main() {
         .clang_arg("-xc++")
         .header("cpp/alvr_server/bindings.h")
         .derive_default(true)
+        .parse_callbacks(Box::new(PodDerive))
         .generate()
         .expect("bindings")
         .write_to_file(out_dir.join("bindings.rs"))

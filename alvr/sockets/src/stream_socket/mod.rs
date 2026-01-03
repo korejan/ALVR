@@ -103,18 +103,21 @@ pub struct SendBufferLock<'a> {
 
 impl Deref for SendBufferLock<'_> {
     type Target = BytesMut;
+    #[inline]
     fn deref(&self) -> &BytesMut {
         &self.buffer_bytes
     }
 }
 
 impl DerefMut for SendBufferLock<'_> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut BytesMut {
         &mut self.buffer_bytes
     }
 }
 
 impl Drop for SendBufferLock<'_> {
+    #[inline]
     fn drop(&mut self) {
         // the extra split is to avoid moving buffer_bytes
         self.header_bytes.unsplit(self.buffer_bytes.split())
@@ -131,6 +134,7 @@ impl<T> SenderBuffer<T> {
     // Get the editable part of the buffer (the header part is excluded). The returned buffer can
     // be grown at zero-cost until `preferred_max_buffer_size` (set with send_buffer()) is reached.
     // After that a reallocation will be needed but there will be no other side effects.
+    #[inline]
     pub fn get_mut(&mut self) -> SendBufferLock<'_> {
         let buffer_bytes = self.inner.split_off(self.offset);
         SendBufferLock {
@@ -211,6 +215,7 @@ pub fn new_sender_buffer<T: serde::Serialize>(
 }
 
 impl<T: Serialize> StreamSender<T> {
+    #[inline(always)]
     pub fn new_buffer(
         &self,
         header: &T,
@@ -219,6 +224,7 @@ impl<T: Serialize> StreamSender<T> {
         new_sender_buffer(self.stream_id, header, preferred_max_buffer_size)
     }
 
+    #[inline(always)]
     pub async fn send(&mut self, packet: &T) -> StrResult {
         self.send_buffer(self.new_buffer(packet, 0)?).await
     }

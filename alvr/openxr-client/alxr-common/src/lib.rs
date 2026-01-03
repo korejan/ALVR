@@ -9,22 +9,22 @@ use alvr_session::Fov;
 use alvr_session::LinuxAudioBackend;
 use alvr_sockets::{
     BatteryPacket, HeadsetInfoPacket, HiddenAreaMesh, Input, LegacyController, LegacyInput,
-    MotionData, TimeSyncPacket, ViewsConfig,
+    MotionData, QuatF16, TimeSyncPacket, Vec3F16, ViewsConfig,
 };
 pub use alxr_engine_sys::*;
+use bytemuck::cast_slice;
+use glam::{Quat, Vec2, Vec3};
 use lazy_static::lazy_static;
 use local_ipaddress;
 use parking_lot::Mutex;
+use semver::Version;
 use std::ffi::CStr;
 use std::{
     slice,
     sync::atomic::{AtomicBool, Ordering},
 };
-use tokio::{runtime::Runtime, sync::Notify, sync::mpsc};
-//#[cfg(not(target_os = "android"))]
-use glam::{Quat, Vec2, Vec3};
-use semver::Version;
 use structopt::StructOpt;
+use tokio::{runtime::Runtime, sync::Notify, sync::mpsc};
 
 #[cfg(target_os = "android")]
 use android_system_properties::AndroidSystemProperties;
@@ -528,21 +528,50 @@ pub extern "C" fn input_send(data_ptr: *const TrackingInfo) {
         Vec2::new(vec.x, vec.y)
     }
 
+    #[inline(always)]
+    fn convert_to_quat_f16<const N: usize>(src: &[TrackingQuat; N]) -> [QuatF16; N] {
+        const {
+            assert!(
+                std::mem::size_of::<TrackingQuat>() % std::mem::size_of::<f32>() == 0,
+                "size of TrackingQuat must be divisible by size of f32"
+            );
+        }
+        let mut array: std::mem::MaybeUninit<[QuatF16; N]> = std::mem::MaybeUninit::uninit();
+        let dst = unsafe { &mut *array.as_mut_ptr() };
+        let src_f32: &[f32] = cast_slice(src);
+        QuatF16::convert_from_f32_slice(dst, src_f32);
+        unsafe { array.assume_init() }
+    }
+
+    #[inline(always)]
+    fn convert_to_vec3_f16<const N: usize>(src: &[TrackingVector3; N]) -> [Vec3F16; N] {
+        const {
+            assert!(
+                std::mem::size_of::<TrackingVector3>() % std::mem::size_of::<f32>() == 0,
+                "size of TrackingVector3 must be divisible by size of f32"
+            );
+        }
+        let mut array: std::mem::MaybeUninit<[Vec3F16; N]> = std::mem::MaybeUninit::uninit();
+        let dst = unsafe { &mut *array.as_mut_ptr() };
+        let src_f32: &[f32] = cast_slice(src);
+        Vec3F16::convert_from_f32_slice(dst, src_f32);
+        unsafe { array.assume_init() }
+    }
+
     let data: &TrackingInfo = unsafe { &*data_ptr };
     let input = Input {
         target_timestamp: std::time::Duration::from_nanos(data.targetTimestampNs),
-        device_motions: vec![
+        device_motions: [
             (
-                *HEAD_ID,
                 MotionData {
                     orientation: from_tracking_quat(&data.headPose.orientation),
                     position: from_tracking_vector3(&data.headPose.position),
                     linear_velocity: None,
                     angular_velocity: None,
                 },
+                *HEAD_ID,
             ),
             (
-                *LEFT_HAND_ID,
                 MotionData {
                     orientation: from_tracking_quat(if data.controller[0].isHand {
                         &data.controller[0].boneRootPose.orientation
@@ -561,9 +590,9 @@ pub extern "C" fn input_send(data_ptr: *const TrackingInfo) {
                         &data.controller[0].angularVelocity,
                     )),
                 },
+                *LEFT_HAND_ID,
             ),
             (
-                *RIGHT_HAND_ID,
                 MotionData {
                     orientation: from_tracking_quat(if data.controller[1].isHand {
                         &data.controller[1].boneRootPose.orientation
@@ -582,6 +611,7 @@ pub extern "C" fn input_send(data_ptr: *const TrackingInfo) {
                         &data.controller[1].angularVelocity,
                     )),
                 },
+                *RIGHT_HAND_ID,
             ),
         ],
         // left_hand_tracking: None,
@@ -598,22 +628,8 @@ pub extern "C" fn input_send(data_ptr: *const TrackingInfo) {
                     trackpad_position: from_tracking_vector2(&data.controller[0].trackpadPosition),
                     trigger_value: data.controller[0].triggerValue,
                     grip_value: data.controller[0].gripValue,
-                    bone_rotations: {
-                        let bone_rotations = &data.controller[0].boneRotations;
-                        let mut array = [Quat::IDENTITY; 19];
-                        for i in 0..array.len() {
-                            array[i] = from_tracking_quat(&bone_rotations[i]);
-                        }
-                        array
-                    },
-                    bone_positions_base: {
-                        let bone_positions = &data.controller[0].bonePositionsBase;
-                        let mut array = [Vec3::ZERO; 19];
-                        for i in 0..array.len() {
-                            array[i] = from_tracking_vector3(&bone_positions[i]);
-                        }
-                        array
-                    },
+                    bone_rotations: convert_to_quat_f16(&data.controller[0].boneRotations),
+                    bone_positions_base: convert_to_vec3_f16(&data.controller[0].bonePositionsBase),
                     hand_finger_confience: data.controller[0].handFingerConfidences,
                 },
                 LegacyController {
@@ -624,22 +640,8 @@ pub extern "C" fn input_send(data_ptr: *const TrackingInfo) {
                     trackpad_position: from_tracking_vector2(&data.controller[1].trackpadPosition),
                     trigger_value: data.controller[1].triggerValue,
                     grip_value: data.controller[1].gripValue,
-                    bone_rotations: {
-                        let bone_rotations = &data.controller[1].boneRotations;
-                        let mut array = [Quat::IDENTITY; 19];
-                        for i in 0..array.len() {
-                            array[i] = from_tracking_quat(&bone_rotations[i]);
-                        }
-                        array
-                    },
-                    bone_positions_base: {
-                        let bone_positions = &data.controller[1].bonePositionsBase;
-                        let mut array = [Vec3::ZERO; 19];
-                        for i in 0..array.len() {
-                            array[i] = from_tracking_vector3(&bone_positions[i]);
-                        }
-                        array
-                    },
+                    bone_rotations: convert_to_quat_f16(&data.controller[1].boneRotations),
+                    bone_positions_base: convert_to_vec3_f16(&data.controller[1].bonePositionsBase),
                     hand_finger_confience: data.controller[1].handFingerConfidences,
                 },
             ],

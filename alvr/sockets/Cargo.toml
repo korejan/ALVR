@@ -20,6 +20,8 @@ nonzero_ext = "0.3"
 socket2 = "0.6"
 tokio = { version = "1", features = ["rt", "net", "macros"] }
 tokio-util = { version = "0.7", features = ["codec", "net"] }
+half = { version = "2", features = ["bytemuck", "serde"] }
+bytemuck = { version = "1", features = ["derive"] }
 # Miscellaneous
 rand = "0.9"
 

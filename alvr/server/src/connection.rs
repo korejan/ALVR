@@ -16,9 +16,10 @@ use alvr_session::{
 };
 use alvr_sockets::{
     AUDIO, ClientConfigPacket, ClientControlPacket, ControlSocketReceiver, ControlSocketSender,
-    HAPTICS, HeadsetInfoPacket, INPUT, Input, PeerType, ProtoControlSocket, ServerControlPacket,
-    StreamSocketBuilder, VIDEO, spawn_cancelable,
+    HAPTICS, HeadsetInfoPacket, INPUT, Input, PeerType, ProtoControlSocket, QuatF16,
+    ServerControlPacket, StreamSocketBuilder, VIDEO, Vec3F16, spawn_cancelable,
 };
+use bytemuck::cast_slice_mut;
 use futures::future::{BoxFuture, Either};
 use settings_schema::Switch;
 use std::{
@@ -870,6 +871,37 @@ async fn connection_pipeline() -> StrResult {
         }
     }
 
+    #[inline(always)]
+    fn convert_to_quat_f32<const N: usize>(src: &[QuatF16; N]) -> [TrackingQuat; N] {
+        const {
+            assert!(
+                std::mem::size_of::<TrackingQuat>() % std::mem::size_of::<f32>() == 0,
+                "size of TrackingQuat must be divisible by size of f32"
+            );
+        }
+        let mut array: std::mem::MaybeUninit<[TrackingQuat; N]> = std::mem::MaybeUninit::uninit();
+        let dst = unsafe { &mut *array.as_mut_ptr() };
+        let dst_f32: &mut [f32] = cast_slice_mut(dst);
+        QuatF16::convert_to_f32_slice(src, dst_f32);
+        unsafe { array.assume_init() }
+    }
+
+    #[inline(always)]
+    fn convert_to_vec3_f32<const N: usize>(src: &[Vec3F16; N]) -> [TrackingVector3; N] {
+        const {
+            assert!(
+                std::mem::size_of::<TrackingVector3>() % std::mem::size_of::<f32>() == 0,
+                "size of TrackingVector3 must be divisible by size of f32"
+            );
+        }
+        let mut array: std::mem::MaybeUninit<[TrackingVector3; N]> =
+            std::mem::MaybeUninit::uninit();
+        let dst = unsafe { &mut *array.as_mut_ptr() };
+        let dst_f32: &mut [f32] = cast_slice_mut(dst);
+        Vec3F16::convert_to_f32_slice(src, dst_f32);
+        unsafe { array.assume_init() }
+    }
+
     let input_receive_loop = {
         let mut receiver = stream_socket.subscribe_to_stream::<Input>(INPUT).await?;
         async move {
@@ -879,23 +911,23 @@ async fn connection_pipeline() -> StrResult {
                 let head_motion = &input
                     .device_motions
                     .iter()
-                    .find(|(id, _)| *id == *HEAD_ID)
+                    .find(|(_, id)| *id == *HEAD_ID)
                     .unwrap()
-                    .1;
+                    .0;
 
                 let left_hand_motion = &input
                     .device_motions
                     .iter()
-                    .find(|(id, _)| *id == *LEFT_HAND_ID)
+                    .find(|(_, id)| *id == *LEFT_HAND_ID)
                     .unwrap()
-                    .1;
+                    .0;
 
                 let right_hand_motion = &input
                     .device_motions
                     .iter()
-                    .find(|(id, _)| *id == *RIGHT_HAND_ID)
+                    .find(|(_, id)| *id == *RIGHT_HAND_ID)
                     .unwrap()
-                    .1;
+                    .0;
 
                 let tracking_info = TrackingInfo {
                     targetTimestampNs: input.target_timestamp.as_nanos() as _,
@@ -927,23 +959,12 @@ async fn connection_pipeline() -> StrResult {
                             linearVelocity: to_tracking_vector3(
                                 &left_hand_motion.linear_velocity.unwrap_or(Vec3::ZERO),
                             ),
-                            boneRotations: {
-                                let bone_rotations = &input.legacy.controllers[0].bone_rotations;
-                                let mut array = [TrackingQuat::default(); 19];
-                                for i in 0..array.len() {
-                                    array[i] = to_tracking_quat(&bone_rotations[i]);
-                                }
-                                array
-                            },
-                            bonePositionsBase: {
-                                let bone_positions =
-                                    &input.legacy.controllers[0].bone_positions_base;
-                                let mut array = [TrackingVector3::default(); 19];
-                                for i in 0..array.len() {
-                                    array[i] = to_tracking_vector3(&bone_positions[i]);
-                                }
-                                array
-                            },
+                            boneRotations: convert_to_quat_f32(
+                                &input.legacy.controllers[0].bone_rotations,
+                            ),
+                            bonePositionsBase: convert_to_vec3_f32(
+                                &input.legacy.controllers[0].bone_positions_base,
+                            ),
                             boneRootPose: TrackingPosef {
                                 orientation: to_tracking_quat(&left_hand_motion.orientation),
                                 position: to_tracking_vector3(&left_hand_motion.position),
@@ -973,23 +994,12 @@ async fn connection_pipeline() -> StrResult {
                             linearVelocity: to_tracking_vector3(
                                 &right_hand_motion.linear_velocity.unwrap_or(Vec3::ZERO),
                             ),
-                            boneRotations: {
-                                let bone_rotations = &input.legacy.controllers[1].bone_rotations;
-                                let mut array = [TrackingQuat::default(); 19];
-                                for i in 0..array.len() {
-                                    array[i] = to_tracking_quat(&bone_rotations[i]);
-                                }
-                                array
-                            },
-                            bonePositionsBase: {
-                                let bone_positions =
-                                    &input.legacy.controllers[1].bone_positions_base;
-                                let mut array = [TrackingVector3::default(); 19];
-                                for i in 0..array.len() {
-                                    array[i] = to_tracking_vector3(&bone_positions[i]);
-                                }
-                                array
-                            },
+                            boneRotations: convert_to_quat_f32(
+                                &input.legacy.controllers[1].bone_rotations,
+                            ),
+                            bonePositionsBase: convert_to_vec3_f32(
+                                &input.legacy.controllers[1].bone_positions_base,
+                            ),
                             boneRootPose: TrackingPosef {
                                 orientation: to_tracking_quat(&right_hand_motion.orientation),
                                 position: to_tracking_vector3(&right_hand_motion.position),
