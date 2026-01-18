@@ -58,6 +58,35 @@ pub fn create_identity(hostname: Option<String>) -> StrResult<PrivateIdentity> {
     });
 }
 
+use std::io::{self, Write};
+
+/// A writer that counts bytes without allocating
+struct CountingWriter(usize);
+
+impl Write for CountingWriter {
+    #[inline(always)]
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.0 += buf.len();
+        Ok(buf.len())
+    }
+
+    #[inline(always)]
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+/// Get the serialized size of a value without allocating
+pub fn serialized_size<T: serde::Serialize>(value: &T) -> StrResult<usize> {
+    let mut counter = CountingWriter(0);
+    trace_err!(bincode::serde::encode_into_std_write(
+        value,
+        &mut counter,
+        BINCODE_CONFIG
+    ))?;
+    Ok(counter.0)
+}
+
 mod util {
     use alvr_common::prelude::*;
     use std::future::Future;

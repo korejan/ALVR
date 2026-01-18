@@ -2,7 +2,7 @@
 mod android {
     use alvr_common::prelude::*;
     use alvr_session::AudioConfig;
-    use alvr_sockets::{StreamReceiver, StreamSender};
+    use alvr_sockets::{AUDIO, SenderBuffer, StreamReceiver, StreamSender};
     use oboe::{
         AudioInputCallback, AudioInputStreamSafe, AudioOutputCallback, AudioOutputStreamSafe,
         AudioStream, AudioStreamBase, AudioStreamBuilder, DataCallbackResult, InputPreset, Mono,
@@ -22,8 +22,8 @@ mod android {
     const MIC_BATCH_MS: u32 = 10;
 
     struct RecorderCallback {
-        sender: tmpsc::UnboundedSender<Vec<u8>>,
-        recycle_receiver: smpsc::Receiver<Vec<u8>>,
+        sender: tmpsc::UnboundedSender<SenderBuffer<()>>,
+        recycle_receiver: smpsc::Receiver<SenderBuffer<()>>,
     }
 
     impl AudioInputCallback for RecorderCallback {
@@ -34,15 +34,21 @@ mod android {
             _: &mut dyn AudioInputStreamSafe,
             frames: &[i16],
         ) -> DataCallbackResult {
-            let mut sample_buffer = self.recycle_receiver.try_recv().unwrap_or_default();
-            sample_buffer.clear();
-            sample_buffer.reserve(frames.len() * mem::size_of::<i16>());
+            // Get recycled buffer or create new one (grows organically like Vec)
+            let mut buffer = self
+                .recycle_receiver
+                .try_recv()
+                .unwrap_or_else(|_| SenderBuffer::<()>::new(AUDIO, 0).unwrap());
+            // encode() clears buffer and returns lock to payload portion
+            let mut samples = buffer.encode(&()).unwrap();
+            samples.reserve(frames.len() * mem::size_of::<i16>());
 
             for frame in frames {
-                sample_buffer.extend(&frame.to_ne_bytes());
+                samples.extend_from_slice(&frame.to_ne_bytes());
             }
 
-            self.sender.send(sample_buffer).ok();
+            drop(samples); // Release lock before sending
+            self.sender.send(buffer).ok();
 
             DataCallbackResult::Continue
         }
@@ -69,8 +75,8 @@ mod android {
 
     pub async fn record_audio_loop(mut sender: StreamSender<()>) -> StrResult {
         let (_shutdown_notifier, shutdown_receiver) = smpsc::channel::<()>();
-        let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
-        let (recycle_sender, recycle_receiver) = smpsc::channel();
+        let (data_sender, mut data_receiver) = tmpsc::unbounded_channel::<SenderBuffer<()>>();
+        let (recycle_sender, recycle_receiver) = smpsc::channel::<SenderBuffer<()>>();
 
         // Query the actual sample rate from the device
         let actual_sample_rate = get_input_sample_rate()?;
@@ -99,11 +105,10 @@ mod android {
             Ok(())
         });
 
-        while let Some(data) = data_receiver.recv().await {
-            let mut buffer = sender.new_buffer(&(), data.len())?;
-            buffer.get_mut().extend(&data);
-            sender.send_buffer(buffer).await.ok();
-            recycle_sender.send(data).ok();
+        // Receive pre-filled buffers from callback, send over network, recycle
+        while let Some(mut buffer) = data_receiver.recv().await {
+            sender.send_buffer_ref(&mut buffer).await.ok();
+            recycle_sender.send(buffer).ok();
         }
 
         Ok(())

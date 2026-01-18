@@ -244,7 +244,7 @@ pub async fn receive_samples_loop(
         let mut sample_buffer_ref = sample_buffer.lock();
 
         if packet.had_packet_loss {
-            info!("Audio packet loss!");
+            // debug!("Audio packet loss!");
 
             if sample_buffer_ref.len() / channels_count < batch_frames_count {
                 sample_buffer_ref.clear();
@@ -295,7 +295,7 @@ pub async fn receive_samples_loop(
                 }
 
                 sample_buffer_ref.extend(recovery_sample_buffer.drain(..));
-                info!("Audio recovered");
+                // debug!("Audio recovered");
             }
         } else {
             sample_buffer_ref.extend(
@@ -309,7 +309,7 @@ pub async fn receive_samples_loop(
         // todo: use smarter policy with EventTiming
         let buffer_frames_size = sample_buffer_ref.len() / channels_count;
         if buffer_frames_size > 2 * average_buffer_frames_count + batch_frames_count {
-            info!("Audio buffer overflow! size: {buffer_frames_size}");
+            // debug!("Audio buffer overflow! size: {buffer_frames_size}");
 
             // Ensure we keep at least batch_frames_count for the cross-fade
             let target_frames = average_buffer_frames_count.max(batch_frames_count);

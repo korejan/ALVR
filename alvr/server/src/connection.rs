@@ -1,7 +1,8 @@
 use crate::{
     CLIENTS_UPDATED_NOTIFIER, ClientListAction, EyeFov, HAPTICS_SENDER, RESTART_NOTIFIER,
     SESSION_MANAGER, TIME_SYNC_SENDER, TimeSync, TrackingInfo, TrackingInfo_Controller,
-    TrackingPosef, TrackingQuat, TrackingVector2, TrackingVector3, VIDEO_SENDER, connection_utils,
+    TrackingPosef, TrackingQuat, TrackingVector2, TrackingVector3, VIDEO_BUFFER_POOL_SIZE,
+    VIDEO_SENDER, VideoSender, connection_utils,
 };
 use alvr_audio::{AudioDevice, AudioDeviceType};
 use alvr_common::{
@@ -15,9 +16,10 @@ use alvr_session::{
     CodecType, FrameSize, OpenvrConfig, OpenvrPropValue, OpenvrPropertyKey, ServerEvent,
 };
 use alvr_sockets::{
-    AUDIO, ClientConfigPacket, ClientControlPacket, ControlSocketReceiver, ControlSocketSender,
-    HAPTICS, HeadsetInfoPacket, INPUT, Input, PeerType, ProtoControlSocket, QuatF16,
-    ServerControlPacket, StreamSocketBuilder, VIDEO, Vec3F16, spawn_cancelable,
+    AUDIO, ClientConfigPacket, ClientControlPacket, ControlBuffer, ControlBufferMut,
+    ControlSocketReceiver, ControlSocketSender, HAPTICS, Haptics, HeadsetInfoPacket, INPUT, Input,
+    PeerType, ProtoControlSocket, QuatF16, SenderBuffer, ServerControlPacket, StreamSocketBuilder,
+    VIDEO, Vec3F16, VideoFrameHeaderPacket, spawn_cancelable,
 };
 use bytemuck::cast_slice_mut;
 use futures::future::{BoxFuture, Either};
@@ -798,14 +800,26 @@ async fn connection_pipeline() -> StrResult {
         let mut socket_sender = stream_socket.request_stream(VIDEO).await?;
         async move {
             let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
-            *VIDEO_SENDER.lock() = Some(data_sender);
 
-            while let Some(video_frame_packet_buffer) = data_receiver.recv().await {
-                socket_sender
-                    .send_buffer(video_frame_packet_buffer)
+            let (recycle_sender, recycle_receiver) = tmpsc::channel(VIDEO_BUFFER_POOL_SIZE);
+            for _ in 0..VIDEO_BUFFER_POOL_SIZE {
+                recycle_sender
+                    .send(SenderBuffer::<VideoFrameHeaderPacket>::new(VIDEO, 0).unwrap())
                     .await
                     .ok();
             }
+
+            *VIDEO_SENDER.lock() = Some(VideoSender {
+                sender: data_sender,
+                recycle_receiver,
+            });
+
+            while let Some(mut buffer) = data_receiver.recv().await {
+                socket_sender.send_buffer_ref(&mut buffer).await.ok();
+                recycle_sender.send(buffer).await.ok(); // Recycle buffer back to pool
+            }
+
+            *VIDEO_SENDER.lock() = None;
 
             Ok(())
         }
@@ -817,11 +831,13 @@ async fn connection_pipeline() -> StrResult {
             let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
             *TIME_SYNC_SENDER.lock() = Some(data_sender);
 
+            let mut buffer = ControlBufferMut::<ServerControlPacket>::new()?;
             while let Some(time_sync) = data_receiver.recv().await {
+                buffer.encode(&ServerControlPacket::TimeSync(time_sync))?;
                 control_sender
                     .lock()
                     .await
-                    .send(&ServerControlPacket::TimeSync(time_sync))
+                    .send_buffer_mut(&mut buffer)
                     .await
                     .ok();
             }
@@ -836,11 +852,10 @@ async fn connection_pipeline() -> StrResult {
             let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
             *HAPTICS_SENDER.lock() = Some(data_sender);
 
+            let mut buffer = SenderBuffer::<Haptics>::new(HAPTICS, 0)?;
             while let Some(haptics) = data_receiver.recv().await {
-                socket_sender
-                    .send_buffer(socket_sender.new_buffer(&haptics, 0)?)
-                    .await
-                    .ok();
+                buffer.encode(&haptics)?;
+                socket_sender.send_buffer_ref(&mut buffer).await.ok();
             }
 
             Ok(())
@@ -1032,11 +1047,13 @@ async fn connection_pipeline() -> StrResult {
     let keepalive_loop = {
         let control_sender = Arc::clone(&control_sender);
         async move {
+            let keep_alive_msg =
+                ControlBuffer::<ServerControlPacket>::encoded(&ServerControlPacket::KeepAlive)?;
             loop {
                 let res = control_sender
                     .lock()
                     .await
-                    .send(&ServerControlPacket::KeepAlive)
+                    .send_buffer(&keep_alive_msg)
                     .await;
                 if let Err(e) = res {
                     alvr_session::log_event(ServerEvent::ClientDisconnected);
@@ -1169,12 +1186,12 @@ async fn connection_pipeline() -> StrResult {
         res = control_loop => res,
 
         _ = RESTART_NOTIFIER.notified() => {
-            control_sender
-                .lock()
-                .await
-                .send(&ServerControlPacket::Restarting)
-                .await
-                .ok();
+                control_sender
+                    .lock()
+                    .await
+                    .send(&ServerControlPacket::Restarting)
+                    .await
+                    .ok();
 
             Ok(())
         }

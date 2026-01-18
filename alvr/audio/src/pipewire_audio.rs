@@ -12,11 +12,19 @@
 //! - `tokio::sync::mpsc` for audio data (PipeWire -> async, capture only)
 //! - `Arc<Mutex<VecDeque<f32>>>` for shared sample buffer (playback only)
 
-use std::{cell::RefCell, collections::VecDeque, io::Cursor, mem, rc::Rc, sync::Arc, thread};
+use std::{
+    cell::RefCell,
+    collections::VecDeque,
+    io::Cursor,
+    mem,
+    rc::Rc,
+    sync::{Arc, mpsc as smpsc},
+    thread,
+};
 
 use alvr_common::prelude::*;
 use alvr_session::AudioConfig;
-use alvr_sockets::{StreamReceiver, StreamSender};
+use alvr_sockets::{AUDIO, SenderBuffer, StreamReceiver, StreamSender};
 use parking_lot::Mutex;
 use pipewire::{
     self as pw,
@@ -150,11 +158,18 @@ pub async fn record_audio_loop(
 ) -> StrResult {
     let sample_rate = get_sample_rate(&device)?;
 
-    let (data_tx, mut data_rx) = tmpsc::unbounded_channel::<StrResult<Vec<u8>>>();
+    let (data_tx, mut data_rx) = tmpsc::unbounded_channel::<StrResult<SenderBuffer<()>>>();
     let (shutdown_tx, shutdown_rx) = pw::channel::channel::<Shutdown>();
+    let (recycle_tx, recycle_rx) = smpsc::channel::<SenderBuffer<()>>();
 
     let handle = thread::spawn(move || {
-        if let Err(e) = run_capture_loop(channels_count, sample_rate, data_tx, shutdown_rx) {
+        if let Err(e) = run_capture_loop(
+            channels_count,
+            sample_rate,
+            data_tx,
+            recycle_rx,
+            shutdown_rx,
+        ) {
             error!("PipeWire capture error: {e}");
         }
     });
@@ -162,11 +177,11 @@ pub async fn record_audio_loop(
     // Guard ensures shutdown is sent even if this async task is cancelled
     let shutdown_tx = ShutdownSender(Some(shutdown_tx));
 
+    // Receive pre-filled buffers from callback, send over network, recycle
     while let Some(result) = data_rx.recv().await {
-        let data = result?;
-        let mut buffer = sender.new_buffer(&(), data.len())?;
-        buffer.get_mut().extend(&data);
-        sender.send_buffer(buffer).await.ok();
+        let mut buffer = result?;
+        sender.send_buffer_ref(&mut buffer).await.ok();
+        recycle_tx.send(buffer).ok();
     }
 
     drop(shutdown_tx);
@@ -181,7 +196,8 @@ pub async fn record_audio_loop(
 fn run_capture_loop(
     channels_count: u16,
     sample_rate: u32,
-    data_tx: tmpsc::UnboundedSender<StrResult<Vec<u8>>>,
+    data_tx: tmpsc::UnboundedSender<StrResult<SenderBuffer<()>>>,
+    recycle_rx: smpsc::Receiver<SenderBuffer<()>>,
     shutdown_rx: pw::channel::Receiver<Shutdown>,
 ) -> StrResult {
     // Initialize PipeWire library for this thread
@@ -214,6 +230,7 @@ fn run_capture_loop(
     });
 
     let data_tx = Rc::new(data_tx);
+    let recycle_rx = Rc::new(recycle_rx);
 
     let _listener = stream
         .add_local_listener::<()>()
@@ -229,11 +246,12 @@ fn run_capture_loop(
         })
         .process({
             let data_tx = Rc::clone(&data_tx);
+            let recycle_rx = Rc::clone(&recycle_rx);
             move |stream, _| {
-                let Some(mut buffer) = stream.dequeue_buffer() else {
+                let Some(mut pw_buffer) = stream.dequeue_buffer() else {
                     return;
                 };
-                let datas = buffer.datas_mut();
+                let datas = pw_buffer.datas_mut();
                 if datas.is_empty() {
                     return;
                 }
@@ -245,12 +263,15 @@ fn run_capture_loop(
 
                 if let Some(audio_data) = data.data() {
                     if size > 0 && offset + size <= audio_data.len() {
-                        // Note: Allocation here is unavoidable since we need to send
-                        // owned data across the channel to the async task.
-                        // The Vec is sized exactly to the audio chunk size.
-                        let mut samples = Vec::with_capacity(size);
+                        // Get recycled buffer or create new one (grows organically like Vec)
+                        let mut buffer = recycle_rx
+                            .try_recv()
+                            .unwrap_or_else(|_| SenderBuffer::<()>::new(AUDIO, 0).unwrap());
+                        // encode() clears buffer and returns lock to payload portion
+                        let mut samples = buffer.encode(&()).unwrap();
                         samples.extend_from_slice(&audio_data[offset..offset + size]);
-                        let _ = data_tx.send(Ok(samples));
+                        drop(samples); // Release lock before sending
+                        let _ = data_tx.send(Ok(buffer));
                     }
                 }
             }

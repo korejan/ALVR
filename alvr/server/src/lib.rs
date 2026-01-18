@@ -44,6 +44,13 @@ use tokio::{
 
 type VideoFramePacket = alvr_sockets::SenderBuffer<VideoFrameHeaderPacket>;
 
+pub(crate) const VIDEO_BUFFER_POOL_SIZE: usize = 512;
+
+pub struct VideoSender {
+    pub sender: mpsc::UnboundedSender<VideoFramePacket>,
+    pub recycle_receiver: mpsc::Receiver<VideoFramePacket>,
+}
+
 lazy_static! {
     // Since ALVR_DIR is needed to initialize logging, if error then just panic
     static ref FILESYSTEM_LAYOUT: Layout =
@@ -53,7 +60,7 @@ lazy_static! {
     static ref RUNTIME: Mutex<Option<Runtime>> = Mutex::new(Runtime::new().ok());
     static ref MAYBE_WINDOW: Mutex<Option<Arc<alcro::UI>>> = Mutex::new(None);
 
-    static ref VIDEO_SENDER: Mutex<Option<mpsc::UnboundedSender<VideoFramePacket>>> =
+    static ref VIDEO_SENDER: Mutex<Option<VideoSender>> =
         Mutex::new(None);
     static ref HAPTICS_SENDER: Mutex<Option<mpsc::UnboundedSender<Haptics>>> =
         Mutex::new(None);
@@ -333,30 +340,34 @@ pub unsafe extern "C" fn HmdDriverFactory(
         }
 
         extern "C" fn video_send(header: *const VideoFrame, buffer_ptr: *const u8, len: u32) {
-            if let Some(sender) = &*VIDEO_SENDER.lock() {
-                let header = unsafe {
-                    VideoFrameHeaderPacket {
-                        packet_counter: (*header).packetCounter,
-                        tracking_frame_index: (*header).trackingFrameIndex,
-                        video_frame_index: (*header).videoFrameIndex,
-                        sent_time: (*header).sentTime,
-                        frame_byte_size: (*header).frameByteSize,
-                        fec_index: (*header).fecIndex,
-                        fec_percentage: (*header).fecPercentage,
-                    }
-                };
+            let mut guard = VIDEO_SENDER.lock();
+            let Some(video_sender) = guard.as_mut() else {
+                return;
+            };
 
-                let mut video_frame_packet_buffer =
-                    alvr_sockets::new_sender_buffer(alvr_sockets::VIDEO, &header, len as _)
-                        .unwrap();
+            let Some(mut buffer) = video_sender.recycle_receiver.blocking_recv() else {
+                return;
+            };
 
-                let data_slice = unsafe { std::slice::from_raw_parts(buffer_ptr, len as _) };
-                video_frame_packet_buffer
-                    .get_mut()
-                    .extend_from_slice(data_slice);
+            let header = unsafe {
+                VideoFrameHeaderPacket {
+                    packet_counter: (*header).packetCounter,
+                    tracking_frame_index: (*header).trackingFrameIndex,
+                    video_frame_index: (*header).videoFrameIndex,
+                    sent_time: (*header).sentTime,
+                    frame_byte_size: (*header).frameByteSize,
+                    fec_index: (*header).fecIndex,
+                    fec_percentage: (*header).fecPercentage,
+                }
+            };
 
-                sender.send(video_frame_packet_buffer).ok();
-            }
+            let data_slice = unsafe { std::slice::from_raw_parts(buffer_ptr, len as _) };
+            buffer
+                .encode(&header)
+                .unwrap()
+                .extend_from_slice(data_slice);
+
+            video_sender.sender.send(buffer).ok();
         }
 
         extern "C" fn haptics_send(path: u64, duration_s: f32, frequency: f32, amplitude: f32) {

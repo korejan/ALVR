@@ -8,7 +8,7 @@ mod tcp;
 mod throttled_udp;
 mod udp;
 
-use crate::BINCODE_CONFIG;
+use crate::{BINCODE_CONFIG, serialized_size};
 use alvr_common::prelude::*;
 use alvr_session::{SocketBufferSize, SocketProtocol};
 use bytes::{Buf, BufMut, BytesMut};
@@ -103,21 +103,21 @@ pub struct SendBufferLock<'a> {
 
 impl Deref for SendBufferLock<'_> {
     type Target = BytesMut;
-    #[inline]
+    #[inline(always)]
     fn deref(&self) -> &BytesMut {
         &self.buffer_bytes
     }
 }
 
 impl DerefMut for SendBufferLock<'_> {
-    #[inline]
+    #[inline(always)]
     fn deref_mut(&mut self) -> &mut BytesMut {
         &mut self.buffer_bytes
     }
 }
 
 impl Drop for SendBufferLock<'_> {
-    #[inline]
+    #[inline(always)]
     fn drop(&mut self) {
         // the extra split is to avoid moving buffer_bytes
         self.header_bytes.unsplit(self.buffer_bytes.split())
@@ -126,21 +126,85 @@ impl Drop for SendBufferLock<'_> {
 
 pub struct SenderBuffer<T> {
     inner: BytesMut,
-    offset: usize,
+    stream_id: StreamId,
+    offset: usize, // Position after header, used by get_mut() for backward compat
     _phantom: PhantomData<T>,
 }
 
 impl<T> SenderBuffer<T> {
-    // Get the editable part of the buffer (the header part is excluded). The returned buffer can
-    // be grown at zero-cost until `preferred_max_buffer_size` (set with send_buffer()) is reached.
-    // After that a reallocation will be needed but there will be no other side effects.
-    #[inline]
+    /// Get the editable payload portion of the buffer (header excluded).
+    /// Used by legacy new_sender_buffer() callers.
+    #[inline(always)]
     pub fn get_mut(&mut self) -> SendBufferLock<'_> {
         let buffer_bytes = self.inner.split_off(self.offset);
         SendBufferLock {
             header_bytes: &mut self.inner,
             buffer_bytes,
         }
+    }
+
+    #[inline(always)]
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    #[inline(always)]
+    pub fn capacity(&self) -> usize {
+        self.inner.capacity()
+    }
+}
+
+impl<T: Serialize + Default> SenderBuffer<T> {
+    /// Create a reusable buffer for packets with header + payload.
+    /// Uses T::default() + serialized_size() to compute header capacity.
+    #[inline(always)]
+    pub fn new(stream_id: StreamId, max_payload_size: usize) -> StrResult<Self> {
+        let header_size = serialized_size(&T::default())?;
+        let capacity = 2 + 4 + header_size + max_payload_size; // stream_id + packet_index + header + payload
+        Ok(Self {
+            inner: BytesMut::with_capacity(capacity),
+            stream_id,
+            offset: 0, // Will be set by encode()
+            _phantom: PhantomData,
+        })
+    }
+}
+
+impl<T: Serialize> SenderBuffer<T> {
+    /// Create a pre-encoded buffer for constant header-only packets.
+    /// Can be sent multiple times without re-encoding - only packet_index changes.
+    #[inline]
+    pub fn encoded(stream_id: StreamId, max_payload_size: usize, header: &T) -> StrResult<Self> {
+        let header_size = serialized_size(&header)?;
+        // stream_id + packet_index + header + payload-size
+        let capacity = 2 + 4 + header_size + max_payload_size;
+        let mut buffer = Self {
+            inner: BytesMut::with_capacity(capacity),
+            stream_id,
+            offset: 0,
+            _phantom: PhantomData,
+        };
+        buffer.encode(header)?;
+        Ok(buffer)
+    }
+
+    /// Encode header into buffer, returns lock to payload portion for writing.
+    /// Clears the buffer first, so this must be called before each send for variable headers.
+    #[inline]
+    pub fn encode(&mut self, header: &T) -> StrResult<SendBufferLock<'_>> {
+        self.inner.clear();
+        self.inner.put_u16(self.stream_id);
+        self.inner.put_u32(0); // packet_index placeholder
+
+        // Use writer() to get a Write impl, encode directly into BytesMut
+        trace_err!(bincode::serde::encode_into_std_write(
+            header,
+            &mut (&mut self.inner).writer(),
+            BINCODE_CONFIG
+        ))?;
+
+        self.offset = self.inner.len();
+        Ok(self.get_mut())
     }
 }
 
@@ -153,80 +217,60 @@ pub struct StreamSender<T> {
 }
 
 impl<T> StreamSender<T> {
-    // The buffer is moved into the method. There is no way of reusing the same buffer twice without
-    // extra copies/allocations
+    /// Send using a reusable buffer - does NOT consume the buffer.
+    /// Buffer data is preserved after send, ready for next `encode()` or re-send.
+    pub async fn send_buffer_ref(&mut self, buffer: &mut SenderBuffer<T>) -> StrResult {
+        buffer.inner[2..6].copy_from_slice(&self.next_packet_index.to_be_bytes());
+        self.next_packet_index += 1;
+
+        #[cfg(debug_assertions)]
+        let (original_len, original_ptr) = (buffer.inner.len(), buffer.inner.as_ptr() as usize);
+
+        let bytes = std::mem::take(&mut buffer.inner).freeze();
+        let result = match &self.socket {
+            StreamSendSocket::Udp(s) => {
+                s.inner
+                    .lock()
+                    .await
+                    .send((bytes.clone(), s.peer_addr))
+                    .await
+            }
+            StreamSendSocket::Tcp(s) => s.lock().await.send(bytes.clone()).await,
+            StreamSendSocket::ThrottledUdp(s) => s.send(bytes.clone()).await,
+        };
+        buffer.inner = bytes
+            .try_into_mut()
+            .expect("buffer refcount should be 1 after send");
+
+        #[cfg(debug_assertions)]
+        {
+            debug_assert_eq!(
+                buffer.inner.len(),
+                original_len,
+                "buffer length changed after send"
+            );
+            debug_assert_eq!(
+                buffer.inner.as_ptr() as usize,
+                original_ptr,
+                "buffer was reallocated after send"
+            );
+        }
+
+        trace_err!(result)
+    }
+
+    /// Send consuming the buffer
     pub async fn send_buffer(&mut self, mut buffer: SenderBuffer<T>) -> StrResult {
         buffer.inner[2..6].copy_from_slice(&self.next_packet_index.to_be_bytes());
         self.next_packet_index += 1;
 
-        match &self.socket {
-            StreamSendSocket::Udp(socket) => trace_err!(
-                socket
-                    .inner
-                    .lock()
-                    .await
-                    .send((buffer.inner.freeze(), socket.peer_addr))
-                    .await
-            ),
-            StreamSendSocket::Tcp(socket) => {
-                trace_err!(socket.lock().await.send(buffer.inner.freeze()).await)
-            }
-            StreamSendSocket::ThrottledUdp(socket) => {
-                trace_err!(socket.send(buffer.inner.freeze()).await)
-            }
-        }
-    }
-}
-
-const MAX_HEADER_SIZE: usize = 1500;
-
-pub fn new_sender_buffer<T: serde::Serialize>(
-    stream_id: StreamId,
-    header: &T,
-    preferred_max_buffer_size: usize,
-) -> StrResult<SenderBuffer<T>> {
-    let mut header_buf: MaybeUninit<[u8; MAX_HEADER_SIZE]> = MaybeUninit::uninit();
-
-    let header_size = trace_err!(bincode::serde::encode_into_slice(
-        header,
-        unsafe { &mut *header_buf.as_mut_ptr() },
-        BINCODE_CONFIG
-    ))?;
-
-    // the first two bytes are for the stream ID, next 4 for packet index
-    let offset = 2 + 4 + header_size;
-
-    let mut buffer = BytesMut::with_capacity(offset + preferred_max_buffer_size);
-
-    buffer.put_u16(stream_id);
-
-    // make space for the packet index
-    buffer.put_u32(0);
-
-    buffer.put_slice(unsafe {
-        std::slice::from_raw_parts(header_buf.as_ptr() as *const u8, header_size)
-    });
-
-    Ok(SenderBuffer {
-        inner: buffer,
-        offset,
-        _phantom: PhantomData,
-    })
-}
-
-impl<T: Serialize> StreamSender<T> {
-    #[inline(always)]
-    pub fn new_buffer(
-        &self,
-        header: &T,
-        preferred_max_buffer_size: usize,
-    ) -> StrResult<SenderBuffer<T>> {
-        new_sender_buffer(self.stream_id, header, preferred_max_buffer_size)
-    }
-
-    #[inline(always)]
-    pub async fn send(&mut self, packet: &T) -> StrResult {
-        self.send_buffer(self.new_buffer(packet, 0)?).await
+        let bytes = buffer.inner.freeze();
+        let result = match &self.socket {
+            StreamSendSocket::Udp(s) => s.inner.lock().await.send((bytes, s.peer_addr)).await,
+            StreamSendSocket::Tcp(s) => s.lock().await.send(bytes).await,
+            StreamSendSocket::ThrottledUdp(s) => s.send(bytes).await,
+        };
+        trace_err!(result)
     }
 }
 

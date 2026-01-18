@@ -1,6 +1,6 @@
 use alvr_common::{lazy_static, prelude::*};
 use alvr_session::{AudioConfig, AudioDeviceId, LinuxAudioBackend};
-use alvr_sockets::{StreamReceiver, StreamSender};
+use alvr_sockets::{AUDIO, SenderBuffer, StreamReceiver, StreamSender};
 use cpal::{
     BufferSize, Device, Sample, SampleFormat, StreamConfig, SupportedStreamConfig,
     traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -299,9 +299,10 @@ pub async fn record_audio_loop(
     };
 
     // data_sender/receiver is the bridge between tokio and std thread
-    let (data_sender, mut data_receiver) = tmpsc::unbounded_channel::<StrResult<Vec<_>>>();
+    let (data_sender, mut data_receiver) =
+        tmpsc::unbounded_channel::<StrResult<SenderBuffer<()>>>();
     let (_shutdown_notifier, shutdown_receiver) = smpsc::channel::<()>();
-    let (recycle_sender, recycle_receiver) = smpsc::channel::<Vec<u8>>();
+    let (recycle_sender, recycle_receiver) = smpsc::channel::<SenderBuffer<()>>();
 
     let thread_callback = {
         let data_sender = data_sender.clone();
@@ -320,8 +321,13 @@ pub async fn record_audio_loop(
                 {
                     let data_sender = data_sender.clone();
                     move |data, _| {
-                        let mut new_data = recycle_receiver.try_recv().unwrap_or_default();
-                        new_data.clear();
+                        // Get recycled buffer or create new one (grows organically like Vec)
+                        let mut buffer = recycle_receiver
+                            .try_recv()
+                            .unwrap_or_else(|_| SenderBuffer::<()>::new(AUDIO, 0).unwrap());
+
+                        // encode() clears buffer and returns lock to payload portion
+                        let mut samples = buffer.encode(&()).unwrap();
 
                         let input_channels = config.channels();
                         let output_channels = channels_count;
@@ -330,8 +336,9 @@ pub async fn record_audio_loop(
                         if config.sample_format() == SampleFormat::F32 {
                             let frames = data_bytes.len() / (4 * input_channels as usize);
                             let required_capacity = frames * output_channels as usize * 2;
-                            if new_data.capacity() < required_capacity {
-                                new_data.reserve(required_capacity - new_data.len());
+                            let current_len = samples.len();
+                            if samples.capacity() < required_capacity {
+                                samples.reserve(required_capacity - current_len);
                             }
 
                             #[inline(always)]
@@ -344,8 +351,8 @@ pub async fn record_audio_loop(
                             if input_channels == 1 && output_channels == 2 {
                                 for chunk in data_bytes.chunks_exact(4) {
                                     let s = to_i16_bytes(chunk);
-                                    new_data.extend_from_slice(&s);
-                                    new_data.extend_from_slice(&s);
+                                    samples.extend_from_slice(&s);
+                                    samples.extend_from_slice(&s);
                                 }
                             } else if input_channels == 2 && output_channels == 1 {
                                 // Average both channels for proper stereo-to-mono downmix
@@ -357,25 +364,26 @@ pub async fn record_audio_loop(
                                         chunk[4], chunk[5], chunk[6], chunk[7],
                                     ]);
                                     let mixed = ((l + r) * 0.5).to_sample::<i16>();
-                                    new_data.extend_from_slice(&mixed.to_ne_bytes());
+                                    samples.extend_from_slice(&mixed.to_ne_bytes());
                                 }
                             } else {
                                 for chunk in data_bytes.chunks_exact(4) {
                                     let s = to_i16_bytes(chunk);
-                                    new_data.extend_from_slice(&s);
+                                    samples.extend_from_slice(&s);
                                 }
                             }
                         } else {
                             let frames = data_bytes.len() / (2 * input_channels as usize);
                             let required_capacity = frames * output_channels as usize * 2;
-                            if new_data.capacity() < required_capacity {
-                                new_data.reserve(required_capacity - new_data.len());
+                            let current_len = samples.len();
+                            if samples.capacity() < required_capacity {
+                                samples.reserve(required_capacity - current_len);
                             }
 
                             if input_channels == 1 && output_channels == 2 {
                                 for chunk in data_bytes.chunks_exact(2) {
-                                    new_data.extend_from_slice(chunk);
-                                    new_data.extend_from_slice(chunk);
+                                    samples.extend_from_slice(chunk);
+                                    samples.extend_from_slice(chunk);
                                 }
                             } else if input_channels == 2 && output_channels == 1 {
                                 // Average both channels for proper stereo-to-mono downmix
@@ -384,14 +392,15 @@ pub async fn record_audio_loop(
                                     let r = i16::from_ne_bytes([chunk[2], chunk[3]]);
                                     // Use i32 to avoid overflow, then divide
                                     let mixed = ((l as i32 + r as i32) / 2) as i16;
-                                    new_data.extend_from_slice(&mixed.to_ne_bytes());
+                                    samples.extend_from_slice(&mixed.to_ne_bytes());
                                 }
                             } else {
-                                new_data.extend_from_slice(data_bytes);
+                                samples.extend_from_slice(data_bytes);
                             }
                         }
 
-                        data_sender.send(Ok(new_data)).ok();
+                        drop(samples); // Release lock before sending
+                        data_sender.send(Ok(buffer)).ok();
                     }
                 },
                 {
@@ -409,25 +418,23 @@ pub async fn record_audio_loop(
 
             shutdown_receiver.recv().ok();
 
-            Ok(vec![])
+            Ok(())
         }
     };
 
     // use a std thread to store the stream object. The stream object must be destroyed on the same
     // thread of creation.
     thread::spawn(move || {
-        let res = thread_callback();
-        if res.is_err() {
-            data_sender.send(res).ok();
+        if let Err(e) = thread_callback() {
+            data_sender.send(Err(e)).ok();
         }
     });
 
-    while let Some(maybe_data) = data_receiver.recv().await {
-        let data = maybe_data?;
-        let mut buffer = sender.new_buffer(&(), data.len())?;
-        buffer.get_mut().extend(&data);
-        sender.send_buffer(buffer).await.ok();
-        recycle_sender.send(data).ok();
+    // Receive pre-filled buffers from callback, send over network, recycle
+    while let Some(maybe_buffer) = data_receiver.recv().await {
+        let mut buffer = maybe_buffer?;
+        sender.send_buffer_ref(&mut buffer).await.ok();
+        recycle_sender.send(buffer).ok();
     }
 
     Ok(())

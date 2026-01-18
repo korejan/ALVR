@@ -6,9 +6,10 @@ use crate::{
 use alvr_common::{ALVR_NAME, ALVR_VERSION, prelude::*};
 use alvr_session::SessionDesc;
 use alvr_sockets::{
-    AUDIO, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, HAPTICS, Haptics,
-    HeadsetInfoPacket, INPUT, PeerType, PrivateIdentity, ProtoControlSocket, ServerControlPacket,
-    ServerHandshakePacket, StreamSocketBuilder, VIDEO, VideoFrameHeaderPacket, spawn_cancelable,
+    AUDIO, ClientConfigPacket, ClientControlPacket, ClientHandshakePacket, ControlBuffer,
+    ControlBufferMut, HAPTICS, Haptics, HeadsetInfoPacket, INPUT, Input, PeerType, PrivateIdentity,
+    ProtoControlSocket, SenderBuffer, ServerControlPacket, ServerHandshakePacket,
+    StreamSocketBuilder, VIDEO, VideoFrameHeaderPacket, spawn_cancelable,
 };
 
 use futures::future::BoxFuture;
@@ -373,11 +374,11 @@ async fn connection_pipeline(
         async move {
             let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
             *INPUT_SENDER.lock() = Some(data_sender);
+
+            let mut buffer = SenderBuffer::<Input>::new(INPUT, 0)?;
             while let Some(input) = data_receiver.recv().await {
-                socket_sender
-                    .send_buffer(socket_sender.new_buffer(&input, 0)?)
-                    .await
-                    .ok();
+                buffer.encode(&input)?;
+                socket_sender.send_buffer_ref(&mut buffer).await.ok();
             }
 
             Ok(())
@@ -390,11 +391,13 @@ async fn connection_pipeline(
             let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
             *TIME_SYNC_SENDER.lock() = Some(data_sender);
 
+            let mut buffer = ControlBufferMut::<ClientControlPacket>::new()?;
             while let Some(time_sync) = data_receiver.recv().await {
+                buffer.encode(&ClientControlPacket::TimeSync(time_sync))?;
                 control_sender
                     .lock()
                     .await
-                    .send(&ClientControlPacket::TimeSync(time_sync))
+                    .send_buffer_mut(&mut buffer)
                     .await
                     .ok();
             }
@@ -409,11 +412,14 @@ async fn connection_pipeline(
             let (data_sender, mut data_receiver) = tmpsc::unbounded_channel();
             *VIDEO_ERROR_REPORT_SENDER.lock() = Some(data_sender);
 
+            let video_error_report_msg = ControlBuffer::<ClientControlPacket>::encoded(
+                &ClientControlPacket::VideoErrorReport,
+            )?;
             while let Some(()) = data_receiver.recv().await {
                 control_sender
                     .lock()
                     .await
-                    .send(&ClientControlPacket::VideoErrorReport)
+                    .send_buffer(&video_error_report_msg)
                     .await
                     .ok();
             }
@@ -425,11 +431,13 @@ async fn connection_pipeline(
     let views_config_send_loop = {
         let control_sender = Arc::clone(&control_sender);
         async move {
+            let mut buffer = ControlBufferMut::<ClientControlPacket>::new()?;
             while let Some(config) = views_config_receiver.recv().await {
+                buffer.encode(&ClientControlPacket::ViewsConfig(config))?;
                 control_sender
                     .lock()
                     .await
-                    .send(&ClientControlPacket::ViewsConfig(config))
+                    .send_buffer_mut(&mut buffer)
                     .await
                     .ok();
             }
@@ -441,11 +449,13 @@ async fn connection_pipeline(
     let battery_send_loop = {
         let control_sender = Arc::clone(&control_sender);
         async move {
+            let mut buffer = ControlBufferMut::<ClientControlPacket>::new()?;
             while let Some(packet) = battery_receiver.recv().await {
+                buffer.encode(&ClientControlPacket::Battery(packet))?;
                 control_sender
                     .lock()
                     .await
-                    .send(&ClientControlPacket::Battery(packet))
+                    .send_buffer_mut(&mut buffer)
                     .await
                     .ok();
             }
@@ -521,17 +531,19 @@ async fn connection_pipeline(
     let playspace_sync_loop = {
         let control_sender = Arc::clone(&control_sender);
         async move {
+            let mut buffer = ControlBufferMut::<ClientControlPacket>::new()?;
             loop {
                 let guardian_data = unsafe { crate::alxr_get_guardian_data() };
 
                 if guardian_data.shouldSync {
+                    buffer.encode(&ClientControlPacket::PlayspaceSync(Vec2::new(
+                        guardian_data.areaWidth,
+                        guardian_data.areaHeight,
+                    )))?;
                     control_sender
                         .lock()
                         .await
-                        .send(&ClientControlPacket::PlayspaceSync(Vec2::new(
-                            guardian_data.areaWidth,
-                            guardian_data.areaHeight,
-                        )))
+                        .send_buffer_mut(&mut buffer)
                         .await
                         .ok();
                 }
@@ -573,11 +585,13 @@ async fn connection_pipeline(
         //let java_vm = Arc::clone(&java_vm);
         //let activity_ref = Arc::clone(&activity_ref);
         async move {
+            let keep_alive_msg =
+                ControlBuffer::<ClientControlPacket>::encoded(&ClientControlPacket::KeepAlive)?;
             loop {
                 let res = control_sender
                     .lock()
                     .await
-                    .send(&ClientControlPacket::KeepAlive)
+                    .send_buffer(&keep_alive_msg)
                     .await;
                 if let Err(e) = res {
                     info!("Server disconnected. Cause: {}", e);
@@ -601,11 +615,13 @@ async fn connection_pipeline(
         // let java_vm = Arc::clone(&java_vm);
         // let activity_ref = Arc::clone(&activity_ref);
         async move {
+            let request_idr_msg =
+                ControlBuffer::<ClientControlPacket>::encoded(&ClientControlPacket::RequestIdr)?;
             loop {
                 tokio::select! {
                     _ = crate::IDR_REQUEST_NOTIFIER.notified() => {
                         println!("Sending IDR Request!");
-                        control_sender.lock().await.send(&ClientControlPacket::RequestIdr).await?;
+                        control_sender.lock().await.send_buffer(&request_idr_msg).await?;
                     }
                     control_packet = control_receiver.recv() =>
                         match control_packet {

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Duration};
+use std::time::Duration;
 
 use crate::StreamId;
 use alvr_common::{
@@ -123,8 +123,9 @@ pub struct ClientConfigPacket {
     pub server_version: Option<Version>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub enum ServerControlPacket {
+    #[default]
     StartStream,
     Restarting,
     KeepAlive,
@@ -160,11 +161,12 @@ pub struct BatteryPacket {
     pub is_plugged: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub enum ClientControlPacket {
     PlayspaceSync(Vec2),
     RequestIdr,
     KeepAlive,
+    #[default]
     StreamReady,
     ViewsConfig(ViewsConfig),
     Battery(BatteryPacket),
@@ -175,7 +177,7 @@ pub enum ClientControlPacket {
 }
 
 // legacy video packet
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct VideoFrameHeaderPacket {
     pub tracking_frame_index: u64,
     pub video_frame_index: u64,
@@ -212,7 +214,7 @@ pub enum ButtonValue {
     Scalar(f32),
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct MotionData {
     pub orientation: Quat,
     pub position: Vec3,
@@ -246,14 +248,14 @@ pub struct LegacyInput {
     pub mounted: u8,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct Input {
     pub legacy: LegacyInput,
     pub device_motions: [(MotionData, u64); 3],
     pub target_timestamp: Duration,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct Haptics {
     pub duration: Duration,
     pub path: u64,

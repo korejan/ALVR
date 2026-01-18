@@ -4,6 +4,7 @@
 #include <memory>
 #include <fstream>
 #include <mutex>
+#include <vector>
 
 #include "ALVR-common/packet_types.h"
 #include "Settings.h"
@@ -41,4 +42,8 @@ public:
 	uint64_t mVideoFrameIndex = 1;
 
 	uint64_t m_LastStatisticsUpdate;
+
+	// FEC reusable buffers - avoid per-frame allocations
+	std::vector<uint8_t> m_fecParityBuffer;    // Contiguous parity shard storage
+	std::vector<uint8_t> m_fecPaddingBuffer;   // Single padding buffer
 };

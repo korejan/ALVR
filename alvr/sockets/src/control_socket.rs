@@ -1,6 +1,6 @@
-use super::{BINCODE_CONFIG, CONTROL_PORT, LOCAL_IP, Ldc};
+use super::{BINCODE_CONFIG, CONTROL_PORT, LOCAL_IP, Ldc, serialized_size};
 use alvr_common::prelude::*;
-use bytes::Bytes;
+use bytes::{BufMut, Bytes, BytesMut};
 use futures::{
     SinkExt, StreamExt,
     stream::{SplitSink, SplitStream},
@@ -10,16 +10,95 @@ use std::{marker::PhantomData, net::IpAddr};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::codec::Framed;
 
+pub struct ControlBuffer<T> {
+    inner: Bytes,
+    _phantom: PhantomData<T>,
+}
+
+/// Reusable buffer for control packets (no stream framing).
+/// Use `encoded()` for constant packets, `encode()` for variable packets.
+pub struct ControlBufferMut<T> {
+    inner: BytesMut,
+    _phantom: PhantomData<T>,
+}
+
+impl<T: Serialize + Default> ControlBufferMut<T> {
+    #[inline(always)]
+    pub fn new() -> StrResult<Self> {
+        let capacity = serialized_size(&T::default())?;
+        Ok(Self {
+            inner: BytesMut::with_capacity(capacity),
+            _phantom: PhantomData,
+        })
+    }
+}
+
+impl<T: Serialize> ControlBufferMut<T> {
+    /// Create a pre-encoded buffer for constant packets.
+    /// Can be sent multiple times without re-encoding.
+    #[inline(always)]
+    pub fn encoded(packet: &T) -> StrResult<Self> {
+        let capacity = serialized_size(packet)?;
+        let mut buffer = Self {
+            inner: BytesMut::with_capacity(capacity),
+            _phantom: PhantomData,
+        };
+        buffer.encode(packet)?;
+        Ok(buffer)
+    }
+
+    /// Encode packet into buffer (clears first).
+    /// Call before each send for variable packets.
+    #[inline(always)]
+    pub fn encode(&mut self, packet: &T) -> StrResult {
+        self.inner.clear();
+        trace_err!(bincode::serde::encode_into_std_write(
+            packet,
+            &mut (&mut self.inner).writer(),
+            BINCODE_CONFIG
+        ))?;
+        Ok(())
+    }
+}
+
+impl<T: Serialize> ControlBuffer<T> {
+    #[inline(always)]
+    pub fn encoded(packet: &T) -> StrResult<Self> {
+        let ctrl_buf = ControlBufferMut::encoded(packet)?;
+        Ok(Self {
+            inner: ctrl_buf.inner.freeze(),
+            _phantom: PhantomData,
+        })
+    }
+}
+
 pub struct ControlSocketSender<T> {
     inner: SplitSink<Framed<TcpStream, Ldc>, Bytes>,
     _phantom: PhantomData<T>,
 }
 
 impl<S: Serialize> ControlSocketSender<S> {
-    #[inline]
+    #[inline(always)]
     pub async fn send(&mut self, packet: &S) -> StrResult {
-        let packet_bytes = trace_err!(bincode::serde::encode_to_vec(packet, BINCODE_CONFIG))?;
-        trace_err!(self.inner.send(packet_bytes.into()).await)
+        let packet_types = ControlBuffer::<S>::encoded(packet)?;
+        self.send_buffer(&packet_types).await
+    }
+
+    #[inline(always)]
+    pub async fn send_buffer(&mut self, buffer: &ControlBuffer<S>) -> StrResult {
+        trace_err!(self.inner.send(buffer.inner.clone()).await)
+    }
+
+    /// Send using a reusable buffer - does NOT consume the buffer.
+    /// Buffer data is preserved after send, ready for next `encode()` or re-send.
+    #[inline]
+    pub async fn send_buffer_mut(&mut self, buffer: &mut ControlBufferMut<S>) -> StrResult {
+        let bytes = std::mem::take(&mut buffer.inner).freeze();
+        let result = self.inner.send(bytes.clone()).await;
+        buffer.inner = bytes
+            .try_into_mut()
+            .expect("buffer refcount should be 1 after send");
+        trace_err!(result)
     }
 }
 
@@ -75,10 +154,30 @@ impl ProtoControlSocket {
         Ok((Self { inner: socket }, peer_ip))
     }
 
-    #[inline]
+    #[inline(always)]
     pub async fn send<S: Serialize>(&mut self, packet: &S) -> StrResult {
-        let packet_bytes = trace_err!(bincode::serde::encode_to_vec(packet, BINCODE_CONFIG))?;
-        trace_err!(self.inner.send(packet_bytes.into()).await)
+        let packet_bytes = ControlBuffer::<S>::encoded(packet)?;
+        self.send_buffer(&packet_bytes).await
+    }
+
+    #[inline(always)]
+    pub async fn send_buffer<S: Serialize>(&mut self, buffer: &ControlBuffer<S>) -> StrResult {
+        trace_err!(self.inner.send(buffer.inner.clone()).await)
+    }
+
+    /// Send using a reusable buffer - does NOT consume the buffer.
+    /// Buffer data is preserved after send, ready for next `encode()` or re-send.
+    #[inline]
+    pub async fn send_buffer_mut<S: Serialize>(
+        &mut self,
+        buffer: &mut ControlBufferMut<S>,
+    ) -> StrResult {
+        let bytes = std::mem::take(&mut buffer.inner).freeze();
+        let result = self.inner.send(bytes.clone()).await;
+        buffer.inner = bytes
+            .try_into_mut()
+            .expect("buffer refcount should be 1 after send");
+        trace_err!(result)
     }
 
     #[inline]
