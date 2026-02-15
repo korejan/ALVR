@@ -190,6 +190,7 @@ async fn connection_pipeline(
             info!("Server restarting");
             //set_loading_message(&*java_vm, &*activity_ref, hostname, SERVER_RESTART_MESSAGE)?;
             println!("{0}", SERVER_RESTART_MESSAGE);
+            unsafe { crate::alxr_on_server_disconnect() };
             return Ok(());
         }
         Err(e) => {
@@ -471,7 +472,7 @@ async fn connection_pipeline(
         async move {
             let mut idr_request_deadline = None;
             loop {
-                let packet = receiver.recv().await.unwrap();
+                let packet = receiver.recv().await?;
 
                 // Send again IDR packet every 2s in case it is missed
                 // (due to dropped burst of packets at the start of the stream or otherwise).
@@ -634,6 +635,7 @@ async fn connection_pipeline(
                                 //     hostname,
                                 //     SERVER_RESTART_MESSAGE
                                 // )?;
+                                unsafe { crate::alxr_on_server_disconnect() };
                                 break Ok(());
                             }
                             Ok(ServerControlPacket::TimeSync(data)) => {
