@@ -18,8 +18,8 @@ public:
 
 	ClientConnection();
 
-	void FECSend(const uint8_t *buf, uint32_t len, uint64_t targetTimestampNs, uint64_t videoFrameIndex);
-	void SendVideo(const uint8_t *buf, uint32_t len, uint64_t targetTimestampNs);
+	void FECSend(uint8_t *buf, uint32_t len, uint64_t targetTimestampNs, uint64_t videoFrameIndex);
+	void SendVideo(uint8_t *buf, uint32_t len, uint64_t targetTimestampNs);
  	void ProcessTimeSync(const TimeSync &data);
 	float GetPoseTimeOffset();
 	void OnFecFailure();
@@ -46,4 +46,5 @@ public:
 	// FEC reusable buffers - avoid per-frame allocations
 	std::vector<uint8_t> m_fecParityBuffer;    // Contiguous parity shard storage
 	std::vector<uint8_t> m_fecPaddingBuffer;   // Single padding buffer
+	std::vector<uint8_t> m_rsBuffer;
 };

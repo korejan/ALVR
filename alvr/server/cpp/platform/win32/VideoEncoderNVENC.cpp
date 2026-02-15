@@ -122,7 +122,7 @@ void VideoEncoderNVENC::Transmit(ID3D11Texture2D *pTexture, uint64_t presentatio
 
 	for (std::size_t packetIndex = 0; packetIndex < packetCount; ++packetIndex)
 	{
-		const auto& packet = m_vPacket[packetIndex].frame;
+		auto& packet = m_vPacket[packetIndex].frame;
 #ifndef NDEBUG
 		if (fpOut) {
 			fpOut.write(reinterpret_cast<const char*>(packet.data()), packet.size());

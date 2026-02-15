@@ -2,6 +2,8 @@
 #include <mutex>
 #include <string.h>
 
+#include "rs_auto.h"
+
 #include "Logger.h"
 #include "Settings.h"
 #include "Statistics.h"
@@ -22,17 +24,17 @@ ClientConnection::ClientConnection() : m_LastStatisticsUpdate(0) {
     m_Statistics->ResetAll();
 }
 
-void ClientConnection::FECSend(const uint8_t *buf,
+void ClientConnection::FECSend(uint8_t *buf,
                                uint32_t len,
                                uint64_t targetTimestampNs,
                                uint64_t videoFrameIndex) {
-    const int shardPackets = CalculateFECShardPackets(len, m_fecPercentage);
+    const uint32_t shardPackets = CalculateFECShardPackets(len, m_fecPercentage);
 
-    const int blockSize = shardPackets * ALVR_MAX_VIDEO_BUFFER_SIZE;
+    const uint32_t blockSize = shardPackets * ALVR_MAX_VIDEO_BUFFER_SIZE;
 
-    const int dataShards = (len + blockSize - 1) / blockSize;
-    const int totalParityShards = CalculateParityShards(dataShards, m_fecPercentage);
-    const int totalShards = dataShards + totalParityShards;
+    const uint32_t dataShards = (len + blockSize - 1) / blockSize;
+    const uint32_t totalParityShards = CalculateParityShards(dataShards, m_fecPercentage);
+    const uint32_t totalShards = dataShards + totalParityShards;
 
     assert(totalShards <= DATA_SHARDS_MAX);
 
@@ -46,8 +48,8 @@ void ClientConnection::FECSend(const uint8_t *buf,
 
     uint8_t *shards[DATA_SHARDS_MAX];
     // Data shards point directly into input buffer
-    for (int i = 0; i < dataShards; ++i) {
-        shards[i] = const_cast<uint8_t *>(buf) + i * blockSize;
+    for (uint32_t i = 0; i < dataShards; ++i) {
+        shards[i] = buf + i * blockSize;
     }
 
     // Handle padding for last data shard if needed
@@ -70,19 +72,21 @@ void ClientConnection::FECSend(const uint8_t *buf,
     }
 
     // Parity shards point into contiguous parity buffer
-    for (int i = 0; i < totalParityShards; ++i) {
+    for (uint32_t i = 0; i < totalParityShards; ++i) {
         shards[dataShards + i] = m_fecParityBuffer.data() + i * blockSize;
     }
 
-    reed_solomon rs = {};
-    reed_solomon_new(dataShards, totalParityShards, &rs);
+    const size_t rsBufSize = reed_solomon_bufsize(dataShards, totalParityShards);
+    if (m_rsBuffer.size() < rsBufSize) {
+        m_rsBuffer.resize(rsBufSize);
+    }
+    reed_solomon *rs =
+        reed_solomon_new_static(m_rsBuffer.data(), rsBufSize, dataShards, totalParityShards);
 
-    const int ret = reed_solomon_encode(&rs, shards, totalShards, blockSize);
+    const int ret = reed_solomon_encode(rs, shards, totalShards, blockSize);
     assert(ret == 0);
 
-    reed_solomon_release(&rs);
-
-    int dataRemain = len;
+    int32_t dataRemain = static_cast<int32_t>(len);
 
     VideoFrame header = {
         .type = ALVR_PACKET_TYPE_VIDEO_FRAME,
@@ -93,9 +97,10 @@ void ClientConnection::FECSend(const uint8_t *buf,
         .fecIndex = 0,
         .fecPercentage = (uint16_t)m_fecPercentage,
     };
-    for (int i = 0; i < dataShards; ++i) {
-        for (int j = 0; j < shardPackets; ++j) {
-            const int copyLength = std::min(ALVR_MAX_VIDEO_BUFFER_SIZE, dataRemain);
+    for (uint32_t i = 0; i < dataShards; ++i) {
+        for (uint32_t j = 0; j < shardPackets; ++j) {
+            const int32_t copyLength =
+                std::min(static_cast<int32_t>(ALVR_MAX_VIDEO_BUFFER_SIZE), dataRemain);
             if (copyLength <= 0) {
                 break;
             }
@@ -111,9 +116,9 @@ void ClientConnection::FECSend(const uint8_t *buf,
         }
     }
     header.fecIndex = dataShards * shardPackets;
-    for (int i = 0; i < totalParityShards; ++i) {
-        for (int j = 0; j < shardPackets; ++j) {
-            const int copyLength = ALVR_MAX_VIDEO_BUFFER_SIZE;
+    for (uint32_t i = 0; i < totalParityShards; ++i) {
+        for (uint32_t j = 0; j < shardPackets; ++j) {
+            const uint32_t copyLength = ALVR_MAX_VIDEO_BUFFER_SIZE;
 
             const uint8_t *payload = shards[dataShards + i] + j * ALVR_MAX_VIDEO_BUFFER_SIZE;
             header.packetCounter = videoPacketCounter;
@@ -126,17 +131,17 @@ void ClientConnection::FECSend(const uint8_t *buf,
     }
 }
 
-void ClientConnection::SendVideo(const uint8_t *buf, uint32_t len, uint64_t targetTimestampNs) {
+void ClientConnection::SendVideo(uint8_t *buf, uint32_t len, uint64_t targetTimestampNs) {
     if (Settings::Instance().m_enableFec) {
         FECSend(buf, len, targetTimestampNs, mVideoFrameIndex);
     } else {
-        VideoFrame header = {};
-        header.packetCounter = this->videoPacketCounter;
-        header.trackingFrameIndex = targetTimestampNs;
-        header.videoFrameIndex = mVideoFrameIndex;
-        header.sentTime = GetSystemTimestampUs();
-        header.frameByteSize = len;
-
+        const VideoFrame header = {
+            .packetCounter = this->videoPacketCounter,
+            .trackingFrameIndex = targetTimestampNs,
+            .videoFrameIndex = mVideoFrameIndex,
+            .sentTime = GetSystemTimestampUs(),
+            .frameByteSize = len,
+        };
         VideoSend(&header, buf, len);
 
         m_Statistics->CountPacket(sizeof(VideoFrame) + len);

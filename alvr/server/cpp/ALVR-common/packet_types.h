@@ -2,7 +2,6 @@
 #define ALVRCLIENT_PACKETTYPES_H
 #include <stdint.h>
 #include <assert.h>
-#include "reedsolomon/rs.h"
 #include "../alvr_server/bindings.h"
 
 enum ALVR_PACKET_TYPE {
@@ -138,24 +137,24 @@ enum ALVR_HAND_INPUT {
 #define ALVR_BUTTON_FLAG(input) (1ULL << input)
 
 
-static const int ALVR_MAX_VIDEO_BUFFER_SIZE = 1400;
+inline constexpr const uint32_t ALVR_MAX_VIDEO_BUFFER_SIZE = 1400;
 
-static const int ALVR_FEC_SHARDS_MAX = 20;
+inline constexpr const uint32_t ALVR_FEC_SHARDS_MAX = 20;
 
-inline int CalculateParityShards(int dataShards, int fecPercentage) {
-	int totalParityShards = (dataShards * fecPercentage + 99) / 100;
+constexpr inline uint32_t CalculateParityShards(uint32_t dataShards, uint32_t fecPercentage) {
+	const uint32_t totalParityShards = (dataShards * fecPercentage + 99) / 100;
 	return totalParityShards;
 }
 
 // Calculate how many packet is needed for make signal shard.
-inline int CalculateFECShardPackets(int len, int fecPercentage) {
+constexpr inline uint32_t CalculateFECShardPackets(uint32_t len, uint32_t fecPercentage) {
 	// This reed solomon implementation accept only 255 shards.
 	// Normally, we use ALVR_MAX_VIDEO_BUFFER_SIZE as block_size and single packet becomes single shard.
 	// If we need more than maxDataShards packets, we need to combine multiple packet to make single shrad.
 	// NOTE: Moonlight seems to use only 255 shards for video frame.
-	int maxDataShards = ((ALVR_FEC_SHARDS_MAX - 2) * 100 + 99 + fecPercentage) / (100 + fecPercentage);
-	int minBlockSize = (len + maxDataShards - 1) / maxDataShards;
-	int shardPackets = (minBlockSize + ALVR_MAX_VIDEO_BUFFER_SIZE - 1) / ALVR_MAX_VIDEO_BUFFER_SIZE;
+	const uint32_t maxDataShards = ((ALVR_FEC_SHARDS_MAX - 2) * 100 + 99 + fecPercentage) / (100 + fecPercentage);
+	const uint32_t minBlockSize = (len + maxDataShards - 1) / maxDataShards;
+	const uint32_t shardPackets = (minBlockSize + ALVR_MAX_VIDEO_BUFFER_SIZE - 1) / ALVR_MAX_VIDEO_BUFFER_SIZE;
 	assert(maxDataShards + CalculateParityShards(maxDataShards, fecPercentage) <= ALVR_FEC_SHARDS_MAX);
 	return shardPackets;
 }

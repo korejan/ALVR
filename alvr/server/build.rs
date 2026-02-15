@@ -88,6 +88,15 @@ fn do_ffmpeg_windows_config(build: &mut cc::Build) {
     println!("cargo:rustc-link-lib=swscale");
 }
 
+const NANORS_DIR: &str = "cpp/ALVR-common/nanors";
+
+fn nanors_filter(entry: &walkdir::DirEntry) -> bool {
+    let file_name = entry.file_name();
+    // exclude nanors test files and statically dispatched simd code
+    // only need nanors/deps/* and nanors/rs_auto.h/c
+    file_name != "t" && file_name != "rs.h" && file_name != "rs.c" && file_name != "oblas_lite.c"
+}
+
 fn main() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let cpp_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("cpp");
@@ -101,7 +110,9 @@ fn main() {
 
     let common_iter = walkdir::WalkDir::new("cpp")
         .into_iter()
-        .filter_entry(|entry| entry.file_name() != "tools" && entry.file_name() != "platform");
+        .filter_entry(|entry| {
+            entry.file_name() != "tools" && entry.file_name() != "platform" && nanors_filter(entry)
+        });
 
     let platform_iter = walkdir::WalkDir::new(platform).into_iter();
 
@@ -128,7 +139,9 @@ fn main() {
         .flag_if_supported("-isystemcpp/openvr/headers") // silences many warnings from openvr headers
         .flag_if_supported("-std=c++20")
         .include("cpp/openvr/headers")
-        .include("cpp");
+        .include("cpp")
+        .include(NANORS_DIR)
+        .include(format!("{}/deps/obl", NANORS_DIR));
 
     #[cfg(windows)]
     build
