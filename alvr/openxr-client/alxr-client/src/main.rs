@@ -3,11 +3,12 @@
 use alxr_common::{
     ALXRClientCtx, ALXRColorSpace, ALXRDecoderType, ALXREyeTrackingType, ALXRFacialExpressionType,
     ALXRGraphicsApi, ALXRPassthroughMode, ALXRSystemProperties, ALXRVersion, APP_CONFIG,
-    alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame, battery_send,
-    init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
-    time_sync_send, to_alxr_version, video_error_report_send, views_config_send,
+    alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame,
+    alxr_request_exit_session, battery_send, init_connections, input_send, path_string_to_hash,
+    request_idr, set_waiting_next_idr, shutdown, time_sync_send, to_alxr_version,
+    video_error_report_send, views_config_send,
 };
-use std::{thread, time};
+use std::{io, thread, time};
 
 // http://developer.download.nvidia.com/devzone/devcenter/gamegraphics/files/OptimusRenderingPolicies.pdf
 #[cfg(target_os = "windows")]
@@ -44,6 +45,15 @@ fn main() {
         .xr_api_version
         .clone()
         .unwrap_or(semver::Version::new(0, 0, 0));
+
+    #[cfg(not(target_vendor = "uwp"))]
+    thread::spawn(|| {
+        let mut input = String::new();
+        if io::stdin().read_line(&mut input).is_ok() {
+            unsafe { alxr_request_exit_session() };
+        }
+    });
+
     unsafe {
         loop {
             let ctx = ALXRClientCtx {
