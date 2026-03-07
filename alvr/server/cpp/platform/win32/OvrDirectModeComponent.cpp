@@ -133,44 +133,29 @@ void OvrDirectModeComponent::GetNextSwapTextureSetIndex(vr::SharedTextureHandle_
 * using CreateSwapTextureSet and should be alternated per frame.  Call Present once all layers have been submitted. */
 void OvrDirectModeComponent::SubmitLayer(const SubmitLayerPerEye_t(&perEye)[2])
 {
-	auto pPose = &perEye[0].mHmdPose; // TODO: are both poses the same? Name HMD suggests yes.
+	const auto& pPose = perEye[0].mHmdPose; // TODO: are both poses the same? Name HMD suggests yes.
 	Debug("SubmitLayer Handles=%p,%p DepthHandles=%p,%p %f-%f,%f-%f %f-%f,%f-%f\n%f,%f,%f,%f\n%f,%f,%f,%f\n%f,%f,%f,%f\n"
 		, perEye[0].hTexture, perEye[1].hTexture, perEye[0].hDepthTexture, perEye[1].hDepthTexture
 		, perEye[0].bounds.uMin, perEye[0].bounds.uMax, perEye[0].bounds.vMin, perEye[0].bounds.vMax
 		, perEye[1].bounds.uMin, perEye[1].bounds.uMax, perEye[1].bounds.vMin, perEye[1].bounds.vMax
-		, pPose->m[0][0], pPose->m[0][1], pPose->m[0][2], pPose->m[0][3]
-		, pPose->m[1][0], pPose->m[1][1], pPose->m[1][2], pPose->m[1][3]
-		, pPose->m[2][0], pPose->m[2][1], pPose->m[2][2], pPose->m[2][3]
+		, pPose.m[0][0], pPose.m[0][1], pPose.m[0][2], pPose.m[0][3]
+		, pPose.m[1][0], pPose.m[1][1], pPose.m[1][2], pPose.m[1][3]
+		, pPose.m[2][0], pPose.m[2][1], pPose.m[2][2], pPose.m[2][3]
 	);
-	// pPose is qRotation which is calculated by SteamVR using vr::DriverPose_t::qRotation.
-	// pPose->m[0][0], pPose->m[0][1], pPose->m[0][2],
-	// pPose->m[1][0], pPose->m[1][1], pPose->m[1][2], 
-	// pPose->m[2][0], pPose->m[2][1], pPose->m[2][2], 
-	// position
-	// x = pPose->m[0][3], y = pPose->m[1][3], z = pPose->m[2][3]
 
 	if (m_submitLayer == 0) {
 		// Detect FrameIndex of submitted frame by pPose.
 		// This is important part to achieve smooth headtracking.
 		// We search for history of TrackingInfo and find the TrackingInfo which have nearest matrix value.
-
-		auto pose = m_poseHistory->GetBestPoseMatch(*pPose);
-		if (pose) {
+		if (const auto pose = m_poseHistory->GetBestPoseMatch(pPose)) {
 			// found the frameIndex
 			m_prevTargetTimestampNs = m_targetTimestampNs;
 			m_targetTimestampNs = pose->info.targetTimestampNs;
-
-			m_prevFramePoseRotation = m_framePoseRotation;
-			m_framePoseRotation.x = pose->info.headPose.orientation.x;
-			m_framePoseRotation.y = pose->info.headPose.orientation.y;
-			m_framePoseRotation.z = pose->info.headPose.orientation.z;
-			m_framePoseRotation.w = pose->info.headPose.orientation.w;
 
 			Debug("Frame pose found. m_prevSubmitFrameIndex=%llu m_submitFrameIndex=%llu\n", m_prevTargetTimestampNs, m_targetTimestampNs);
 		}
 		else {
 			m_targetTimestampNs = 0;
-			m_framePoseRotation = HmdQuaternion_Init(0.0, 0.0, 0.0, 0.0);
 		}
 	}
 	if (m_submitLayer < MAX_LAYERS) {
@@ -181,25 +166,27 @@ void OvrDirectModeComponent::SubmitLayer(const SubmitLayerPerEye_t(&perEye)[2])
 	else {
 		Warn("Too many layers submitted!\n");
 	}
-
-	//CopyTexture();
 }
 
 /** Submits queued layers for display. */
 void OvrDirectModeComponent::Present(vr::SharedTextureHandle_t syncTexture)
 {
-	bool useMutex = true;
+	constexpr const bool useMutex = true;
 	Debug("Present syncTexture=%p (use:%d) m_prevSubmitFrameIndex=%llu m_submitFrameIndex=%llu\n", syncTexture, useMutex, m_prevTargetTimestampNs, m_targetTimestampNs);
 
-	IDXGIKeyedMutex *pKeyedMutex = NULL;
-
-	uint32_t layerCount = m_submitLayer;
+	const uint32_t layerCount = m_submitLayer;
 	m_submitLayer = 0;
 
+	if (m_paused) {
+		return;
+	}
+
+#ifndef NDEBUG
 	if (m_prevTargetTimestampNs == m_targetTimestampNs) {
 		Debug("Discard duplicated frame. FrameIndex=%llu (Ignoring)\n", m_targetTimestampNs);
 		//return;
 	}
+#endif
 
 	ID3D11Texture2D *pSyncTexture = m_pD3DRender->GetSharedTexture((HANDLE)syncTexture);
 	if (!pSyncTexture)
@@ -207,6 +194,8 @@ void OvrDirectModeComponent::Present(vr::SharedTextureHandle_t syncTexture)
 		Warn("[VDispDvr] SyncTexture is NULL!\n");
 		return;
 	}
+	
+	IDXGIKeyedMutex *pKeyedMutex = NULL;
 
 	if (useMutex) {
 		// Access to shared texture must be wrapped in AcquireSync/ReleaseSync

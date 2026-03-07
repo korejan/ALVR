@@ -35,7 +35,7 @@ class OvrHmd : public TrackedDevice,
 
     virtual vr::EVRInitError Activate(vr::TrackedDeviceIndex_t unObjectId);
     virtual void Deactivate();
-    virtual void EnterStandby() {}
+    virtual void EnterStandby() override { Info("Entering standby mode\n"); }
     void *GetComponent(const char *pchComponentNameAndVersion);
     virtual void DebugRequest(const char *request, char *response_buffer, uint32_t size) {}
     virtual vr::DriverPose_t GetPose();
@@ -43,12 +43,15 @@ class OvrHmd : public TrackedDevice,
     void OnPoseUpdated(const TrackingInfo& info);
 
     void StartStreaming();
+    void StopStreaming();
 
     void OnStreamStart();
 
     void updateController(const TrackingInfo &info);
 
     void SetViewsConfig(const ViewsConfigData &config);
+
+    void SetUserPresence(bool isPresent);
 
     bool IsTrackingRef() const { return m_deviceClass == vr::TrackedDeviceClass_TrackingReference; }
     bool IsHMD() const { return m_deviceClass == vr::TrackedDeviceClass_HMD; }
@@ -68,7 +71,7 @@ class OvrHmd : public TrackedDevice,
     std::shared_ptr<ClientConnection> m_Listener;
     float m_poseTimeOffset;
 
-    vr::VRInputComponentHandle_t m_proximity;
+    vr::VRInputComponentHandle_t m_proximity{vr::k_ulInvalidInputComponentHandle};
 
     std::shared_ptr<OvrController> m_leftController;
     std::shared_ptr<OvrController> m_rightController;
@@ -110,5 +113,5 @@ class OvrHmd : public TrackedDevice,
     HiddenAreaMeshViews m_hiddenAreaMeshesVP;
 
     void SetHiddenAreaMeshes(const ViewsConfigData &config,
-                             const std::array<vr::HmdRect2_t,2>& view_projs);
+                             const std::array<vr::HmdRect2_t, 2> &view_projs);
 };

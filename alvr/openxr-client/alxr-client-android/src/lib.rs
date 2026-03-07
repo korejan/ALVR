@@ -15,7 +15,8 @@ use alxr_common::{
     ALXRGraphicsApi, ALXRPassthroughMode, ALXRSystemProperties, ALXRVersion, APP_CONFIG,
     alxr_destroy, alxr_init, alxr_on_pause, alxr_on_resume, alxr_process_frame, battery_send,
     init_connections, input_send, path_string_to_hash, request_idr, set_waiting_next_idr, shutdown,
-    time_sync_send, to_alxr_version, video_error_report_send, views_config_send,
+    time_sync_send, to_alxr_version, user_presence_send, video_error_report_send,
+    views_config_send,
 };
 
 fn get_build_property<'a>(jvm: &'a jni::JavaVM, property_name: &str) -> String {
@@ -324,6 +325,7 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
             timeSyncSend: Some(time_sync_send),
             videoErrorReportSend: Some(video_error_report_send),
             batterySend: Some(battery_send),
+            userPresenceSend: Some(user_presence_send),
             setWaitingNextIDR: Some(set_waiting_next_idr),
             requestIDR: Some(request_idr),
             disableLinearizeSrgb: no_linearize_srgb,

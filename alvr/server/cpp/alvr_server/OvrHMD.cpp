@@ -316,14 +316,14 @@ void *OvrHmd::GetComponent(const char *component_name_and_version) {
 }
 
 vr::DriverPose_t OvrHmd::GetPose() {
-    vr::DriverPose_t pose = {};
-    pose.poseIsValid = true;
-    pose.result = vr::TrackingResult_Running_OK;
-    pose.deviceIsConnected = true;
-
-    pose.qWorldFromDriverRotation = HmdQuaternion_Init(1, 0, 0, 0);
-    pose.qDriverFromHeadRotation = HmdQuaternion_Init(1, 0, 0, 0);
-    pose.qRotation = HmdQuaternion_Init(1, 0, 0, 0);
+    vr::DriverPose_t pose = {
+        .qWorldFromDriverRotation = HmdQuaternion_Init(1, 0, 0, 0),
+        .qDriverFromHeadRotation = HmdQuaternion_Init(1, 0, 0, 0),
+        .qRotation = HmdQuaternion_Init(1, 0, 0, 0),
+        .result = vr::TrackingResult_Running_OK,
+        .poseIsValid = true,
+        .deviceIsConnected = true,
+    };
 
     if (m_TrackingInfo.targetTimestampNs > 0) {
         TrackingInfo &info = m_TrackingInfo;
@@ -336,9 +336,6 @@ vr::DriverPose_t OvrHmd::GetPose() {
         pose.vecPosition[0] = info.headPose.position.x;
         pose.vecPosition[1] = info.headPose.position.y;
         pose.vecPosition[2] = info.headPose.position.z;
-
-        // set prox sensor
-        vr::VRDriverInput()->UpdateBooleanComponent(m_proximity, info.mounted == 1, 0.0);
 
         Debug("GetPose: Rotation=(%f, %f, %f, %f) Position=(%f, %f, %f)\n",
               pose.qRotation.x,
@@ -383,6 +380,9 @@ void OvrHmd::OnPoseUpdated(const TrackingInfo& info) {
 }
 
 void OvrHmd::StartStreaming() {
+
+    SetUserPresence(true);
+
     if (m_streamComponentsInitialized) {
         return;
     }
@@ -423,6 +423,10 @@ void OvrHmd::StartStreaming() {
     }
 
     m_streamComponentsInitialized = true;
+}
+
+void OvrHmd::StopStreaming() {
+    SetUserPresence(false);
 }
 
 void OvrHmd::SetViewsConfig(const ViewsConfigData &config) {
@@ -479,6 +483,23 @@ void OvrHmd::SetHiddenAreaMeshes(const ViewsConfigData &config,
     
     if (auto encoder = m_encoder) {
         encoder->SetVisibilityMasks(m_hiddenAreaMeshesNDC);
+    }
+}
+
+void OvrHmd::SetUserPresence(bool isPresent) {
+    if (m_proximity != vr::k_ulInvalidInputComponentHandle) {
+        Info("Setting user presence to %s\n", isPresent ? "present" : "not present");
+        vr::VRDriverInput()->UpdateBooleanComponent(m_proximity, isPresent, 0.0);
+    }
+
+    auto dmComponent = m_directModeComponent;
+    if (dmComponent == nullptr)
+        return;
+    
+    if (isPresent) {
+        dmComponent->Resume();
+    } else {
+        dmComponent->Pause();
     }
 }
 

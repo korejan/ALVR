@@ -197,6 +197,7 @@ extern "C" void ShutdownSteamvr();
 extern "C" void SetOpenvrProperty(uint64_t topLevelPath, OpenvrProperty prop);
 extern "C" void SetViewsConfig(const ViewsConfigData* config);
 extern "C" void SetBattery(uint64_t topLevelPath, float gauge_value, bool is_plugged);
+extern "C" void SetUserPresence(bool isPresent);
 
 #ifdef __cplusplus
 }

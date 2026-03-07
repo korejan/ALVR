@@ -1,6 +1,6 @@
 use crate::{
     ALXRTrackingSpace_StageRefSpace, APP_CONFIG, BATTERY_SENDER, INPUT_SENDER, TIME_SYNC_SENDER,
-    TimeSync, VIDEO_ERROR_REPORT_SENDER, VIEWS_CONFIG_SENDER, VideoFrame,
+    TimeSync, USER_PRESENCE_SENDER, VIDEO_ERROR_REPORT_SENDER, VIEWS_CONFIG_SENDER, VideoFrame,
     connection_utils::{self, ConnectionError},
 };
 use alvr_common::{ALVR_NAME, ALVR_VERSION, prelude::*};
@@ -278,6 +278,8 @@ async fn connection_pipeline(
     *VIEWS_CONFIG_SENDER.lock() = Some(views_config_sender);
     let (battery_sender, mut battery_receiver) = tmpsc::unbounded_channel();
     *BATTERY_SENDER.lock() = Some(battery_sender);
+    let (user_presence_sender, mut user_presence_receiver) = tmpsc::unbounded_channel();
+    *USER_PRESENCE_SENDER.lock() = Some(user_presence_sender);
 
     // assert!((config_packet.eye_resolution_width % headset_info.recommended_eye_width) == 0);
     // assert!((config_packet.eye_resolution_height % headset_info.recommended_eye_height) == 0);
@@ -453,6 +455,24 @@ async fn connection_pipeline(
             let mut buffer = ControlBufferMut::<ClientControlPacket>::new()?;
             while let Some(packet) = battery_receiver.recv().await {
                 buffer.encode(&ClientControlPacket::Battery(packet))?;
+                control_sender
+                    .lock()
+                    .await
+                    .send_buffer_mut(&mut buffer)
+                    .await
+                    .ok();
+            }
+
+            Ok(())
+        }
+    };
+
+    let user_presence_send_loop = {
+        let control_sender = Arc::clone(&control_sender);
+        async move {
+            let mut buffer = ControlBufferMut::<ClientControlPacket>::new()?;
+            while let Some(packet) = user_presence_receiver.recv().await {
+                buffer.encode(&ClientControlPacket::UserPresence(packet))?;
                 control_sender
                     .lock()
                     .await
@@ -710,6 +730,7 @@ async fn connection_pipeline(
         res = spawn_cancelable(video_error_report_send_loop) => res,
         res = spawn_cancelable(views_config_send_loop) => res,
         res = spawn_cancelable(battery_send_loop) => res,
+        res = spawn_cancelable(user_presence_send_loop) => res,
         res = spawn_cancelable(video_receive_loop) => res,
         res = spawn_cancelable(haptics_receive_loop) => res,
 

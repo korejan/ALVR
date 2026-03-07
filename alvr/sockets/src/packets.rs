@@ -172,6 +172,7 @@ pub enum ClientControlPacket {
     Battery(BatteryPacket),
     TimeSync(TimeSyncPacket), // legacy
     VideoErrorReport,         // legacy
+    UserPresence(bool),
     Reserved(String),
     ReservedBuffer(Vec<u8>),
 }

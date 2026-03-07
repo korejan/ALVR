@@ -428,6 +428,7 @@ lazy_static! {
         Mutex::new(None);
     static ref VIDEO_ERROR_REPORT_SENDER: Mutex<Option<mpsc::UnboundedSender<()>>> =
         Mutex::new(None);
+    static ref USER_PRESENCE_SENDER: Mutex<Option<mpsc::UnboundedSender<bool>>> = Mutex::new(None);
     pub static ref ON_PAUSE_NOTIFIER: Notify = Notify::new();
 }
 
@@ -755,6 +756,12 @@ pub extern "C" fn time_sync_send(data_ptr: *const TimeSync) {
 pub extern "C" fn video_error_report_send() {
     if let Some(sender) = &*VIDEO_ERROR_REPORT_SENDER.lock() {
         sender.send(()).ok();
+    }
+}
+
+pub extern "C" fn user_presence_send(is_present: bool) {
+    if let Some(sender) = &*USER_PRESENCE_SENDER.lock() {
+        sender.send(is_present).ok();
     }
 }
 

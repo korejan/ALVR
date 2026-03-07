@@ -140,8 +140,8 @@ class DriverProvider : public vr::IServerTrackedDeviceProvider {
         }
     }
     virtual bool ShouldBlockStandbyMode() override { return false; }
-    virtual void EnterStandby() override {}
-    virtual void LeaveStandby() override {}
+    virtual void EnterStandby() override { Info("Entering standby mode\n"); }
+    virtual void LeaveStandby() override { Info("Leaving standby mode\n"); }
 } g_driver_provider;
 
 // bindigs for Rust
@@ -198,7 +198,9 @@ void InitializeStreaming() {
 }
 
 void DeinitializeStreaming() {
-    // nothing to do
+    if (g_driver_provider.hmd) {
+        g_driver_provider.hmd->StopStreaming();
+    }
 }
 
 void RequestIDR() {
@@ -275,5 +277,11 @@ void SetBattery(uint64_t top_level_path, float gauge_value, bool is_plugged) {
         } else if (top_level_path == RIGHT_HAND_PATH) {
             stats->m_rightControllerBattery = gauge_value;
         }
+    }
+}
+
+void SetUserPresence(bool isPresent) {
+    if (g_driver_provider.hmd) {
+        g_driver_provider.hmd->SetUserPresence(isPresent);
     }
 }

@@ -1150,6 +1150,9 @@ async fn connection_pipeline() -> StrResult {
                 Ok(ClientControlPacket::Battery(packet)) => unsafe {
                     crate::SetBattery(packet.device_id, packet.gauge_value, packet.is_plugged);
                 },
+                Ok(ClientControlPacket::UserPresence(is_present)) => unsafe {
+                    crate::SetUserPresence(is_present);
+                },
                 Ok(_) => (),
                 Err(e) => {
                     alvr_session::log_event(ServerEvent::ClientDisconnected);

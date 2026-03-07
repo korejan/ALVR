@@ -6,7 +6,7 @@ use alxr_common::{
     alxr_destroy, alxr_init, alxr_is_session_running, alxr_process_frame,
     alxr_request_exit_session, battery_send, init_connections, input_send, path_string_to_hash,
     request_idr, set_waiting_next_idr, shutdown, time_sync_send, to_alxr_version,
-    video_error_report_send, views_config_send,
+    user_presence_send, video_error_report_send, views_config_send,
 };
 use std::{io, thread, time};
 
@@ -63,6 +63,7 @@ fn main() {
                 timeSyncSend: Some(time_sync_send),
                 videoErrorReportSend: Some(video_error_report_send),
                 batterySend: Some(battery_send),
+                userPresenceSend: Some(user_presence_send),
                 setWaitingNextIDR: Some(set_waiting_next_idr),
                 requestIDR: Some(request_idr),
                 graphicsApi: selected_api,
