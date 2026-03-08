@@ -109,7 +109,6 @@ pub fn bump_version(maybe_version: Option<String>, is_nightly: bool) {
 
     for dir_name in [
         "audio",
-        "client",
         "commands",
         "common",
         "filesystem",
