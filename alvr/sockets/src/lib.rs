@@ -3,7 +3,7 @@ mod packets;
 mod stream_socket;
 
 use alvr_common::prelude::*;
-use rand::Rng;
+use rand::RngExt;
 use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, Ipv4Addr};
 
@@ -32,16 +32,17 @@ pub struct PrivateIdentity {
 }
 
 pub fn create_identity(hostname: Option<String>) -> StrResult<PrivateIdentity> {
+    let mut rng = rand::rng();
     let hostname = hostname.unwrap_or(format!(
         "{}{}{}{}.client.alvr",
-        rand::rng().random_range(0..10),
-        rand::rng().random_range(0..10),
-        rand::rng().random_range(0..10),
-        rand::rng().random_range(0..10),
+        rng.random_range(0..10),
+        rng.random_range(0..10),
+        rng.random_range(0..10),
+        rng.random_range(0..10),
     ));
 
     #[cfg(target_os = "android")]
-    let certificate = trace_err!(rcgen::generate_simple_self_signed([hostname.clone()]))?;
+    let certified_key = trace_err!(rcgen::generate_simple_self_signed([hostname.clone()]))?;
 
     #[cfg(not(target_os = "android"))]
     return Ok(PrivateIdentity {
@@ -53,8 +54,8 @@ pub fn create_identity(hostname: Option<String>) -> StrResult<PrivateIdentity> {
     #[cfg(target_os = "android")]
     return Ok(PrivateIdentity {
         hostname,
-        certificate_pem: trace_err!(certificate.serialize_pem())?,
-        key_pem: certificate.serialize_private_key_pem(),
+        certificate_pem: certified_key.cert.pem(),
+        key_pem: certified_key.signing_key.serialize_pem(),
     });
 }
 

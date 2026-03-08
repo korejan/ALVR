@@ -23,7 +23,7 @@ tokio-util = { version = "0.7", features = ["codec", "net"] }
 half = { version = "2", features = ["bytemuck", "serde"] }
 bytemuck = { version = "1", features = ["derive"] }
 # Miscellaneous
-rand = "0.9"
+rand = "0.10"
 
 [target.'cfg(target_os = "android")'.dependencies]
-rcgen = "0.12"
+rcgen = "0.14"

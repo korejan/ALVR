@@ -9,7 +9,7 @@ edition = "2024"
 backtrace = "0.3"
 lazy_static = "1"
 log = "0.4"
-glam = { version = "0.30", features = ["serde"] }
+glam = { version = "0.32", features = ["serde"] }
 semver = { version = "1", features = ["serde"] }
 
 [target.'cfg(windows)'.dependencies]

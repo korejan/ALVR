@@ -20,7 +20,7 @@ log = "0.4"
 android_logger = "0.15"
 android-activity = { version="0.6", features = [ "native-activity" ] }
 ndk-context = "0.1"
-libloading = "0.8"
+libloading = "0.9"
 lazy_static = "1"
 parking_lot = "0.12"
 version-compare = "0.2"
