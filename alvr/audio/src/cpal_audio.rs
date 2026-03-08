@@ -9,6 +9,7 @@ use parking_lot::Mutex;
 use rodio::Source;
 use std::{
     collections::VecDeque,
+    num::NonZero,
     sync::{Arc, mpsc as smpsc},
     thread,
 };
@@ -16,7 +17,7 @@ use tokio::sync::mpsc as tmpsc;
 
 #[cfg(windows)]
 use windows::Win32::{
-    Devices::FunctionDiscovery::PKEY_Device_FriendlyName,
+    Devices::{FunctionDiscovery::PKEY_Device_FriendlyName, Properties::DEVPKEY_Device_DeviceDesc},
     Media::Audio::{
         DEVICE_STATE_ACTIVE, Endpoints::IAudioEndpointVolume, IMMDevice, IMMDeviceCollection,
         IMMDeviceEnumerator, MMDeviceEnumerator, eAll,
@@ -46,6 +47,11 @@ lazy_static! {
     ];
 }
 
+#[inline(always)]
+fn device_name(device: &Device) -> Result<String, cpal::DeviceNameError> {
+    device.description().map(|desc| desc.name().to_string())
+}
+
 #[cfg_attr(not(target_os = "linux"), allow(unused_variables))]
 pub fn get_devices_list(linux_backend: LinuxAudioBackend) -> StrResult<AudioDevicesList> {
     #[cfg(target_os = "linux")]
@@ -58,10 +64,10 @@ pub fn get_devices_list(linux_backend: LinuxAudioBackend) -> StrResult<AudioDevi
     let host = cpal::default_host();
 
     let output = trace_err!(host.output_devices())?
-        .filter_map(|d| d.name().ok())
+        .filter_map(|d| device_name(&d).ok())
         .collect::<Vec<_>>();
     let input = trace_err!(host.input_devices())?
-        .filter_map(|d| d.name().ok())
+        .filter_map(|d| device_name(&d).ok())
         .collect::<Vec<_>>();
 
     Ok(AudioDevicesList { output, input })
@@ -99,7 +105,7 @@ impl CpalAudioDevice {
                     .ok_or_else(|| "No input audio device found".to_owned())?,
                 AudioDeviceType::VirtualMicrophoneInput => trace_err!(host.output_devices())?
                     .find(|d| {
-                        if let Ok(name) = d.name() {
+                        if let Ok(name) = device_name(d) {
                             VIRTUAL_MICROPHONE_PAIRS
                                 .iter()
                                 .any(|(input_name, _)| name.contains(input_name))
@@ -121,7 +127,7 @@ impl CpalAudioDevice {
                     if let Some(output_name) = maybe_output_name {
                         trace_err!(host.input_devices())?
                             .find(|d| {
-                                if let Ok(name) = d.name() {
+                                if let Ok(name) = device_name(d) {
                                     name.contains(output_name)
                                 } else {
                                     false
@@ -141,7 +147,7 @@ impl CpalAudioDevice {
             },
             AudioDeviceId::Name(name_substring) => trace_err!(host.devices())?
                 .find(|d| {
-                    if let Ok(name) = d.name() {
+                    if let Ok(name) = device_name(d) {
                         name.to_lowercase().contains(&name_substring.to_lowercase())
                     } else {
                         false
@@ -162,12 +168,14 @@ impl CpalAudioDevice {
         })
     }
 
+    #[inline(always)]
     pub fn name(&self) -> StrResult<String> {
-        trace_err!(self.inner.name())
+        trace_err!(device_name(&self.inner))
     }
 
+    #[inline(always)]
     pub fn is_same_device(&self, other: &Self) -> bool {
-        if let (Ok(name1), Ok(name2)) = (self.inner.name(), other.inner.name()) {
+        if let (Ok(name1), Ok(name2)) = (self.name(), other.name()) {
             name1 == name2
         } else {
             false
@@ -176,8 +184,31 @@ impl CpalAudioDevice {
 }
 
 #[cfg(windows)]
+/// # Safety
+/// `key` must point to a valid `PROPERTYKEY` or a structurally compatible type
+/// such as `DEVPROPKEY`.
+unsafe fn get_device_property_string(
+    property_store: &IPropertyStore,
+    key: *const windows::Win32::Foundation::PROPERTYKEY,
+) -> Option<String> {
+    unsafe {
+        let prop_variant = property_store.GetValue(key).ok()?;
+        if prop_variant.vt() != VT_LPWSTR {
+            return None;
+        }
+        prop_variant
+            .Anonymous
+            .Anonymous
+            .Anonymous
+            .pwszVal
+            .to_string()
+            .ok()
+    }
+}
+
+#[cfg(windows)]
 fn get_windows_device(device: &CpalAudioDevice) -> StrResult<IMMDevice> {
-    let device_name = trace_err!(device.inner.name())?;
+    let dev_name = trace_err!(device.name())?;
 
     unsafe {
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
@@ -196,19 +227,16 @@ fn get_windows_device(device: &CpalAudioDevice) -> StrResult<IMMDevice> {
             let property_store: IPropertyStore =
                 trace_err!(mm_device.OpenPropertyStore(STGM_READ))?;
 
-            let prop_variant = trace_err!(property_store.GetValue(&PKEY_Device_FriendlyName))?;
+            // cpal 0.17 prefers DEVPKEY_Device_DeviceDesc, falling back to
+            // PKEY_Device_FriendlyName. Match the same logic so the name
+            // returned by cpal's description().name() can be found here.
+            let mm_device_name = get_device_property_string(
+                &property_store,
+                &DEVPKEY_Device_DeviceDesc as *const _ as *const _,
+            )
+            .or_else(|| get_device_property_string(&property_store, &PKEY_Device_FriendlyName));
 
-            if prop_variant.vt() != VT_LPWSTR {
-                return fmt_e!(
-                    "PKEY_Device_FriendlyName variant type is {:?} - expected VT_LPWSTR",
-                    prop_variant.vt()
-                );
-            }
-
-            let pwsz_val = prop_variant.Anonymous.Anonymous.Anonymous.pwszVal;
-            let mm_device_name = trace_err!(pwsz_val.to_string())?;
-
-            if mm_device_name == device_name {
+            if mm_device_name.as_ref() == Some(&dev_name) {
                 return Ok(mm_device);
             }
         }
@@ -260,8 +288,8 @@ fn get_stream_config(device: &CpalAudioDevice) -> StrResult<SupportedStreamConfi
 }
 
 pub fn get_sample_rate(device: &CpalAudioDevice) -> StrResult<u32> {
-    let config = get_stream_config(&device)?;
-    Ok(config.sample_rate().0)
+    let config = get_stream_config(device)?;
+    Ok(config.sample_rate())
 }
 
 #[cfg(windows)]
@@ -454,12 +482,12 @@ impl Source for StreamingSource {
         None
     }
 
-    fn channels(&self) -> u16 {
-        self.channels_count as _
+    fn channels(&self) -> NonZero<u16> {
+        NonZero::new(self.channels_count as u16).unwrap()
     }
 
-    fn sample_rate(&self) -> u32 {
-        self.sample_rate
+    fn sample_rate(&self) -> NonZero<u32> {
+        NonZero::new(self.sample_rate).unwrap()
     }
 
     fn total_duration(&self) -> Option<std::time::Duration> {
@@ -474,7 +502,7 @@ impl Iterator for StreamingSource {
     fn next(&mut self) -> Option<f32> {
         if self.current_batch_cursor == 0 {
             get_next_frame_batch(
-                &mut *self.sample_buffer.lock(),
+                &mut self.sample_buffer.lock(),
                 self.channels_count,
                 self.batch_frames_count,
                 &mut self.current_batch,
@@ -512,7 +540,7 @@ pub async fn play_audio_loop(
         let sample_buffer = Arc::clone(&sample_buffer);
         move || -> StrResult {
             let stream = trace_err!(
-                rodio::OutputStreamBuilder::from_device(device.inner.clone())
+                rodio::DeviceSinkBuilder::from_device(device.inner.clone())
                     .and_then(|b| b.open_stream())
             )?;
 

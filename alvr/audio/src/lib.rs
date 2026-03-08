@@ -43,13 +43,10 @@ pub enum AudioDevice {
 
 impl AudioDevice {
     pub fn new(
-        linux_backend: alvr_session::LinuxAudioBackend,
-        id: alvr_session::AudioDeviceId,
-        device_type: AudioDeviceType,
+        #[allow(unused_variables)] linux_backend: alvr_session::LinuxAudioBackend,
+        #[allow(unused_variables)] id: alvr_session::AudioDeviceId,
+        #[allow(unused_variables)] device_type: AudioDeviceType,
     ) -> StrResult<Self> {
-        #[allow(unused_variables)]
-        let (linux_backend, id, device_type) = (linux_backend, id, device_type);
-
         #[cfg(target_os = "linux")]
         return match linux_backend {
             alvr_session::LinuxAudioBackend::Alsa | alvr_session::LinuxAudioBackend::Jack => {
@@ -99,11 +96,8 @@ impl AudioDevice {
 }
 
 pub fn get_devices_list(
-    linux_backend: alvr_session::LinuxAudioBackend,
+    #[allow(unused_variables)] linux_backend: alvr_session::LinuxAudioBackend,
 ) -> StrResult<AudioDevicesList> {
-    #[allow(unused_variables)]
-    let linux_backend = linux_backend;
-
     #[cfg(target_os = "linux")]
     return match linux_backend {
         alvr_session::LinuxAudioBackend::Alsa | alvr_session::LinuxAudioBackend::Jack => {
@@ -260,7 +254,7 @@ pub async fn receive_samples_loop(
             recovery_sample_buffer.extend(sample_buffer_ref.drain(..));
         }
 
-        if sample_buffer_ref.len() == 0 || packet.had_packet_loss {
+        if sample_buffer_ref.is_empty() || packet.had_packet_loss {
             recovery_sample_buffer.extend(
                 packet
                     .buffer

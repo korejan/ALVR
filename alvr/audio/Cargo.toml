@@ -15,17 +15,18 @@ serde = "1"
 tokio = "1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-cpal = { version = "0.16", features = ["jack"] }
-rodio = "0.21"
+cpal = { version = "0.17", features = ["jack"] }
+rodio = "0.22"
 pipewire = "0.9"
 
 [target.'cfg(not(any(target_os = "linux", target_os = "android")))'.dependencies]
-cpal = "0.16"
-rodio = "0.21"
+cpal = "0.17"
+rodio = "0.22"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = [
     "Win32_Devices_FunctionDiscovery",
+    "Win32_Devices_Properties",
     "Win32_Media_Audio",
     "Win32_Media_Audio_Endpoints",
     "Win32_System_Com",
