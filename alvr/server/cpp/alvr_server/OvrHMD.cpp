@@ -298,6 +298,8 @@ void OvrHmd::Deactivate() {
     this->prop_container = vr::k_ulInvalidPropertyContainer;
 }
 
+void OvrHmd::EnterStandby() { Info("Entering standby mode\n"); }
+
 void *OvrHmd::GetComponent(const char *component_name_and_version) {
     // NB: "this" pointer needs to be statically cast to point to the correct vtable
 
@@ -492,6 +494,7 @@ void OvrHmd::SetUserPresence(bool isPresent) {
         vr::VRDriverInput()->UpdateBooleanComponent(m_proximity, isPresent, 0.0);
     }
 
+#ifdef _WIN32
     auto dmComponent = m_directModeComponent;
     if (dmComponent == nullptr)
         return;
@@ -501,6 +504,7 @@ void OvrHmd::SetUserPresence(bool isPresent) {
     } else {
         dmComponent->Pause();
     }
+#endif
 }
 
 void OvrHmd::updateController(const TrackingInfo &info) {

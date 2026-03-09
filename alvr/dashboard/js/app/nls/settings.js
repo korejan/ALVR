@@ -77,8 +77,7 @@ define({
             "Reduce color banding (newer nVidia cards or SW encoding only)",
         "_root_video_use10bitEncoder.description":
             "This increases visual quality by streaming 10 bits per color channel instead of 8. Works on all supported platforms except nvidia on linux.",
-        "_root_video_rateControlMode-choice-.name":
-            "Rate control mode",
+        "_root_video_rateControlMode-choice-.name": "Rate control mode",
         "_root_video_rateControlMode-choice-.description":
             "Specifies the bitrate control method (Windows with AMD and nVidia cards only). CBR - constant bitrate, VBR - variable bitrate.",
         "_root_video_rateControlMode_cbr-choice-.name": "CBR",
@@ -88,8 +87,7 @@ define({
             "Specifies the entropy coding method (h264 only). CABAC - provides better quality at lower bitrate, but may increase the encoder/decoder latency, CAVLC - provides worse quality that can be compensated with higher bitrate, and may significantly decrease encoder/decoder latency.",
         "_root_video_entropyCoding_cabac-choice-.name": "CABAC",
         "_root_video_entropyCoding_cavlc-choice-.name": "CAVLC",
-        "_root_video_advancedCodecOptions_amfControls_enableVbaq.name":
-            "Enable VBAQ",
+        "_root_video_advancedCodecOptions_amfControls_enableVbaq.name": "Enable VBAQ",
         "_root_video_advancedCodecOptions_amfControls_enableVbaq.description":
             "Enables Variance Based Adaptive Quantization (VBAQ) that allocates more bits to smooth areas (gradients, solid colors), but picture details may suffer from compression artifacts.",
         "_root_video_advancedCodecOptions_amfControls_usePreproc.name":

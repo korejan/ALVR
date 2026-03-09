@@ -35,7 +35,7 @@ class OvrHmd : public TrackedDevice,
 
     virtual vr::EVRInitError Activate(vr::TrackedDeviceIndex_t unObjectId);
     virtual void Deactivate();
-    virtual void EnterStandby() override { Info("Entering standby mode\n"); }
+    virtual void EnterStandby() override;
     void *GetComponent(const char *pchComponentNameAndVersion);
     virtual void DebugRequest(const char *request, char *response_buffer, uint32_t size) {}
     virtual vr::DriverPose_t GetPose();
