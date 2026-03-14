@@ -1,5 +1,6 @@
 #![cfg(target_os = "android")]
 use jni;
+use jni::{jni_sig, jni_str};
 
 //
 // \brief Gets the internal name for an android permission.
@@ -12,12 +13,17 @@ use jni;
 //
 fn android_permission_name<'a>(
     perm_name: &str,
-    jni_env: &mut jni::JNIEnv<'a>,
+    jni_env: &mut jni::Env<'a>,
 ) -> jni::errors::Result<jni::objects::JValueOwned<'a>> {
     // nested class permission in class android.Manifest,
     // hence android 'slash' Manifest 'dollar' permission
-    let class_manifest_permission = jni_env.find_class("android/Manifest$permission")?;
-    jni_env.get_static_field(class_manifest_permission, perm_name, "Ljava/lang/String;")
+    let class_manifest_permission = jni_env.find_class(jni_str!("android/Manifest$permission"))?;
+    let field_name = jni::strings::JNIString::from(perm_name);
+    jni_env.get_static_field(
+        class_manifest_permission,
+        &field_name,
+        jni_sig!("Ljava/lang/String;"),
+    )
 }
 
 //
@@ -32,15 +38,20 @@ fn android_permission_name<'a>(
 fn android_has_permission<'a>(
     activity: jni::sys::jobject,
     perm_name: &str,
-    jni_env: &mut jni::JNIEnv<'a>,
+    jni_env: &mut jni::Env<'a>,
 ) -> jni::errors::Result<bool> {
-    let class_package_manager = jni_env.find_class("android/content/pm/PackageManager")?;
+    let class_package_manager =
+        jni_env.find_class(jni_str!("android/content/pm/PackageManager"))?;
     let permission_granted = jni_env
-        .get_static_field(class_package_manager, "PERMISSION_GRANTED", "I")?
+        .get_static_field(
+            &class_package_manager,
+            jni_str!("PERMISSION_GRANTED"),
+            jni_sig!("I"),
+        )?
         .i()?;
 
     let maybe_custom_perm_name = if perm_name.contains('.') {
-        Some(jni_env.new_string(&perm_name)?)
+        Some(jni_env.new_string(perm_name)?)
     } else {
         Option::None
     };
@@ -50,12 +61,12 @@ fn android_has_permission<'a>(
     } else {
         maybe_custom_perm_name.unwrap().into()
     };
-    let activity_obj = unsafe { jni::objects::JObject::from_raw(activity) };
+    let activity_obj = unsafe { jni::objects::JObject::from_raw(&*jni_env, activity) };
     let int_result = jni_env
         .call_method(
-            activity_obj,
-            "checkSelfPermission",
-            "(Ljava/lang/String;)I",
+            &activity_obj,
+            jni_str!("checkSelfPermission"),
+            jni_sig!("(Ljava/lang/String;)I"),
             &[(&ls_perm).into()],
         )?
         .i()?;
@@ -73,13 +84,13 @@ fn android_has_permission<'a>(
 fn android_request_permissions<'a>(
     activity: jni::sys::jobject,
     permission_names: &[&str],
-    jni_env: &mut jni::JNIEnv<'a>,
+    jni_env: &mut jni::Env<'a>,
 ) -> jni::errors::Result<()> {
     if permission_names.is_empty() {
         return Ok(());
     }
 
-    let jstring_class = jni_env.find_class("java/lang/String")?;
+    let jstring_class = jni_env.find_class(jni_str!("java/lang/String"))?;
     let jstring_value = jni_env.new_string("")?;
 
     let perm_array =
@@ -88,7 +99,7 @@ fn android_request_permissions<'a>(
         let perm_name = &permission_names[idx];
 
         let maybe_custom_perm_name = if perm_name.contains('.') {
-            Some(jni_env.new_string(&perm_name)?)
+            Some(jni_env.new_string(perm_name)?)
         } else {
             Option::None
         };
@@ -99,24 +110,23 @@ fn android_request_permissions<'a>(
             maybe_custom_perm_name.unwrap().into()
         };
 
-        jni_env.set_object_array_element(&perm_array, idx as i32, jperm_name.l()?)?;
+        perm_array.set_element(jni_env, idx, jperm_name.l()?)?;
     }
 
-    let activity_obj = unsafe { jni::objects::JObject::from_raw(activity) };
+    let activity_obj = unsafe { jni::objects::JObject::from_raw(&*jni_env, activity) };
     jni_env.call_method(
-        activity_obj,
-        "requestPermissions",
-        "([Ljava/lang/String;I)V",
+        &activity_obj,
+        jni_str!("requestPermissions"),
+        jni_sig!("([Ljava/lang/String;I)V"),
         &[(&perm_array).into(), 0.into()],
     )?;
-    return Ok(());
+    Ok(())
 }
 
-pub fn check_android_permissions<'a>(
+pub fn check_android_permissions(
     activity: jni::sys::jobject,
-    jvm: &'a jni::JavaVM,
+    env: &mut jni::Env,
 ) -> jni::errors::Result<()> {
-    let mut env = jvm.attach_current_thread()?;
     let mut permission_names = vec![];
     for perm_name in [
         "RECORD_AUDIO",
@@ -136,9 +146,9 @@ pub fn check_android_permissions<'a>(
         // Re-enable when Pico runtime supports it.
         //"com.picovr.permission.FACE_TRACKING",
     ] {
-        if !android_has_permission(activity, &perm_name, &mut env)? {
+        if !android_has_permission(activity, perm_name, env)? {
             permission_names.push(perm_name);
         }
     }
-    android_request_permissions(activity, &permission_names, &mut env)
+    android_request_permissions(activity, &permission_names, env)
 }

@@ -9,6 +9,7 @@ use wifi_manager::{acquire_wifi_lock, release_wifi_lock};
 
 use android_activity::{AndroidApp, InputStatus, MainEvent, PollEvent};
 use android_logger;
+use jni::{jni_sig, jni_str};
 
 use alxr_common::{
     ALXRClientCtx, ALXRColorSpace, ALXRDecoderType, ALXREyeTrackingType, ALXRFacialExpressionType,
@@ -19,39 +20,35 @@ use alxr_common::{
     views_config_send,
 };
 
-fn get_build_property<'a>(jvm: &'a jni::JavaVM, property_name: &str) -> String {
-    let mut env = jvm.attach_current_thread().unwrap();
-
-    let jdevice_name = env
-        .get_static_field("android/os/Build", &property_name, "Ljava/lang/String;")
-        .unwrap()
-        .l()
-        .unwrap();
-    let device_name_raw = env.get_string((&jdevice_name).into()).unwrap();
-
-    device_name_raw.to_string_lossy().as_ref().to_owned()
+fn get_build_property(jvm: &jni::JavaVM, property_name: &str) -> String {
+    jvm.attach_current_thread(|env| -> jni::errors::Result<String> {
+        let field_name = jni::strings::JNIString::from(property_name);
+        let cls = env.find_class(jni_str!("android/os/Build"))?;
+        let jdevice_name = env
+            .get_static_field(&cls, &field_name, jni_sig!("Ljava/lang/String;"))?
+            .l()?;
+        let jstring = unsafe { jni::objects::JString::from_raw(env, jdevice_name.into_raw()) };
+        jstring.try_to_string(env)
+    })
+    .unwrap()
 }
 
-fn get_build_version_property<'a>(jvm: &'a jni::JavaVM, property_name: &str) -> String {
-    let mut env = jvm.attach_current_thread().unwrap();
-
-    let version_prop_name = env
-        .get_static_field(
-            "android/os/Build$VERSION",
-            &property_name,
-            "Ljava/lang/String;",
-        )
-        .unwrap()
-        .l()
-        .unwrap();
-    let version_prop_raw = env.get_string((&version_prop_name).into()).unwrap();
-
-    version_prop_raw.to_string_lossy().as_ref().to_owned()
+fn get_build_version_property(jvm: &jni::JavaVM, property_name: &str) -> String {
+    jvm.attach_current_thread(|env| -> jni::errors::Result<String> {
+        let field_name = jni::strings::JNIString::from(property_name);
+        let cls = env.find_class(jni_str!("android/os/Build$VERSION"))?;
+        let version_prop_name = env
+            .get_static_field(&cls, &field_name, jni_sig!("Ljava/lang/String;"))?
+            .l()?;
+        let jstring = unsafe { jni::objects::JString::from_raw(env, version_prop_name.into_raw()) };
+        jstring.try_to_string(env)
+    })
+    .unwrap()
 }
 
-fn get_firmware_version<'a>(jvm: &'a jni::JavaVM) -> ALXRVersion {
-    fn get_version_helper<'a, 'b>(jvm: &'a jni::JavaVM, prop_name: &str) -> Option<[u32; 3]> {
-        let value_str = get_build_property(&jvm, &prop_name);
+fn get_firmware_version(jvm: &jni::JavaVM) -> ALXRVersion {
+    fn get_version_helper(jvm: &jni::JavaVM, prop_name: &str) -> Option<[u32; 3]> {
+        let value_str = get_build_property(jvm, prop_name);
         match Version::from(&value_str) {
             Some(v) => {
                 let mut ret: [u32; 3] = [0, 0, 0];
@@ -67,8 +64,8 @@ fn get_firmware_version<'a>(jvm: &'a jni::JavaVM) -> ALXRVersion {
         }
     }
 
-    let version = get_version_helper(&jvm, "ID")
-        .unwrap_or_else(|| get_version_helper(&jvm, "DISPLAY").unwrap_or([0, 0, 0]));
+    let version = get_version_helper(jvm, "ID")
+        .unwrap_or_else(|| get_version_helper(jvm, "DISPLAY").unwrap_or([0, 0, 0]));
 
     ALXRVersion {
         major: version[0],
@@ -78,33 +75,33 @@ fn get_firmware_version<'a>(jvm: &'a jni::JavaVM) -> ALXRVersion {
 }
 
 #[allow(dead_code)]
-fn get_build_model<'a>(jvm: &'a jni::JavaVM) -> String {
-    get_build_property(&jvm, "MODEL")
+fn get_build_model(jvm: &jni::JavaVM) -> String {
+    get_build_property(jvm, "MODEL")
 }
 
 #[allow(dead_code)]
-fn get_build_device<'a>(jvm: &'a jni::JavaVM) -> String {
-    get_build_property(&jvm, "DEVICE")
+fn get_build_device(jvm: &jni::JavaVM) -> String {
+    get_build_property(jvm, "DEVICE")
 }
 
 #[allow(dead_code)]
-fn get_build_manufacturer<'a>(jvm: &'a jni::JavaVM) -> String {
-    get_build_property(&jvm, "MANUFACTURER")
+fn get_build_manufacturer(jvm: &jni::JavaVM) -> String {
+    get_build_property(jvm, "MANUFACTURER")
 }
 
 #[allow(dead_code)]
-fn get_build_version_no<'a>(jvm: &'a jni::JavaVM) -> u64 {
-    get_build_version_property(&jvm, "INCREMENTAL")
+fn get_build_version_no(jvm: &jni::JavaVM) -> u64 {
+    get_build_version_property(jvm, "INCREMENTAL")
         .parse()
         .unwrap_or(0)
 }
 
 #[allow(dead_code)]
-fn is_device<'a>(pname: &str, jvm: &'a jni::JavaVM) -> bool {
+fn is_device(pname: &str, jvm: &jni::JavaVM) -> bool {
     let key = pname.to_lowercase();
-    let model_name = get_build_model(&jvm).to_lowercase();
-    let device_name = get_build_device(&jvm).to_lowercase();
-    let man_name = get_build_manufacturer(&jvm).to_lowercase();
+    let model_name = get_build_model(jvm).to_lowercase();
+    let device_name = get_build_device(jvm).to_lowercase();
+    let man_name = get_build_manufacturer(jvm).to_lowercase();
     for dname in [model_name, device_name, man_name] {
         if dname.contains(&key) {
             return true;
@@ -114,18 +111,18 @@ fn is_device<'a>(pname: &str, jvm: &'a jni::JavaVM) -> bool {
 }
 
 #[allow(dead_code)]
-fn is_android_emulator<'a>(jvm: &'a jni::JavaVM) -> bool {
-    let device_name = get_build_device(&jvm).to_lowercase();
+fn is_android_emulator(jvm: &jni::JavaVM) -> bool {
+    let device_name = get_build_device(jvm).to_lowercase();
     device_name.starts_with("emulator64_")
 }
 
 #[allow(dead_code)]
-fn print_device_info<'a>(jvm: &'a jni::JavaVM) {
-    let model_name = get_build_model(&jvm);
-    let device_name = get_build_device(&jvm);
-    let man_name = get_build_manufacturer(&jvm);
-    let build_id = get_build_property(&jvm, "ID");
-    let version_incremental = get_build_version_no(&jvm);
+fn print_device_info(jvm: &jni::JavaVM) {
+    let model_name = get_build_model(jvm);
+    let device_name = get_build_device(jvm);
+    let man_name = get_build_manufacturer(jvm);
+    let build_id = get_build_property(jvm, "ID");
+    let version_incremental = get_build_version_no(jvm);
     log::info!("           Device Details");
     log::info!("======================================");
     log::info!("model:                {0}", model_name);
@@ -244,10 +241,11 @@ unsafe fn run(android_app: &AndroidApp) -> Result<(), Box<dyn std::error::Error>
         let native_activity = android_app.activity_as_ptr();
         let vm_ptr = android_app.vm_as_ptr();
 
-        let vm = jni::JavaVM::from_raw(vm_ptr.cast())?;
-        let _env = vm.attach_current_thread()?;
+        let vm = jni::JavaVM::from_raw(vm_ptr.cast());
 
-        check_android_permissions(native_activity as jni::sys::jobject, &vm)?;
+        vm.attach_current_thread(|env| {
+            check_android_permissions(native_activity as jni::sys::jobject, env)
+        })?;
 
         let mut app_data = AppData {
             destroy_requested: false,
