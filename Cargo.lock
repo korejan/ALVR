@@ -58,7 +58,7 @@ dependencies = [
 [[package]]
 name = "alcro"
 version = "0.5.4"
-source = "git+https://github.com/korejan/alcro?branch=dep-updates#b73e58ba8c21687fcebf180b62eceb8e7b34b8f8"
+source = "git+https://github.com/korejan/alcro?branch=dep-updates#28e6694b53c951ce9b82ac1c7fdb80105944dd7c"
 dependencies = [
  "crossbeam-channel",
  "dashmap",
@@ -268,7 +268,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client"
-version = "0.79.0"
+version = "0.80.0"
 dependencies = [
  "alxr-common",
  "semver 1.0.27",
@@ -276,7 +276,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-android"
-version = "0.79.0"
+version = "0.80.0"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -293,7 +293,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-pico"
-version = "0.79.0"
+version = "0.80.0"
 dependencies = [
  "alxr-common",
  "android-activity",
@@ -310,7 +310,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-client-uwp"
-version = "1.79.0"
+version = "1.80.0"
 dependencies = [
  "alxr-common",
  "semver 1.0.27",
@@ -320,7 +320,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-common"
-version = "0.79.0"
+version = "0.80.0"
 dependencies = [
  "alvr_audio",
  "alvr_common",
@@ -347,7 +347,7 @@ dependencies = [
 
 [[package]]
 name = "alxr-engine-sys"
-version = "0.79.0"
+version = "0.80.0"
 dependencies = [
  "bindgen",
  "bytemuck",
@@ -431,9 +431,9 @@ dependencies = [
 
 [[package]]
 name = "anstyle"
-version = "1.0.13"
+version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5192cca8006f1fd4f7237516f40fa183bb07f8fbdfedaa0036de5ea9b0b45e78"
+checksum = "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000"
 
 [[package]]
 name = "anyhow"
@@ -867,9 +867,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.56"
+version = "1.2.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aebf35691d1bfb0ac386a69bac2fde4dd276fb618cf8bf4f5318fe285e821bb2"
+checksum = "7a0dd1ca384932ff3641c8718a02769f1698e7563dc6974ffd03346116310423"
 dependencies = [
  "find-msvc-tools",
  "jobserver",
@@ -3805,15 +3805,15 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.21.3"
+version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
+checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "openssl"
-version = "0.10.75"
+version = "0.10.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08838db121398ad17ab8531ce9de97b244589089e290a384c900cb9ff7434328"
+checksum = "951c002c75e16ea2c65b8c7e4d3d51d5530d8dfa7d060b4776828c88cfb18ecf"
 dependencies = [
  "bitflags 2.11.0",
  "cfg-if",
@@ -3843,9 +3843,9 @@ checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
 
 [[package]]
 name = "openssl-sys"
-version = "0.9.111"
+version = "0.9.112"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82cab2d520aa75e3c58898289429321eb788c3106963d0dc886ec7a5f4adc321"
+checksum = "57d55af3b3e226502be1526dfdba67ab0e9c96fc293004e79576b2b9edb0dbdb"
 dependencies = [
  "cc",
  "libc",
@@ -3861,9 +3861,9 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
 name = "orbclient"
-version = "0.3.50"
+version = "0.3.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52ad2c6bae700b7aa5d1cc30c59bdd3a1c180b09dbaea51e2ae2b8e1cf211fdd"
+checksum = "59aed3b33578edcfa1bc96a321d590d31832b6ad55a26f0313362ce687e9abd6"
 dependencies = [
  "libc",
  "libredox",
@@ -4161,9 +4161,9 @@ checksum = "c33a9471896f1c69cecef8d20cbe2f7accd12527ce60845ff44c153bb2a21b49"
 
 [[package]]
 name = "portable-atomic-util"
-version = "0.2.5"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a9db96d7fa8782dd8c15ce32ffe8680bbd1e978a43bf51a34d39483540495f5"
+checksum = "091397be61a01d4be58e7841595bd4bfedb15f1cd54977d79b8271e94ed799a3"
 dependencies = [
  "portable-atomic",
 ]
@@ -5517,9 +5517,9 @@ checksum = "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca"
 
 [[package]]
 name = "tempfile"
-version = "3.26.0"
+version = "3.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82a72c767771b47409d2345987fda8628641887d5466101319899796367354a0"
+checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
  "getrandom 0.4.2",
