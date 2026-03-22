@@ -1,11 +1,11 @@
-use heck::{MixedCase, SnakeCase};
+use heck::{ToLowerCamelCase, ToSnakeCase};
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote};
 use std::string::ToString;
 use syn::{
-    Attribute, Data, DeriveInput, Error, Fields, FieldsNamed, GenericArgument, Ident, Lit, Meta,
-    NestedMeta, PathArguments, Type,
+    Attribute, Data, DeriveInput, Error, Fields, FieldsNamed, GenericArgument, Ident, Lit, LitStr,
+    PathArguments, Type,
 };
 
 fn error<T, TT: ToTokens>(message: &str, tokens: TT) -> Result<T, TokenStream> {
@@ -28,10 +28,10 @@ fn suffix_ident(ty_ident: &Ident, suffix: &str) -> Ident {
 }
 
 fn get_only_type_argument(arguments: &PathArguments) -> &Type {
-    if let PathArguments::AngleBracketed(args_block) = &arguments {
-        if let GenericArgument::Type(ty) = args_block.args.first().unwrap() {
-            return ty;
-        }
+    if let PathArguments::AngleBracketed(args_block) = &arguments
+        && let GenericArgument::Type(ty) = args_block.args.first().unwrap()
+    {
+        return ty;
     }
     // Fail cases are already handled by the compiler
     unreachable!()
@@ -40,13 +40,7 @@ fn get_only_type_argument(arguments: &PathArguments) -> &Type {
 fn schema_attrs(attrs: Vec<Attribute>, name: &str) -> Vec<Attribute> {
     attrs
         .into_iter()
-        .filter(|attr| {
-            if let Some(attr_ident) = attr.path.get_ident() {
-                attr_ident == name
-            } else {
-                false
-            }
-        })
+        .filter(|attr| attr.path().is_ident(name))
         .collect()
 }
 
@@ -69,55 +63,46 @@ fn schema_attributes(attrs: Vec<Attribute>) -> Result<SchemaAttributes, TokenStr
     let mut step = None;
     let mut gui = None;
     for attr in schema_attrs(attrs, "schema") {
-        let parsed_attr = attr
-            .parse_meta()
-            .map_err(|e| e.to_compile_error().into_token_stream())?;
-        if let Meta::List(args_list) = parsed_attr {
-            for arg in args_list.nested {
-                if let NestedMeta::Meta(meta_arg) = arg {
-                    match meta_arg {
-                        Meta::Path(path_arg) => {
-                            if let Some(arg_ident) = path_arg.get_ident() {
-                                if arg_ident == "advanced" {
-                                    advanced = true;
-                                } else if arg_ident == "switch_advanced" {
-                                    switch_advanced = true;
-                                } else {
-                                    return error("Unknown identifier or missing value", path_arg);
-                                }
-                            } else {
-                                return error("Expected identifier", path_arg);
-                            }
-                        }
-                        Meta::NameValue(name_value_arg) => {
-                            if let Some(arg_ident) = name_value_arg.path.get_ident() {
-                                match arg_ident.to_string().as_str() {
-                                    "min" => min = Some(name_value_arg.lit),
-                                    "max" => max = Some(name_value_arg.lit),
-                                    "step" => step = Some(name_value_arg.lit),
-                                    "gui" => gui = Some(name_value_arg.lit),
-                                    "placeholder" => {
-                                        if let Lit::Str(lit_str) = name_value_arg.lit {
-                                            placeholders.push(lit_str.value());
-                                        } else {
-                                            return error("Expected string", name_value_arg.lit);
-                                        }
-                                    }
-                                    _ => return error("Unknown argument name", arg_ident),
-                                }
-                            } else {
-                                return error("Expected identifier", name_value_arg.path);
-                            }
-                        }
-                        _ => return error("Nested arguments not supported", meta_arg),
-                    }
+        attr.parse_nested_meta(|meta| {
+            if meta.path.is_ident("advanced") {
+                advanced = true;
+                Ok(())
+            } else if meta.path.is_ident("switch_advanced") {
+                switch_advanced = true;
+                Ok(())
+            } else if meta.path.is_ident("min") {
+                let value = meta.value()?;
+                min = Some(value.parse::<Lit>()?);
+                Ok(())
+            } else if meta.path.is_ident("max") {
+                let value = meta.value()?;
+                max = Some(value.parse::<Lit>()?);
+                Ok(())
+            } else if meta.path.is_ident("step") {
+                let value = meta.value()?;
+                step = Some(value.parse::<Lit>()?);
+                Ok(())
+            } else if meta.path.is_ident("gui") {
+                let value = meta.value()?;
+                gui = Some(value.parse::<Lit>()?);
+                Ok(())
+            } else if meta.path.is_ident("placeholder") {
+                let value = meta.value()?;
+                let lit: Lit = value.parse()?;
+                if let Lit::Str(lit_str) = lit {
+                    placeholders.push(lit_str.value());
                 } else {
-                    return error("Unexpected literal", arg);
+                    return Err(syn::Error::new_spanned(
+                        lit,
+                        "[SettingsSchema] Expected string",
+                    ));
                 }
+                Ok(())
+            } else {
+                Err(meta.error("[SettingsSchema] Unknown argument"))
             }
-        } else {
-            return error("Expected arguments", parsed_attr);
-        }
+        })
+        .map_err(|e| -> TokenStream { e.to_compile_error().into() })?;
     }
     Ok(SchemaAttributes {
         placeholders,
@@ -273,7 +258,7 @@ fn type_schema(ty: &Type, schema_attrs: SchemaAttributes) -> Result<TypeSchema, 
             let TypeSchema {
                 default_ty_ts,
                 schema_code_ts,
-            } = type_schema(&*ty_array.elem, schema_attrs)?;
+            } = type_schema(&ty_array.elem, schema_attrs)?;
             Ok(TypeSchema {
                 default_ty_ts: quote!([#default_ty_ts; #len]),
                 schema_code_ts: quote! {{
@@ -400,30 +385,31 @@ fn type_schema(ty: &Type, schema_attrs: SchemaAttributes) -> Result<TypeSchema, 
                     })
                 }
             } else {
-                error("Generics are supported only for Option, Switch, Vec", &ty)
+                error("Generics are supported only for Option, Switch, Vec", ty)
             }
         }
-        _ => error("Unsupported type", &ty),
+        _ => error("Unsupported type", ty),
     }
 }
 
 fn get_case(attrs: Vec<Attribute>) -> Result<Option<String>, TokenStream> {
+    let mut case = None;
     for attr in schema_attrs(attrs, "serde") {
-        let parsed_attr = attr
-            .parse_meta()
-            .map_err(|e| e.to_compile_error().into_token_stream())?;
-        if let Meta::List(args_list) = parsed_attr {
-            for arg in args_list.nested {
-                if let NestedMeta::Meta(Meta::NameValue(name_value_arg)) = arg {
-                    if let Some(arg_ident) = name_value_arg.path.get_ident() {
-                        if arg_ident == "rename_all" {
-                            if let Lit::Str(lit_str) = name_value_arg.lit {
-                                return Ok(Some(lit_str.value()));
-                            }
-                        }
-                    }
-                }
+        attr.parse_nested_meta(|meta| {
+            if meta.path.is_ident("rename_all") {
+                let value = meta.value()?;
+                let lit_str: LitStr = value.parse()?;
+                case = Some(lit_str.value());
+            } else if meta.input.peek(syn::Token![=]) {
+                // Consume unknown name-value attributes (e.g. tag = "type")
+                meta.value()?;
+                meta.input.parse::<Lit>()?;
             }
+            Ok(())
+        })
+        .map_err(|e| -> TokenStream { e.to_compile_error().into() })?;
+        if case.is_some() {
+            return Ok(case);
         }
     }
     Ok(None)
@@ -431,7 +417,7 @@ fn get_case(attrs: Vec<Attribute>) -> Result<Option<String>, TokenStream> {
 
 fn case_transform(input: &str, format: Option<&str>) -> String {
     match format {
-        Some("camelCase") => input.to_mixed_case(),
+        Some("camelCase") => input.to_lower_camel_case(),
         Some("snake_case") => input.to_snake_case(),
         _ => input.into(),
     }

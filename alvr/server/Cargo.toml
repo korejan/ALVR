@@ -1,6 +1,6 @@
 [package]
 name = "alvr_server"
-version = "18.24.0"
+version = "18.25.0"
 authors = ["alvr-org", "polygraphene", "Valve Corporation"]
 license = "MIT"
 edition = "2024"
@@ -43,20 +43,15 @@ tokio = { version = "1", features = [
 ] }
 # Networking
 bytes = "1"
-headers = "0.3"
-hyper = { version = "0.14", features = [
-    "http2",
-    "server",
-    "stream",
-    "runtime",
-    "tcp",
-] }
-reqwest = "0.11"
-tokio-tungstenite = "0.28"
-tokio-util = { version = "0.7", features = ["codec"] }
+headers = "0.4"
+http-body-util = "0.1"
+hyper = { version = "1", features = ["http1", "server"] }
+hyper-util = { version = "0.1", features = ["tokio", "server-auto"] }
+reqwest = "0.13"
+tokio-tungstenite = "0.29"
 bytemuck = "1"
 # Graphics
-wgpu = "28"
+wgpu = "29"
 winit = "0.30" # needed to get the screen size
 # Browser interop
 tempfile = "3"
@@ -72,4 +67,4 @@ cc = { version = "1", features = ["parallel"] }
 walkdir = "2"
 
 [target.'cfg(unix)'.build-dependencies]
-pkg-config = "0.3.9"
+pkg-config = "0.3"

@@ -7,7 +7,7 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-use sysinfo::{ProcessRefreshKind, RefreshKind, System};
+use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, RefreshKind, System};
 
 const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -27,31 +27,31 @@ fn spawn_no_window(command: &mut Command) {
 
 pub fn is_steamvr_running() -> bool {
     let mut system = System::new_with_specifics(
-        RefreshKind::new().with_processes(ProcessRefreshKind::everything()),
+        RefreshKind::nothing().with_processes(ProcessRefreshKind::everything()),
     );
-    system.refresh_processes();
+    system.refresh_processes(ProcessesToUpdate::All, true);
 
     system
-        .processes_by_name(&afs::exec_fname("vrserver"))
+        .processes_by_name(afs::exec_fname("vrserver").as_ref())
         .count()
         != 0
 }
 
 pub fn maybe_launch_steamvr() {
     let mut system = System::new_with_specifics(
-        RefreshKind::new().with_processes(ProcessRefreshKind::everything()),
+        RefreshKind::nothing().with_processes(ProcessRefreshKind::everything()),
     );
-    system.refresh_processes();
+    system.refresh_processes(ProcessesToUpdate::All, true);
 
     if system
-        .processes_by_name(&afs::exec_fname("vrserver"))
+        .processes_by_name(afs::exec_fname("vrserver").as_ref())
         .count()
         == 0
     {
         #[cfg(windows)]
-        spawn_no_window(Command::new("cmd").args(&["/C", "start", "steam://rungameid/250820"]));
+        spawn_no_window(Command::new("cmd").args(["/C", "start", "steam://rungameid/250820"]));
         #[cfg(not(windows))]
-        spawn_no_window(Command::new("steam").args(&["steam://rungameid/250820"]));
+        spawn_no_window(Command::new("steam").args(["steam://rungameid/250820"]));
     }
 }
 
@@ -59,7 +59,7 @@ pub fn maybe_launch_steamvr() {
 fn kill_process(pid: u32) {
     use std::os::windows::process::CommandExt;
     Command::new("taskkill.exe")
-        .args(&["/PID", &pid.to_string(), "/F"])
+        .args(["/PID", &pid.to_string(), "/F"])
         .creation_flags(CREATE_NO_WINDOW)
         .output()
         .ok();
@@ -68,13 +68,13 @@ fn kill_process(pid: u32) {
 // this will not kill the child process "ALVR launcher"
 pub fn kill_steamvr() {
     let mut system = System::new_with_specifics(
-        RefreshKind::new().with_processes(ProcessRefreshKind::everything()),
+        RefreshKind::nothing().with_processes(ProcessRefreshKind::everything()),
     );
-    system.refresh_processes();
+    system.refresh_processes(ProcessesToUpdate::All, true);
 
     // first kill vrmonitor, then kill vrserver if it is hung.
 
-    for process in system.processes_by_name(&afs::exec_fname("vrmonitor")) {
+    for process in system.processes_by_name(afs::exec_fname("vrmonitor").as_ref()) {
         #[cfg(not(windows))]
         process.kill_with(sysinfo::Signal::Term);
         #[cfg(windows)]
@@ -83,7 +83,7 @@ pub fn kill_steamvr() {
 
     thread::sleep(Duration::from_secs(1));
 
-    for process in system.processes_by_name(&afs::exec_fname("vrserver")) {
+    for process in system.processes_by_name(afs::exec_fname("vrserver").as_ref()) {
         #[cfg(not(windows))]
         process.kill_with(sysinfo::Signal::Term);
         #[cfg(windows)]

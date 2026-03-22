@@ -3,9 +3,9 @@ use wgpu::Adapter;
 
 lazy_static! {
     static ref GPU_ADAPTERS: Vec<Adapter> = {
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::PRIMARY,
-            ..Default::default()
+            ..wgpu::InstanceDescriptor::new_without_display_handle()
         });
 
         futures::executor::block_on(instance.enumerate_adapters(wgpu::Backends::PRIMARY))

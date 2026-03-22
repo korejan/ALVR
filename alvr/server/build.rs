@@ -1,7 +1,5 @@
 use alvr_filesystem as afs;
 use bindgen::callbacks::{DeriveInfo, ParseCallbacks, TypeKind};
-#[cfg(target_os = "linux")]
-use pkg_config;
 use std::{env, path::PathBuf};
 
 #[derive(Debug)]

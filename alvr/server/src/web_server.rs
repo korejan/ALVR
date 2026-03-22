@@ -1,49 +1,54 @@
 use crate::{ClientListAction, FILESYSTEM_LAYOUT, SESSION_MANAGER, graphics_info};
 use alvr_common::{ALVR_VERSION, prelude::*};
 use alvr_session::ServerEvent;
-use bytes::Buf;
+use bytes::Bytes;
 use futures::SinkExt;
 use headers::HeaderMapExt;
+use http_body_util::{BodyExt, Full};
 use hyper::{
-    Body, Request, Response, StatusCode,
+    Request, Response, StatusCode,
+    body::Incoming,
     header::{self, ACCESS_CONTROL_ALLOW_ORIGIN, CACHE_CONTROL, CONTENT_TYPE, HeaderValue},
-    service,
 };
+use hyper_util::rt::{TokioExecutor, TokioIo};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json as json;
 use std::{env::consts::OS, fs, io::Write, net::SocketAddr, path::PathBuf};
 use tokio::sync::broadcast::{self, error::RecvError};
 use tokio_tungstenite::{WebSocketStream, tungstenite::protocol};
-use tokio_util::codec::{BytesCodec, FramedRead};
 
 pub const WS_BROADCAST_CAPACITY: usize = 256;
 
-fn reply(code: StatusCode) -> StrResult<Response<Body>> {
-    trace_err!(Response::builder().status(code).body(Body::empty()))
-}
-
-fn reply_json<T: Serialize>(obj: &T) -> StrResult<Response<Body>> {
+fn reply(code: StatusCode) -> StrResult<Response<Full<Bytes>>> {
     trace_err!(
         Response::builder()
-            .header(header::CONTENT_TYPE, "application/json")
-            .body(trace_err!(json::to_string(obj))?.into())
+            .status(code)
+            .body(Full::new(Bytes::new()))
     )
 }
 
-async fn from_request_body<T: DeserializeOwned>(request: Request<Body>) -> StrResult<T> {
-    trace_err!(json::from_reader(
-        trace_err!(hyper::body::aggregate(request).await)?.reader()
-    ))
+fn reply_json<T: Serialize>(obj: &T) -> StrResult<Response<Full<Bytes>>> {
+    trace_err!(
+        Response::builder()
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Full::new(Bytes::from(trace_err!(json::to_string(obj))?)))
+    )
+}
+
+async fn from_request_body<T: DeserializeOwned>(request: Request<Incoming>) -> StrResult<T> {
+    let collected = trace_err!(request.into_body().collect().await)?;
+    trace_err!(json::from_slice(&collected.to_bytes()))
 }
 
 async fn text_websocket(
-    request: Request<Body>,
+    request: Request<Incoming>,
     sender: broadcast::Sender<String>,
-) -> StrResult<Response<Body>> {
+) -> StrResult<Response<Full<Bytes>>> {
     if let Some(key) = request.headers().typed_get::<headers::SecWebsocketKey>() {
         tokio::spawn(async move {
             match hyper::upgrade::on(request).await {
                 Ok(upgraded) => {
+                    let upgraded = TokioIo::new(upgraded);
                     let mut log_receiver = sender.subscribe();
 
                     let mut ws =
@@ -74,7 +79,7 @@ async fn text_websocket(
         let mut response = trace_err!(
             Response::builder()
                 .status(StatusCode::SWITCHING_PROTOCOLS)
-                .body(Body::empty())
+                .body(Full::new(Bytes::new()))
         )?;
 
         let h = response.headers_mut();
@@ -89,10 +94,10 @@ async fn text_websocket(
 }
 
 async fn http_api(
-    request: Request<Body>,
+    request: Request<Incoming>,
     log_sender: broadcast::Sender<String>,
     events_sender: broadcast::Sender<String>,
-) -> StrResult<Response<Body>> {
+) -> StrResult<Response<Full<Bytes>>> {
     let mut response = match request.uri().path() {
         "/api/settings-schema" => reply_json(&alvr_session::settings_schema(
             alvr_session::session_settings_default(),
@@ -213,7 +218,7 @@ async fn http_api(
                 reply(StatusCode::BAD_REQUEST)?
             }
         }
-        "/api/version" => Response::new(ALVR_VERSION.to_string().into()),
+        "/api/version" => Response::new(Full::new(Bytes::from(ALVR_VERSION.to_string()))),
         "/api/open" => {
             if let Ok(url) = from_request_body::<String>(request).await {
                 webbrowser::open(&url).ok();
@@ -222,7 +227,7 @@ async fn http_api(
                 reply(StatusCode::BAD_REQUEST)?
             }
         }
-        "/api/server-os" => Response::new(OS.into()),
+        "/api/server-os" => Response::new(Full::new(Bytes::from(OS))),
         "/api/update" => {
             if let Ok(url) = from_request_body::<String>(request).await {
                 let redirection_response = trace_err!(reqwest::get(&url).await)?;
@@ -264,20 +269,18 @@ async fn http_api(
                     other_path => other_path,
                 };
 
-                let maybe_file = tokio::fs::File::open(format!(
+                let maybe_content = tokio::fs::read(format!(
                     "{}{path_branch}",
                     FILESYSTEM_LAYOUT.dashboard_dir().to_string_lossy(),
                 ))
                 .await;
 
-                if let Ok(file) = maybe_file {
+                if let Ok(content) = maybe_content {
                     let mut builder = Response::builder();
                     if other_uri.ends_with(".wasm") {
                         builder = builder.header(CONTENT_TYPE, "application/wasm");
                     }
-                    trace_err!(
-                        builder.body(Body::wrap_stream(FramedRead::new(file, BytesCodec::new())))
-                    )?
+                    trace_err!(builder.body(Full::new(Bytes::from(content))))?
                 } else {
                     reply(StatusCode::NOT_FOUND)?
                 }
@@ -307,11 +310,21 @@ pub async fn web_server(
         .connection
         .web_server_port;
 
-    let service = service::make_service_fn(|_| {
+    let listener = trace_err!(
+        tokio::net::TcpListener::bind(
+            SocketAddr::new("0.0.0.0".parse().unwrap(), web_server_port,)
+        )
+        .await
+    )?;
+
+    loop {
+        let (stream, _) = trace_err!(listener.accept().await)?;
         let log_sender = log_sender.clone();
         let events_sender = events_sender.clone();
-        async move {
-            StrResult::Ok(service::service_fn(move |request| {
+        let io = TokioIo::new(stream);
+
+        tokio::spawn(async move {
+            let service = hyper::service::service_fn(move |request| {
                 let log_sender = log_sender.clone();
                 let events_sender = events_sender.clone();
                 async move {
@@ -322,16 +335,14 @@ pub async fn web_server(
 
                     res
                 }
-            }))
-        }
-    });
+            });
 
-    trace_err!(
-        hyper::Server::bind(&SocketAddr::new(
-            "0.0.0.0".parse().unwrap(),
-            web_server_port
-        ))
-        .serve(service)
-        .await
-    )
+            if let Err(e) = hyper_util::server::conn::auto::Builder::new(TokioExecutor::new())
+                .serve_connection_with_upgrades(io, service)
+                .await
+            {
+                error!("Error serving connection: {e}");
+            }
+        });
+    }
 }
