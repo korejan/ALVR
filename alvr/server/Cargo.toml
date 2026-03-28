@@ -1,6 +1,6 @@
 [package]
 name = "alvr_server"
-version = "18.25.0"
+version = "18.26.0"
 authors = ["alvr-org", "polygraphene", "Valve Corporation"]
 license = "MIT"
 edition = "2024"
