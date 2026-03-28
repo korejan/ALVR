@@ -113,7 +113,7 @@ impl LauncherApp {
 }
 
 impl eframe::App for LauncherApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if !self.lifecycle_spawned {
             self.lifecycle_spawned = true;
             let state = Arc::clone(&self.state);
@@ -121,17 +121,15 @@ impl eframe::App for LauncherApp {
             thread::spawn(move || launcher_lifecycle(state, ctx_clone));
         }
 
-        let (view, should_close) = {
-            let state = self.state.lock().unwrap();
-            (state.view.clone(), state.should_close)
-        };
-
-        if should_close {
+        if self.state.lock().unwrap().should_close {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-            return;
         }
+    }
 
-        egui::CentralPanel::default().show(ctx, |ui| match &view {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let view = self.state.lock().unwrap().view.clone();
+
+        match &view {
             View::RequirementsCheck { steamvr } => {
                 ui.add_space(ui.available_height() / 3.0);
                 ui.horizontal(|ui| {
@@ -151,7 +149,7 @@ impl eframe::App for LauncherApp {
                     }
                 });
             }
-        });
+        }
     }
 }
 
