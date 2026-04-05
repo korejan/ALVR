@@ -149,7 +149,7 @@ pub fn build_server(
     .unwrap();
 
     if bundle_ffmpeg {
-        let ffmpeg_path = dependencies::extract_ffmpeg_linux("8.0", gpl);
+        let ffmpeg_path = dependencies::extract_ffmpeg_linux("8.1", gpl);
         let lib_dir = afs::server_build_dir().join("lib64").join("alvr");
         let mut libavcodec_so = std::path::PathBuf::new();
         fs::create_dir_all(lib_dir.clone()).unwrap();
@@ -1016,7 +1016,7 @@ fn main() {
         let root: Option<String> = args.opt_value_from_str("--root").unwrap();
         let abi_target: Option<String> = args.opt_value_from_str("--target").unwrap();
 
-        let default_var = String::from("release/8.0");
+        let default_var = String::from("release/8.1");
         let ffmpeg_version: String = args.opt_value_from_str("--ffmpeg-version").unwrap().map_or(
             default_var.clone(),
             |s: String| {
