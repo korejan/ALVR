@@ -48,10 +48,10 @@ http-body-util = "0.1"
 hyper = { version = "1", features = ["http1", "server"] }
 hyper-util = { version = "0.1", features = ["tokio", "server-auto"] }
 reqwest = "0.13"
-tokio-tungstenite = "0.29"
+tokio-tungstenite = "0.30"
 bytemuck = "1"
 # Graphics
-wgpu = "29"
+wgpu = "30"
 winit = "0.30" # needed to get the screen size
 # Browser interop
 tempfile = "3"

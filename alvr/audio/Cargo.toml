@@ -17,7 +17,7 @@ tokio = "1"
 [target.'cfg(target_os = "linux")'.dependencies]
 cpal = { version = "0.17", features = ["jack"] }
 rodio = "0.22"
-pipewire = "0.9"
+pipewire = "0.10"
 
 [target.'cfg(not(any(target_os = "linux", target_os = "android")))'.dependencies]
 cpal = "0.17"
