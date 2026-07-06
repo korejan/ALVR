@@ -2,12 +2,12 @@
 
 cd "$(dirname "$0")"
 
-mkdir -p cpp/platform/linux/generated
+mkdir -p generated
 
 ./generate_library_loader.py \
 	--name avutil \
-	--output-cc cpp/platform/linux/generated/avutil_loader.cpp \
-	--output-h cpp/platform/linux/generated/avutil_loader.h \
+	--output-cc generated/avutil_loader.cpp \
+	--output-h generated/avutil_loader.h \
 	--header '<stdint.h>
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
@@ -19,16 +19,16 @@ mkdir -p cpp/platform/linux/generated
 
 ./generate_library_loader.py \
 	--name avcodec \
-	--output-cc cpp/platform/linux/generated/avcodec_loader.cpp \
-	--output-h cpp/platform/linux/generated/avcodec_loader.h \
+	--output-cc generated/avcodec_loader.cpp \
+	--output-h generated/avcodec_loader.h \
 	--header '<libavcodec/avcodec.h>' \
 	--use-extern-c \
 	avcodec_alloc_context3 avcodec_find_encoder_by_name avcodec_free_context avcodec_open2 avcodec_receive_packet avcodec_send_frame av_packet_alloc av_packet_free
 
 ./generate_library_loader.py \
 	--name avfilter \
-	--output-cc cpp/platform/linux/generated/avfilter_loader.cpp \
-	--output-h cpp/platform/linux/generated/avfilter_loader.h \
+	--output-cc generated/avfilter_loader.cpp \
+	--output-h generated/avfilter_loader.h \
 	--header '<stdint.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
@@ -38,8 +38,8 @@ mkdir -p cpp/platform/linux/generated
 
 ./generate_library_loader.py \
 	--name swscale \
-	--output-cc cpp/platform/linux/generated/swscale_loader.cpp \
-	--output-h cpp/platform/linux/generated/swscale_loader.h \
+	--output-cc generated/swscale_loader.cpp \
+	--output-h generated/swscale_loader.h \
 	--header '<libswscale/swscale.h>' \
 	--use-extern-c \
 	sws_getContext sws_scale

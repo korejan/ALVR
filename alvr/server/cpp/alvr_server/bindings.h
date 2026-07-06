@@ -134,7 +134,7 @@ union OpenvrPropertyValue {
     uint64_t uint64;
     float vector3[3];
     double double_;
-    char string[64];
+    char string[256];
 };
 
 struct OpenvrProperty {
@@ -194,7 +194,7 @@ extern "C" void TimeSyncReceive(const TimeSync* data);
 extern "C" void VideoErrorReportReceive();
 extern "C" void ShutdownSteamvr();
 
-extern "C" void SetOpenvrProperty(uint64_t topLevelPath, OpenvrProperty prop);
+extern "C" void SetOpenvrProperty(uint64_t topLevelPath, const OpenvrProperty* prop);
 extern "C" void SetViewsConfig(const ViewsConfigData* config);
 extern "C" void SetBattery(uint64_t topLevelPath, float gauge_value, bool is_plugged);
 extern "C" void SetUserPresence(bool isPresent);

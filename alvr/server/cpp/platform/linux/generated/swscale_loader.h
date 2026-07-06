@@ -1,5 +1,5 @@
 // This is generated file. Do not modify directly.
-// Path to the code generator: alvr/server/generate_library_loader.py .
+// Path to the code generator: alvr/server/cpp/platform/linux/generate_library_loader.py .
 
 #ifndef LIBRARY_LOADER_SWSCALE_LOADER_H
 #define LIBRARY_LOADER_SWSCALE_LOADER_H

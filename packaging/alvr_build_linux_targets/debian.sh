@@ -66,9 +66,6 @@ build_debian_server() {
         'usr/libexec/alvr/'
     )
 
-    # Add package config (required for Ubuntu)
-    export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:${repoDir}/packaging/deb/cuda.pc"
-
     cd "${repoDir}" > /dev/null || return 4
     log info 'Building ALVR server ...'
     # Cargo does NOT like quotes
@@ -122,12 +119,6 @@ build_debian_server() {
 transform_control() {
     log info 'Copying control file ...'
     cp "${repoDir}/${controlFile}" "${tmpDir}/control"
-
-    if [ "${kwArgs['--no-nvidia']}" != '' ]; then
-        log info 'Removing unused nvidia build dependency ...'
-        sed -i 's/nvidia-cuda-toolkit,//' "${tmpDir}/control"
-    fi
-
 }
 
 # Pop!_OS
