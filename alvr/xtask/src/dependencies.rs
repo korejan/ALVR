@@ -1,4 +1,4 @@
-use crate::command::{self, run_as_bash_in as bash_in};
+use crate::command;
 use alvr_filesystem as afs;
 use std::{fs, io::BufRead, path::Path};
 
@@ -39,8 +39,24 @@ fn download_and_extract_tarxz(url: &str, destination: &Path) {
     fs::remove_file(tar_file).unwrap();
 }
 
-/// Patch rpath of all shared libraries in a directory to include $ORIGIN
-/// This ensures libraries can find their dependencies in the same directory
+fn assert_patchelf_available() {
+    let available = std::process::Command::new("patchelf")
+        .arg("--version")
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false);
+    assert!(
+        available,
+        "patchelf is required to bundle FFmpeg (it stamps RUNPATH=$ORIGIN on the bundled \
+         libraries so they find each other at runtime); install it first, e.g. \
+         `sudo apt install patchelf` or `sudo pacman -S patchelf`"
+    );
+}
+
+/// Patch rpath of all shared libraries in a directory to $ORIGIN so they find
+/// their siblings when bundled next to each other. Any failure aborts the
+/// build: without the patch, the bundle silently depends on the host's system
+/// FFmpeg instead of the bundled one.
 fn patch_rpath(lib_dir: &Path) {
     for entry in walkdir::WalkDir::new(lib_dir)
         .into_iter()
@@ -52,29 +68,14 @@ fn patch_rpath(lib_dir: &Path) {
                 .unwrap_or(false)
         })
     {
-        // Use patchelf to set rpath to $ORIGIN so libs find each other
         let status = std::process::Command::new("patchelf")
             .args(["--set-rpath", "$ORIGIN", &entry.to_string_lossy()])
             .status();
 
         match status {
-            Ok(s) if s.success() => {
-                println!("Patched rpath for: {}", entry.display());
-            }
-            Ok(s) => {
-                eprintln!(
-                    "Warning: patchelf returned non-zero for {}: {}",
-                    entry.display(),
-                    s
-                );
-            }
-            Err(e) => {
-                eprintln!(
-                    "Warning: Failed to run patchelf on {}: {}",
-                    entry.display(),
-                    e
-                );
-            }
+            Ok(s) if s.success() => println!("Patched rpath for: {}", entry.display()),
+            Ok(s) => panic!("patchelf returned non-zero for {}: {s}", entry.display()),
+            Err(e) => panic!("failed to run patchelf on {}: {e}", entry.display()),
         }
     }
 }
@@ -114,17 +115,24 @@ pub fn extract_ffmpeg_linux(version: &str, gpl: bool) -> std::path::PathBuf {
         base_filename
     );
 
+    // Checked before downloading: the bundle is unusable without the rpath
+    // patching below.
+    assert_patchelf_available();
+
     let download_path = afs::deps_dir().join("linux");
-    let mut ffmpeg_path = download_path.join(&base_filename);
+    let ffmpeg_path = download_path.join(&base_filename);
     if !ffmpeg_path.exists() {
         download_and_extract_tarxz(&url, &download_path);
         assert!(ffmpeg_path.exists(), "FFmpeg extraction failed");
-        ffmpeg_path = dunce::canonicalize(ffmpeg_path).unwrap();
-        // Patch rpath to $ORIGIN so libraries find each other at runtime
-        patch_rpath(&ffmpeg_path.join("lib"));
     }
-    assert!(ffmpeg_path.exists(), "FFmpeg deps path does not exist!");
-    dunce::canonicalize(ffmpeg_path).unwrap()
+    let ffmpeg_path = dunce::canonicalize(ffmpeg_path).unwrap();
+
+    // Run on every call, not only after a fresh extraction: patchelf is
+    // idempotent and cheap, and this heals a cache whose patching was
+    // interrupted or failed in a previous run.
+    patch_rpath(&ffmpeg_path.join("lib"));
+
+    ffmpeg_path
 }
 
 fn get_oculus_openxr_mobile_loader() {

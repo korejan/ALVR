@@ -129,7 +129,7 @@ alvr::EncodePipelineVAAPI::EncodePipelineVAAPI(std::vector<VkFrame>& input_frame
   switch (codec_id)
   {
     case ALVR_CODEC_H264:
-      encoder_ctx->profile = FF_PROFILE_H264_MAIN;
+      encoder_ctx->profile = AV_PROFILE_H264_MAIN;
 
       switch (settings.m_entropyCoding) {
       case ALVR_CABAC:
@@ -142,7 +142,7 @@ alvr::EncodePipelineVAAPI::EncodePipelineVAAPI(std::vector<VkFrame>& input_frame
 
       break;
     case ALVR_CODEC_H265:
-      encoder_ctx->profile = FF_PROFILE_HEVC_MAIN;
+      encoder_ctx->profile = AV_PROFILE_HEVC_MAIN;
       AVUTIL.av_opt_set(encoder_ctx, "rc_mode", "2", 0);
       break;
   }
