@@ -480,7 +480,7 @@ void VideoEncoderVCE::Receive(AMFDataPtr data)
 {
 	amf_pts current_time = amf_high_precision_clock();
 	amf_pts start_time = 0;
-	uint64_t targetTimestampNs;
+	uint64_t targetTimestampNs = 0;
 	data->GetProperty(START_TIME_PROPERTY, &start_time);
 	data->GetProperty(FRAME_INDEX_PROPERTY, &targetTimestampNs);
 

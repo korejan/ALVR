@@ -103,15 +103,14 @@ pub fn to_cpp_openvr_prop(key: OpenvrPropertyKey, value: OpenvrPropValue) -> Ope
         OpenvrPropValue::Double(double_) => OpenvrPropertyValue { double_ },
         OpenvrPropValue::String(value) => {
             let c_string = CString::new(value).unwrap();
-            let mut string = [0; 64];
+            let source = c_string.as_bytes_with_nul();
 
+            let mut string = [0; 256];
+            let count = source.len().min(string.len());
             unsafe {
-                ptr::copy_nonoverlapping(
-                    c_string.as_ptr(),
-                    string.as_mut_ptr(),
-                    c_string.as_bytes_with_nul().len(),
-                );
+                ptr::copy_nonoverlapping(c_string.as_ptr(), string.as_mut_ptr(), count);
             }
+            string[string.len() - 1] = 0;
 
             OpenvrPropertyValue { string }
         }

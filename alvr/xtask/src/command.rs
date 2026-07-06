@@ -53,11 +53,6 @@ pub fn run(cmd: &str) -> Result<(), Box<dyn Error>> {
     run_in(&env::current_dir().unwrap(), cmd)
 }
 
-// Bash can be invoked on Windows if WSL is installed
-pub fn run_as_bash_in(workdir: &Path, cmd: &str) -> Result<(), Box<dyn Error>> {
-    run_as_shell_in(workdir, "bash", "-c", cmd)
-}
-
 pub fn run_without_shell(cmd: &str, args: &[&str]) -> Result<(), Box<dyn Error>> {
     println!(
         "\n> {}",

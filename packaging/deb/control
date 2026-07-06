@@ -5,6 +5,8 @@ Maintainer: Trae Santiago <trae32566@gmail.com>
 Depends: libx264-dev, libx265-dev, libjack-jackd2-0
 Build-Depends:
  build-essential,
+ cmake,
+ git,
  imagemagick,
  libasound2-dev,
  libatk1.0-dev,
@@ -24,7 +26,7 @@ Build-Depends:
  libxcb-shape0-dev,
  libxcb-xfixes0-dev,
  nasm,
- nvidia-cuda-toolkit,
+ patchelf,
  pkg-config,
  unzip,
  yasm

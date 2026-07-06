@@ -553,13 +553,11 @@ struct OpenvrAudioPropertyGuard {
 impl Drop for OpenvrAudioPropertyGuard {
     fn drop(&mut self) {
         unsafe {
-            crate::SetOpenvrProperty(
-                *HEAD_ID,
-                crate::to_cpp_openvr_prop(
-                    self.property_key.clone(),
-                    OpenvrPropValue::String(self.original_device_id.clone()),
-                ),
+            let prop = crate::to_cpp_openvr_prop(
+                self.property_key.clone(),
+                OpenvrPropValue::String(self.original_device_id.clone()),
             );
+            crate::SetOpenvrProperty(*HEAD_ID, &prop);
         }
     }
 }
@@ -709,13 +707,11 @@ async fn connection_pipeline() -> StrResult {
                 // Set the new device
                 let device_id = alvr_audio::get_windows_device_id(&device)?;
                 unsafe {
-                    crate::SetOpenvrProperty(
-                        *HEAD_ID,
-                        crate::to_cpp_openvr_prop(
-                            OpenvrPropertyKey::AudioDefaultPlaybackDeviceId,
-                            OpenvrPropValue::String(device_id),
-                        ),
+                    let prop = crate::to_cpp_openvr_prop(
+                        OpenvrPropertyKey::AudioDefaultPlaybackDeviceId,
+                        OpenvrPropValue::String(device_id),
                     );
+                    crate::SetOpenvrProperty(*HEAD_ID, &prop);
                 }
 
                 OpenvrAudioPropertyGuard {
@@ -775,13 +771,11 @@ async fn connection_pipeline() -> StrResult {
 
                 // Set the new device
                 unsafe {
-                    crate::SetOpenvrProperty(
-                        *HEAD_ID,
-                        crate::to_cpp_openvr_prop(
-                            OpenvrPropertyKey::AudioDefaultRecordingDeviceId,
-                            OpenvrPropValue::String(microphone_device_id),
-                        ),
+                    let prop = crate::to_cpp_openvr_prop(
+                        OpenvrPropertyKey::AudioDefaultRecordingDeviceId,
+                        OpenvrPropValue::String(microphone_device_id),
                     );
+                    crate::SetOpenvrProperty(*HEAD_ID, &prop);
                 }
 
                 OpenvrAudioPropertyGuard {
