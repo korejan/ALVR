@@ -4,7 +4,7 @@
 #include <mutex>
 
 #ifndef __APPLE__
-#include <openvr.h>
+#include "OpenVRClient.h"
 #endif
 
 using namespace std;
@@ -46,7 +46,7 @@ void SetChaperone(float areaWidth, float areaHeight) {
     vr::VRChaperoneSetup()->CommitWorkingCopy(vr::EChaperoneConfigFile_Live);
 
     // Hide SteamVR Chaperone
-    vr::VRSettings()->SetFloat(
+    ClientVRSettings()->SetFloat(
         vr::k_pch_CollisionBounds_Section, vr::k_pch_CollisionBounds_FadeDistance_Float, 0.0f);
 
     vr::VR_Shutdown();

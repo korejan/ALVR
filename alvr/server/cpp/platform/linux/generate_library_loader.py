@@ -204,7 +204,7 @@ def main():
   # Doing it this way is more maintainable, because it's going to work
   # even if file gets moved without updating the contents.
   source_tree_root = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', '..'))
+    os.path.join(os.path.dirname(__file__), *(['..'] * 5)))
   generator_path = os.path.relpath(__file__, source_tree_root)
 
   header_contents = HEADER_TEMPLATE % {

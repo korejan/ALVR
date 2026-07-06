@@ -57,13 +57,13 @@ alvr::EncodePipelineSW::EncodePipelineSW(std::vector<VkFrame>& input_frames, VkF
   switch (codec_id)
   {
     case ALVR_CODEC_H264:
-      encoder_ctx->profile = settings.m_use10bitEncoder ? FF_PROFILE_H264_HIGH_10 : FF_PROFILE_H264_HIGH;
+      encoder_ctx->profile = settings.m_use10bitEncoder ? AV_PROFILE_H264_HIGH_10 : AV_PROFILE_H264_HIGH;
       AVUTIL.av_dict_set(&opt, "preset", "ultrafast", 0);
       AVUTIL.av_dict_set(&opt, "tune", "zerolatency", 0);
       encoder_ctx->gop_size = 72;
       break;
     case ALVR_CODEC_H265:
-      encoder_ctx->profile = settings.m_use10bitEncoder ? FF_PROFILE_HEVC_MAIN_10 : FF_PROFILE_HEVC_MAIN;
+      encoder_ctx->profile = settings.m_use10bitEncoder ? AV_PROFILE_HEVC_MAIN_10 : AV_PROFILE_HEVC_MAIN;
       AVUTIL.av_dict_set(&opt, "preset", "ultrafast", 0);
       AVUTIL.av_dict_set(&opt, "tune", "zerolatency", 0);
       encoder_ctx->gop_size = 72;
