@@ -6,7 +6,7 @@ License: MIT
 Source: https://github.com/alvr-org/ALVR/archive/refs/tags/v18.26.0.tar.gz
 URL: https://github.com/alvr-org/ALVR/
 ExclusiveArch: x86_64
-BuildRequires: alsa-lib-devel cairo-gobject-devel cargo clang-devel ffmpeg-devel gcc gcc-c++ cmake ImageMagick (jack-audio-connection-kit-devel or pipewire-jack-audio-connection-kit-devel) libunwind-devel openssl-devel rpmdevtools rust rust-atk-sys-devel rust-cairo-sys-rs-devel rust-gdk-sys-devel rust-glib-sys-devel rust-pango-sys-devel selinux-policy-devel vulkan-headers vulkan-loader-devel
+BuildRequires: alsa-lib-devel cairo-gobject-devel cargo clang-devel ffmpeg-devel gcc gcc-c++ cmake git-core ImageMagick (jack-audio-connection-kit-devel or pipewire-jack-audio-connection-kit-devel) libunwind-devel openssl-devel rpmdevtools rust rust-atk-sys-devel rust-cairo-sys-rs-devel rust-gdk-sys-devel rust-glib-sys-devel rust-pango-sys-devel selinux-policy-devel vulkan-headers vulkan-loader-devel
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 Requires: ffmpeg (jack-audio-connection-kit or pipewire-jack-audio-connection-kit) steam
 Requires(post): policycoreutils

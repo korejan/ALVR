@@ -1068,7 +1068,9 @@ int NvEncoder::GetCapabilityValue(GUID guidCodec, NV_ENC_CAPS capsToQuery)
     }
     NV_ENC_CAPS_PARAM capsParam = { NV_ENC_CAPS_PARAM_VER };
     capsParam.capsToQuery = capsToQuery;
-    int v;
+    // Keep the "capability not supported" default if the query fails,
+    // instead of returning an uninitialized value.
+    int v = 0;
     m_nvenc.nvEncGetEncodeCaps(m_hEncoder, guidCodec, &capsParam, &v);
     return v;
 }

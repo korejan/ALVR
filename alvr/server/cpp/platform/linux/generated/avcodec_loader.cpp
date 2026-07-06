@@ -1,5 +1,5 @@
 // This is generated file. Do not modify directly.
-// Path to the code generator: alvr/server/generate_library_loader.py .
+// Path to the code generator: alvr/server/cpp/platform/linux/generate_library_loader.py .
 
 #include "avcodec_loader.h"
 

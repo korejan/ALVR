@@ -150,6 +150,8 @@ pub fn build_server(
 
     if bundle_ffmpeg {
         let ffmpeg_path = dependencies::extract_ffmpeg_linux("8.1", gpl);
+        // Tell alvr_server's build.rs exactly which FFmpeg to build against
+        unsafe { env::set_var("ALVR_FFMPEG_DIR", &ffmpeg_path) };
         let lib_dir = afs::server_build_dir().join("lib64").join("alvr");
         let mut libavcodec_so = std::path::PathBuf::new();
         fs::create_dir_all(lib_dir.clone()).unwrap();
@@ -179,6 +181,8 @@ pub fn build_server(
 
     if gpl && cfg!(windows) {
         let ffmpeg_path = dependencies::extract_ffmpeg_windows();
+        // Tell alvr_server's build.rs exactly which FFmpeg to build against
+        unsafe { env::set_var("ALVR_FFMPEG_DIR", &ffmpeg_path) };
         let bin_dir = afs::server_build_dir().join("bin").join("win64");
         fs::create_dir_all(bin_dir.clone()).unwrap();
         for dll in walkdir::WalkDir::new(ffmpeg_path.join("bin"))
@@ -836,33 +840,6 @@ fn _setup_cargo_appimage() {
 
 pub fn build_alxr_app_image(_root: Option<String>, _ffmpeg_version: &str, _flags: AlxBuildFlags) {
     println!("Not Implemented!");
-    // setup_cargo_appimage();
-
-    // // let target_dir = afs::target_dir();
-
-    // // let bundle_ffmpeg_enabled = cfg!(target_os = "linux") && flags.bundle_ffmpeg;
-    // // if bundle_ffmpeg_enabled {
-    // //     assert!(!ffmpeg_version.is_empty(), "ffmpeg-version is empty!");
-
-    // //     let ffmpeg_lib_dir = &alxr_client_build_dir;
-    // //     dependencies::build_ffmpeg_linux_install(true, ffmpeg_version, /*enable_decoders=*/true, &ffmpeg_lib_dir);
-
-    // //     assert!(ffmpeg_lib_dir.exists());
-    // //     env::set_var("ALXR_BUNDLE_FFMPEG_INSTALL_PATH", ffmpeg_lib_dir.to_str().unwrap());
-    // // }
-
-    // if let Some(root) = root {
-    //     env::set_var("ALVR_ROOT_DIR", root);
-    // }
-    // if flags.fetch_crates {
-    //     command::run("cargo update").unwrap();
-    // }
-    // let build_flags = flags.make_build_string();
-    // let alxr_client_dir = afs::workspace_dir().join("alvr/openxr-client/alxr-client");
-
-    // let rustflags = r#"RUSTFLAGS="-C link-args=-Wl,-rpath,$ORIGIN/lib""#;
-    // //env::set_var("RUSTFLAGS", "-C link-args=\'-Wl,-rpath,$ORIGIN/lib\'");
-    // command::run_in(&alxr_client_dir, &format!("{} cargo appimage {}", rustflags, build_flags)).unwrap();
 }
 
 fn install_alxr_depends() {

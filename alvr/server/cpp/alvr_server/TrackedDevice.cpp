@@ -1,7 +1,7 @@
 #include "TrackedDevice.h"
 #include "Logger.h"
 
-void TrackedDevice::set_prop(OpenvrProperty prop) {
+void TrackedDevice::set_prop(const OpenvrProperty& prop) {
     auto key = (vr::ETrackedDeviceProperty)prop.key;
 
     vr::ETrackedPropertyError result;

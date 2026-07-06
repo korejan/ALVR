@@ -242,11 +242,11 @@ void ShutdownSteamvr() {
     }
 }
 
-void SetOpenvrProperty(uint64_t top_level_path, OpenvrProperty prop) {
+void SetOpenvrProperty(uint64_t top_level_path, const OpenvrProperty* prop) {
     auto device_it = g_driver_provider.tracked_devices.find(top_level_path);
 
     if (device_it != g_driver_provider.tracked_devices.end()) {
-        device_it->second->set_prop(prop);
+        device_it->second->set_prop(*prop);
     }
 }
 

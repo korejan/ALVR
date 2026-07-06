@@ -63,8 +63,5 @@ fern = "0.7"
 [build-dependencies]
 alvr_filesystem = { path = "../filesystem" }
 bindgen = "0.72"
-cc = { version = "1", features = ["parallel"] }
-walkdir = "2"
-
-[target.'cfg(unix)'.build-dependencies]
+cmake = "0.1"
 pkg-config = "0.3"
