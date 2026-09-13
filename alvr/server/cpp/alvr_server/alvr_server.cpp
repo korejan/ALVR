@@ -20,6 +20,7 @@
 #include <cstring>
 #include <map>
 #include <optional>
+#include <string_view>
 
 static void load_debug_privilege(void) {
 #ifdef _WIN32
@@ -284,4 +285,9 @@ void SetUserPresence(bool isPresent) {
     if (g_driver_provider.hmd) {
         g_driver_provider.hmd->SetUserPresence(isPresent);
     }
+}
+
+bool IsServerTrackedDeviceProviderInterface(const char *interface_name) {
+    return interface_name != nullptr &&
+           std::string_view(interface_name) == vr::IServerTrackedDeviceProvider_Version;
 }

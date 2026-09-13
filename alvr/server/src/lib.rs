@@ -295,6 +295,13 @@ pub unsafe extern "C" fn HmdDriverFactory(
     return_code: *mut i32,
 ) -> *mut c_void {
     unsafe {
+        if !IsServerTrackedDeviceProviderInterface(interface_name) {
+            if !return_code.is_null() {
+                *return_code = 105; // vr::VRInitError_Init_InterfaceNotFound
+            }
+            return ptr::null_mut();
+        }
+
         static INIT_ONCE: Once = Once::new();
         INIT_ONCE.call_once(init);
 

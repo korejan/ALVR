@@ -199,6 +199,8 @@ extern "C" void SetViewsConfig(const ViewsConfigData* config);
 extern "C" void SetBattery(uint64_t topLevelPath, float gauge_value, bool is_plugged);
 extern "C" void SetUserPresence(bool isPresent);
 
+extern "C" bool IsServerTrackedDeviceProviderInterface(const char *pInterfaceName);
+
 #ifdef __cplusplus
 }
 #endif
