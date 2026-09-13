@@ -75,6 +75,11 @@ fn get_cargo_config() -> Result<CargoConfig, Box<dyn Error>> {
     target_dir.pop();
     target_dir.pop();
     target_dir.pop();
+    // Newer cargo gives the metadata hash a directory of its own, making OUT_DIR
+    // <target dir>/build/<pkg>/<hash>/out instead of <target dir>/build/<pkg>-<hash>/out.
+    if target_dir.ends_with("build") {
+        target_dir.pop();
+    }
     let target_dir = target_dir;
 
     // Issue a warning if the target directory doesn't match the expected pattern
