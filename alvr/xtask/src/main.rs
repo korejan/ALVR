@@ -149,7 +149,7 @@ pub fn build_server(
     .unwrap();
 
     if bundle_ffmpeg {
-        let ffmpeg_path = dependencies::extract_ffmpeg_linux("8.1", gpl);
+        let ffmpeg_path = dependencies::extract_ffmpeg_linux("9.0", gpl);
         let lib_dir = afs::server_build_dir().join("lib64").join("alvr");
         let mut libavcodec_so = std::path::PathBuf::new();
         fs::create_dir_all(lib_dir.clone()).unwrap();
@@ -708,9 +708,12 @@ pub fn build_alxr_uwp(root: Option<String>, arch: UWPArch, flags: AlxBuildFlags)
     let pack_script_path = alxr_client_dir.join("build_app_package.bat");
     assert!(pack_script_path.exists());
     let pack_script = pack_script_path.to_string_lossy();
+    let cert_path = alxr_client_dir.join("alxr_client_TemporaryKey.pfx");
+    assert!(cert_path.exists());
+    let cert_path = cert_path.to_string_lossy();
     command::run_in(
         &artifacts_dir,
-        &format!("{pack_script} {batch_arch} {alxr_version} {file_mapping}"),
+        &format!("{pack_script} {batch_arch} {alxr_version} {file_mapping} {cert_path}"),
     )
     .unwrap();
 
@@ -1016,7 +1019,7 @@ fn main() {
         let root: Option<String> = args.opt_value_from_str("--root").unwrap();
         let abi_target: Option<String> = args.opt_value_from_str("--target").unwrap();
 
-        let default_var = String::from("release/8.1");
+        let default_var = String::from("release/9.0");
         let ffmpeg_version: String = args.opt_value_from_str("--ffmpeg-version").unwrap().map_or(
             default_var.clone(),
             |s: String| {

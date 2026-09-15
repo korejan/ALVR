@@ -339,6 +339,15 @@ fn generate_appx_manifest(
         return Err("Failed to substitute all Windows 10 Mobile placeholders".into());
     }
 
+    // Debug builds link against the debug VC runtime (*d_app.dll), which lives in a
+    // separate framework package from the retail Microsoft.VCLibs.140.00.
+    let vclibs_debug_dependency = if env::var("PROFILE").as_deref() == Ok("debug") {
+        "\n    <PackageDependency Name=\"Microsoft.VCLibs.140.00.Debug\" MinVersion=\"14.0.30704.0\" Publisher=\"CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US\" />"
+    } else {
+        ""
+    };
+    manifest = manifest.replace("$vclibs-debug-dependency$", vclibs_debug_dependency);
+
     // Replace Package Identity Name
     manifest = manifest.replace("$appx-identity-name$", &appx_config.identity_name);
 

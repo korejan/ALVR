@@ -136,7 +136,6 @@ jobs:
   #         sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev libffmpeg-nvenc-dev nvidia-cuda-toolkit
   #         cp packaging/deb/cuda.pc /usr/share/pkgconfig
   #         cargo xtask build-ffmpeg-linux
-  #         cd deps/linux/FFmpeg-release-5.1 && sudo make install && cd ../../..
 
   #     - name: Build and package ALVR (.tar.gz)
   #       id: build
@@ -177,7 +176,6 @@ jobs:
           sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev libffmpeg-nvenc-dev nvidia-cuda-toolkit
           cp packaging/deb/cuda.pc /usr/share/pkgconfig
           cargo xtask build-ffmpeg-linux
-          cd deps/linux/FFmpeg-release-5.1 && sudo make install && cd ../../..
 
       - name: Build and package ALVR (.tar.gz)
         id: build

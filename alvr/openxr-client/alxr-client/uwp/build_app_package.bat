@@ -17,4 +17,8 @@ for /f "usebackq delims=" %%i in (`%toolpath% -latest -property installationPath
 if exist !VCVarsAllBat! (
     call !VCVarsAllBat! !arch! uwp
     makeappx pack /o /p alxr-client-uwp_%2_%1.msix /v /f %3
+    if not [%4]==[] (
+        echo Self-Signing App-package: alxr-client-uwp_%2_%1.msix with key file: %4
+        signtool sign /v /fd SHA256 /a /f "%~4" alxr-client-uwp_%2_%1.msix
+    )
 )
