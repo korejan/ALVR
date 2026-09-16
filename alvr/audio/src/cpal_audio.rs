@@ -48,7 +48,7 @@ lazy_static! {
 }
 
 #[inline(always)]
-fn device_name(device: &Device) -> Result<String, cpal::DeviceNameError> {
+fn device_name(device: &Device) -> Result<String, cpal::Error> {
     device.description().map(|desc| desc.name().to_string())
 }
 
@@ -227,14 +227,18 @@ fn get_windows_device(device: &CpalAudioDevice) -> StrResult<IMMDevice> {
             let property_store: IPropertyStore =
                 trace_err!(mm_device.OpenPropertyStore(STGM_READ))?;
 
-            // cpal 0.17 prefers DEVPKEY_Device_DeviceDesc, falling back to
-            // PKEY_Device_FriendlyName. Match the same logic so the name
+            // cpal 0.18 prefers PKEY_Device_FriendlyName, falling back to
+            // DEVPKEY_Device_DeviceDesc. Match the same logic so the name
             // returned by cpal's description().name() can be found here.
-            let mm_device_name = get_device_property_string(
-                &property_store,
-                &DEVPKEY_Device_DeviceDesc as *const _ as *const _,
-            )
-            .or_else(|| get_device_property_string(&property_store, &PKEY_Device_FriendlyName));
+            let mm_device_name =
+                get_device_property_string(&property_store, &PKEY_Device_FriendlyName).or_else(
+                    || {
+                        get_device_property_string(
+                            &property_store,
+                            &DEVPKEY_Device_DeviceDesc as *const _ as *const _,
+                        )
+                    },
+                );
 
             if mm_device_name.as_ref() == Some(&dev_name) {
                 return Ok(mm_device);
@@ -287,6 +291,123 @@ fn get_stream_config(device: &CpalAudioDevice) -> StrResult<SupportedStreamConfi
     })
 }
 
+fn get_capture_sample_format(config: &SupportedStreamConfig) -> StrResult<SampleFormat> {
+    match config.sample_format() {
+        format @ (SampleFormat::F32
+        | SampleFormat::I16
+        | SampleFormat::I24
+        | SampleFormat::I32
+        | SampleFormat::F64) => Ok(format),
+        format => fmt_e!("Unsupported audio sample format {format}"),
+    }
+}
+
+#[inline]
+fn convert_capture_samples<T>(
+    data: &cpal::Data,
+    input_channels: u16,
+    output_channels: u16,
+    samples: &mut alvr_sockets::SendBufferLock<'_>,
+    downmix: impl Fn(T, T) -> i16,
+) where
+    T: cpal::SizedSample,
+    i16: cpal::FromSample<T>,
+{
+    if T::FORMAT == SampleFormat::I16 && input_channels == output_channels {
+        samples.extend_from_slice(data.bytes());
+        return;
+    }
+
+    let required_capacity = data.len() / input_channels as usize * output_channels as usize * 2;
+    let current_len = samples.len();
+    if samples.capacity() < required_capacity {
+        samples.reserve(required_capacity - current_len);
+    }
+
+    let data = data.as_slice::<T>().unwrap();
+    samples.resize(current_len + required_capacity, 0);
+    let output = &mut samples[current_len..];
+    if input_channels == 1 && output_channels == 2 {
+        for (sample, frame) in data.iter().zip(output.chunks_exact_mut(4)) {
+            let bytes = sample.to_sample::<i16>().to_ne_bytes();
+            frame[..2].copy_from_slice(&bytes);
+            frame[2..].copy_from_slice(&bytes);
+        }
+    } else if input_channels == 2 && output_channels == 1 {
+        for (frame, sample) in data.chunks_exact(2).zip(output.chunks_exact_mut(2)) {
+            sample.copy_from_slice(&downmix(frame[0], frame[1]).to_ne_bytes());
+        }
+    } else {
+        for (sample, destination) in data.iter().zip(output.chunks_exact_mut(2)) {
+            destination.copy_from_slice(&sample.to_sample::<i16>().to_ne_bytes());
+        }
+    }
+}
+
+#[inline(always)]
+fn downmix_capture_samples<T: Sample>(left: T, right: T) -> i16
+where
+    f64: cpal::FromSample<T>,
+{
+    ((left.to_sample::<f64>() + right.to_sample::<f64>()) * 0.5).to_sample::<i16>()
+}
+
+// cpal passes ALSA S24_LE data through unchanged, without sign-extending the unused top byte of
+// the 32-bit container, so only the low 24 bits are used, like I24::to_sample::<i16>() does.
+// Same result as downmix_capture_samples for sign-extended samples, without the f64 round-trip.
+#[inline(always)]
+fn downmix_i24_capture_samples(left: cpal::I24, right: cpal::I24) -> i16 {
+    let sign_extend = |sample: cpal::I24| (sample.inner() << 8) >> 8;
+    ((sign_extend(left) + sign_extend(right)) / 512) as i16
+}
+
+#[inline]
+fn convert_capture_data(
+    data: &cpal::Data,
+    input_channels: u16,
+    output_channels: u16,
+    samples: &mut alvr_sockets::SendBufferLock<'_>,
+) {
+    match data.sample_format() {
+        SampleFormat::F32 => convert_capture_samples(
+            data,
+            input_channels,
+            output_channels,
+            samples,
+            |left: f32, right: f32| ((left + right) * 0.5).to_sample::<i16>(),
+        ),
+        SampleFormat::I16 => convert_capture_samples(
+            data,
+            input_channels,
+            output_channels,
+            samples,
+            |left: i16, right: i16| ((left as i32 + right as i32) / 2) as i16,
+        ),
+        SampleFormat::I24 => convert_capture_samples(
+            data,
+            input_channels,
+            output_channels,
+            samples,
+            downmix_i24_capture_samples,
+        ),
+        SampleFormat::I32 => convert_capture_samples(
+            data,
+            input_channels,
+            output_channels,
+            samples,
+            downmix_capture_samples::<i32>,
+        ),
+        SampleFormat::F64 => convert_capture_samples(
+            data,
+            input_channels,
+            output_channels,
+            samples,
+            downmix_capture_samples::<f64>,
+        ),
+        _ => unreachable!(),
+    }
+}
+
 pub fn get_sample_rate(device: &CpalAudioDevice) -> StrResult<u32> {
     let config = get_stream_config(device)?;
     Ok(config.sample_rate())
@@ -320,6 +441,8 @@ pub async fn record_audio_loop(
         );
     }
 
+    let sample_format = get_capture_sample_format(&config)?;
+
     let stream_config = StreamConfig {
         channels: config.channels(),
         sample_rate: config.sample_rate(),
@@ -344,8 +467,8 @@ pub async fn record_audio_loop(
             };
 
             let stream = trace_err!(device.inner.build_input_stream_raw(
-                &stream_config,
-                config.sample_format(),
+                stream_config,
+                sample_format,
                 {
                     let data_sender = data_sender.clone();
                     move |data, _| {
@@ -357,75 +480,7 @@ pub async fn record_audio_loop(
                         // encode() clears buffer and returns lock to payload portion
                         let mut samples = buffer.encode(&()).unwrap();
 
-                        let input_channels = config.channels();
-                        let output_channels = channels_count;
-                        let data_bytes = data.bytes();
-
-                        if config.sample_format() == SampleFormat::F32 {
-                            let frames = data_bytes.len() / (4 * input_channels as usize);
-                            let required_capacity = frames * output_channels as usize * 2;
-                            let current_len = samples.len();
-                            if samples.capacity() < required_capacity {
-                                samples.reserve(required_capacity - current_len);
-                            }
-
-                            #[inline(always)]
-                            fn to_i16_bytes(b: &[u8]) -> [u8; 2] {
-                                f32::from_ne_bytes([b[0], b[1], b[2], b[3]])
-                                    .to_sample::<i16>()
-                                    .to_ne_bytes()
-                            }
-
-                            if input_channels == 1 && output_channels == 2 {
-                                for chunk in data_bytes.chunks_exact(4) {
-                                    let s = to_i16_bytes(chunk);
-                                    samples.extend_from_slice(&s);
-                                    samples.extend_from_slice(&s);
-                                }
-                            } else if input_channels == 2 && output_channels == 1 {
-                                // Average both channels for proper stereo-to-mono downmix
-                                for chunk in data_bytes.chunks_exact(8) {
-                                    let l = f32::from_ne_bytes([
-                                        chunk[0], chunk[1], chunk[2], chunk[3],
-                                    ]);
-                                    let r = f32::from_ne_bytes([
-                                        chunk[4], chunk[5], chunk[6], chunk[7],
-                                    ]);
-                                    let mixed = ((l + r) * 0.5).to_sample::<i16>();
-                                    samples.extend_from_slice(&mixed.to_ne_bytes());
-                                }
-                            } else {
-                                for chunk in data_bytes.chunks_exact(4) {
-                                    let s = to_i16_bytes(chunk);
-                                    samples.extend_from_slice(&s);
-                                }
-                            }
-                        } else {
-                            let frames = data_bytes.len() / (2 * input_channels as usize);
-                            let required_capacity = frames * output_channels as usize * 2;
-                            let current_len = samples.len();
-                            if samples.capacity() < required_capacity {
-                                samples.reserve(required_capacity - current_len);
-                            }
-
-                            if input_channels == 1 && output_channels == 2 {
-                                for chunk in data_bytes.chunks_exact(2) {
-                                    samples.extend_from_slice(chunk);
-                                    samples.extend_from_slice(chunk);
-                                }
-                            } else if input_channels == 2 && output_channels == 1 {
-                                // Average both channels for proper stereo-to-mono downmix
-                                for chunk in data_bytes.chunks_exact(4) {
-                                    let l = i16::from_ne_bytes([chunk[0], chunk[1]]);
-                                    let r = i16::from_ne_bytes([chunk[2], chunk[3]]);
-                                    // Use i32 to avoid overflow, then divide
-                                    let mixed = ((l as i32 + r as i32) / 2) as i16;
-                                    samples.extend_from_slice(&mixed.to_ne_bytes());
-                                }
-                            } else {
-                                samples.extend_from_slice(data_bytes);
-                            }
-                        }
+                        convert_capture_data(data, config.channels(), channels_count, &mut samples);
 
                         drop(samples); // Release lock before sending
                         data_sender.send(Ok(buffer)).ok();
@@ -433,10 +488,19 @@ pub async fn record_audio_loop(
                 },
                 {
                     let data_sender = data_sender.clone();
-                    move |e| {
-                        data_sender
-                            .send(fmt_e!("Error while recording audio: {e}"))
-                            .ok();
+                    move |e| match e.kind() {
+                        // cpal 0.18 reports these through the error callback, but the stream
+                        // keeps running, so don't stop recording. Xruns can be frequent (WASAPI
+                        // loopback reports one every time a stream starts), so they aren't logged.
+                        cpal::ErrorKind::Xrun => {}
+                        cpal::ErrorKind::RealtimeDenied | cpal::ErrorKind::DeviceChanged => {
+                            warn!("Audio recording: {e}");
+                        }
+                        _ => {
+                            data_sender
+                                .send(fmt_e!("Error while recording audio: {e}"))
+                                .ok();
+                        }
                     }
                 },
                 None
@@ -568,3 +632,7 @@ pub async fn play_audio_loop(
     )
     .await
 }
+
+#[cfg(test)]
+#[path = "tests/cpal_tests.rs"]
+mod tests;

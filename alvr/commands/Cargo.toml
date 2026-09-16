@@ -15,5 +15,5 @@ serde_json = "1"
 
 [target.'cfg(not(target_os = "android"))'.dependencies]
 alvr_filesystem = { path = "../filesystem" }
-dirs = "6"
+dirs = "7"
 runas = "1"

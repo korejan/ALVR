@@ -7,7 +7,7 @@ edition = "2024"
 
 [dependencies]
 lazy_static = "1"
-dirs = "6"
+dirs = "7"
 
 [target.'cfg(unix)'.dependencies]
 regex = "1"
