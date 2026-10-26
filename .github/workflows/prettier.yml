@@ -10,8 +10,10 @@ jobs:
   prettier:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actionsx/prettier@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          # prettier CLI arguments: https://prettier.io/docs/en/cli.html
-          args: '--config alvr/dashboard/.prettierrc --check "**/*[!.min].{js,css}"'
+          node-version: 22
+      # prettier CLI arguments: https://prettier.io/docs/en/cli.html
+      # pinned to 2.x: prettier 3 changed default formatting and would flag existing sources
+      - run: npx --yes prettier@2.7.1 --config alvr/dashboard/.prettierrc --check "**/*[!.min].{js,css}"
