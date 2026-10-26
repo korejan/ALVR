@@ -22,7 +22,7 @@ android-activity = { version="0.6", features = [ "native-activity" ] }
 ndk-context = "0.1"
 libloading = "0.9"
 lazy_static = "1"
-parking_lot = "0.12"
+parking_lot = "0.13"
 version-compare = "0.2"
 semver = "1"
 

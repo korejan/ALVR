@@ -10,7 +10,7 @@ alvr_common = { path = "../common" }
 alvr_session = { path = "../session" }
 alvr_sockets = { path = "../sockets" }
 
-parking_lot = "0.12"
+parking_lot = "0.13"
 serde = "1"
 tokio = "1"
 
