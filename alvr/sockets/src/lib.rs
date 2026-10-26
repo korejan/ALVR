@@ -15,6 +15,14 @@ pub const LOCAL_IP: IpAddr = IpAddr::V4(Ipv4Addr::UNSPECIFIED);
 pub const CONTROL_PORT: u16 = 9943;
 pub const MAX_HANDSHAKE_PACKET_SIZE_BYTES: usize = 4_000;
 
+pub fn client_stream_port(stream_port: u16, peers_on_same_host: bool) -> u16 {
+    if peers_on_same_host {
+        stream_port.checked_add(1).unwrap_or(stream_port - 1)
+    } else {
+        stream_port
+    }
+}
+
 pub const BINCODE_CONFIG: bincode::config::Configuration = bincode::config::standard();
 
 type Ldc = tokio_util::codec::LengthDelimitedCodec;

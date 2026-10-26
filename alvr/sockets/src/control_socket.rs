@@ -154,6 +154,15 @@ impl ProtoControlSocket {
         Ok((Self { inner: socket }, peer_ip))
     }
 
+    // True if both ends of the connection are on the same host. Loopback is checked separately
+    // because connecting to eg. 127.0.0.2 still uses 127.0.0.1 as the local address
+    pub fn is_peer_on_same_host(&self) -> StrResult<bool> {
+        let socket = self.inner.get_ref();
+        let local_ip = trace_err!(socket.local_addr())?.ip();
+        let peer_ip = trace_err!(socket.peer_addr())?.ip();
+        Ok(local_ip == peer_ip || (local_ip.is_loopback() && peer_ip.is_loopback()))
+    }
+
     #[inline(always)]
     pub async fn send<S: Serialize>(&mut self, packet: &S) -> StrResult {
         let packet_bytes = ControlBuffer::<S>::encoded(packet)?;

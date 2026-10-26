@@ -172,6 +172,7 @@ async fn connection_pipeline(
     trace_err!(proto_socket.send(&(headset_info, server_ip)).await)?;
     let config_packet = trace_err!(proto_socket.recv::<ClientConfigPacket>().await)?;
 
+    let server_on_same_host = proto_socket.is_peer_on_same_host()?;
     let (control_sender, mut control_receiver) = proto_socket.split();
     let control_sender = Arc::new(Mutex::new(control_sender));
 
@@ -221,7 +222,7 @@ async fn connection_pipeline(
     };
 
     let stream_socket_builder = StreamSocketBuilder::listen_for_server(
-        settings.connection.stream_port,
+        alvr_sockets::client_stream_port(settings.connection.stream_port, server_on_same_host),
         settings.connection.stream_protocol,
         settings.connection.client_send_buffer_bytes,
         settings.connection.client_recv_buffer_bytes,

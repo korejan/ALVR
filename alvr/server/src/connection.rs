@@ -88,6 +88,7 @@ async fn client_discovery(auto_trust_clients: bool) -> StrResult<ClientId> {
 
 struct ConnectionInfo {
     client_ip: IpAddr,
+    client_on_same_host: bool,
     client_microphone_sample_rate: u32,
     version: Option<Version>,
     control_sender: ControlSocketSender<ServerControlPacket>,
@@ -216,6 +217,7 @@ async fn client_handshake(
     };
     proto_socket.send(&client_config).await?;
 
+    let client_on_same_host = proto_socket.is_peer_on_same_host()?;
     let (mut control_sender, control_receiver) = proto_socket.split();
 
     let session_settings = SESSION_MANAGER.lock().get().session_settings.clone();
@@ -513,6 +515,7 @@ async fn client_handshake(
 
     Ok(ConnectionInfo {
         client_ip,
+        client_on_same_host,
         client_microphone_sample_rate: headset_info.microphone_sample_rate,
         version,
         control_sender,
@@ -624,6 +627,7 @@ async fn connection_pipeline() -> StrResult {
 
     let ConnectionInfo {
         client_ip,
+        client_on_same_host,
         client_microphone_sample_rate,
         version: _,
         control_sender,
@@ -652,6 +656,7 @@ async fn connection_pipeline() -> StrResult {
     let stream_socket = tokio::select! {
         res = StreamSocketBuilder::connect_to_client(
             client_ip,
+            alvr_sockets::client_stream_port(settings.connection.stream_port, client_on_same_host),
             settings.connection.stream_port,
             settings.connection.stream_protocol,
             mbits_to_bytes(settings.video.encode_bitrate_mbs),

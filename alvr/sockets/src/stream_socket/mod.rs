@@ -378,7 +378,8 @@ impl StreamSocketBuilder {
 
     pub async fn connect_to_client(
         client_ip: IpAddr,
-        port: u16,
+        client_port: u16,
+        server_port: u16,
         protocol: SocketProtocol,
         video_byterate: u32,
         send_buffer_bytes: SocketBufferSize,
@@ -386,29 +387,34 @@ impl StreamSocketBuilder {
     ) -> StrResult<StreamSocket> {
         let (send_socket, receive_socket) = match protocol {
             SocketProtocol::Udp => {
-                let socket = udp::bind(port, send_buffer_bytes, recv_buffer_bytes).await?;
-                let (send_socket, receive_socket) = udp::connect(socket, client_ip, port).await?;
+                let socket = udp::bind(server_port, send_buffer_bytes, recv_buffer_bytes).await?;
+                let (send_socket, receive_socket) =
+                    udp::connect(socket, client_ip, client_port).await?;
                 (
                     StreamSendSocket::Udp(send_socket),
                     StreamReceiveSocket::Udp(receive_socket),
                 )
             }
             SocketProtocol::Tcp => {
-                let (send_socket, receive_socket) =
-                    tcp::connect_to_client(client_ip, port, send_buffer_bytes, recv_buffer_bytes)
-                        .await?;
+                let (send_socket, receive_socket) = tcp::connect_to_client(
+                    client_ip,
+                    client_port,
+                    send_buffer_bytes,
+                    recv_buffer_bytes,
+                )
+                .await?;
                 (
                     StreamSendSocket::Tcp(send_socket),
                     StreamReceiveSocket::Tcp(receive_socket),
                 )
             }
             SocketProtocol::ThrottledUdp { bitrate_multiplier } => {
-                let socket = udp::bind(port, send_buffer_bytes, recv_buffer_bytes).await?;
+                let socket = udp::bind(server_port, send_buffer_bytes, recv_buffer_bytes).await?;
 
                 let (send_socket, receive_socket) = throttled_udp::connect_to_client(
                     socket,
                     client_ip,
-                    port,
+                    client_port,
                     video_byterate,
                     bitrate_multiplier,
                 )
