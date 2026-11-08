@@ -7,7 +7,7 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, RefreshKind, System};
+use sysinfo::{ProcessRefreshKind, RefreshKind, System};
 
 const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -25,29 +25,27 @@ fn spawn_no_window(command: &mut Command) {
     command.spawn().ok();
 }
 
-pub fn is_steamvr_running() -> bool {
-    let mut system = System::new_with_specifics(
-        RefreshKind::nothing().with_processes(ProcessRefreshKind::everything()),
-    );
-    system.refresh_processes(ProcessesToUpdate::All, true);
+// Returns None (after reporting the error) if sysinfo cannot query the system.
+fn system_with_processes() -> Option<System> {
+    alvr_common::show_err(
+        System::new_with_specifics(
+            RefreshKind::nothing().with_processes(ProcessRefreshKind::everything()),
+        )
+        .map_err(|e| format!("Failed to query system processes: {e}")),
+    )
+}
 
-    system
-        .processes_by_name(afs::exec_fname("vrserver").as_ref())
-        .count()
-        != 0
+pub fn is_steamvr_running() -> bool {
+    system_with_processes().is_some_and(|system| {
+        system
+            .processes_by_name(afs::exec_fname("vrserver").as_ref())
+            .count()
+            != 0
+    })
 }
 
 pub fn maybe_launch_steamvr() {
-    let mut system = System::new_with_specifics(
-        RefreshKind::nothing().with_processes(ProcessRefreshKind::everything()),
-    );
-    system.refresh_processes(ProcessesToUpdate::All, true);
-
-    if system
-        .processes_by_name(afs::exec_fname("vrserver").as_ref())
-        .count()
-        == 0
-    {
+    if !is_steamvr_running() {
         #[cfg(windows)]
         spawn_no_window(Command::new("cmd").args(["/C", "start", "steam://rungameid/250820"]));
         #[cfg(not(windows))]
@@ -67,10 +65,9 @@ fn kill_process(pid: u32) {
 
 // this will not kill the child process "ALVR launcher"
 pub fn kill_steamvr() {
-    let mut system = System::new_with_specifics(
-        RefreshKind::nothing().with_processes(ProcessRefreshKind::everything()),
-    );
-    system.refresh_processes(ProcessesToUpdate::All, true);
+    let Some(system) = system_with_processes() else {
+        return;
+    };
 
     // first kill vrmonitor, then kill vrserver if it is hung.
 
