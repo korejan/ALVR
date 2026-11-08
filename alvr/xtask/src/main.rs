@@ -533,7 +533,7 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
     // Build list of allowed path prefixes (our build artifacts + explicitly added paths)
     let mut allowed_prefixes = vec![workspace_target.clone()];
     if let Some(ref ffmpeg_dir) = ffmpeg_build_dir {
-        allowed_prefixes.push(ffmpeg_dir.clone());
+        allowed_prefixes.push(dunce::canonicalize(ffmpeg_dir).unwrap());
     }
 
     println!("Searching for linked native dependencies, please wait this may take some time.");
@@ -548,10 +548,14 @@ pub fn build_alxr_client(root: Option<String>, ffmpeg_version: &str, flags: AlxB
     }
 
     for linked_path in linked_paths.iter() {
-        // Only include paths under allowed prefixes
+        // Only include paths under allowed prefixes. Canonicalize before comparing: the prefixes
+        // are canonical, but cargo reports paths as-is (e.g. a mapped drive vs its UNC path).
+        let Ok(canonical_path) = dunce::canonicalize(linked_path) else {
+            continue;
+        };
         if !allowed_prefixes
             .iter()
-            .any(|p| linked_path.starts_with(p.to_string_lossy().as_ref()))
+            .any(|p| canonical_path.starts_with(p))
         {
             continue;
         }
