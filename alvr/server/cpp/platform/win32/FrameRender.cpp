@@ -300,6 +300,8 @@ bool FrameRender::Startup()
 		m_colorCorrectionPipeline = std::make_unique<RenderPipeline>(m_pD3DRender->GetDevice());
 		m_colorCorrectionPipeline->Initialize({ m_pStagingTexture.Get() }, quadVertexShader.Get(), colorCorrectionShaderCSO,
 											  colorCorrectedTexture.Get(), colorCorrectionBuffer.Get());
+		// Sharpening reads neighbouring texels: clamp at the edges instead of inheriting a wrapping sampler.
+		m_colorCorrectionPipeline->SetSamplerState(CreateLinearClampSampler(m_pD3DRender->GetDevice()).Get());
 
 		m_pStagingTexture = colorCorrectedTexture;
 	}

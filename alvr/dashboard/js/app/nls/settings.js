@@ -40,10 +40,10 @@ define({
             "Higher value moves the uncompressed center towards the bottom of your vision",
         "_root_video_foveatedRendering_content_edgeRatioX.name": "Horizontal compression ratio",
         "_root_video_foveatedRendering_content_edgeRatioX.description":
-            "Compression strength of the left and right edges",
+            "Average compression of the left and right edges",
         "_root_video_foveatedRendering_content_edgeRatioY.name": "Vertical compression ratio",
         "_root_video_foveatedRendering_content_edgeRatioY.description":
-            "Compression strength of the top and bottom edges",
+            "Average compression of the top and bottom edges",
         "_root_video_colorCorrection.name": "Color correction",
         // "_root_video_colorCorrection.description": use "_root_video_colorCorrection_enabled.description"
         "_root_video_colorCorrection_enabled.description":

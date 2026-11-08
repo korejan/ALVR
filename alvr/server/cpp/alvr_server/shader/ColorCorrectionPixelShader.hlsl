@@ -16,11 +16,8 @@ const static float sharpenNeighbourWeight = -sharpening / 8.;
 
 Texture2D<float4> sourceTexture;
 
-SamplerState bilinearSampler {
-	Filter = MIN_MAG_LINEAR_MIP_POINT;
-	AddressU = CLAMP;
-	AddressV = CLAMP;
-};
+// Linear, clamped; bound by FrameRender.cpp.
+SamplerState bilinearSampler : register(s0);
 
 float3 GetSharpenNeighborComponent(float2 uv, float xoff, float yoff) {
 	return sourceTexture.Sample(bilinearSampler, uv + float2(xoff, yoff)).rgb * sharpenNeighbourWeight;

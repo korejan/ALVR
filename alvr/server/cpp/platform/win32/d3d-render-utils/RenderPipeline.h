@@ -17,6 +17,8 @@ namespace d3d_render_utils {
 			ID3D11Texture2D *renderTarget, ID3D11Buffer *shaderBuffer = nullptr,
 			bool enableAlphaBlend = false, bool overrideAlpha = false);
 
+		void SetSamplerState(ID3D11SamplerState *samplerState);
+
 		void Render(ID3D11DeviceContext *otherContext = nullptr);
 
 	private:
@@ -30,6 +32,7 @@ namespace d3d_render_utils {
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mRenderTargetView;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mRenderTargetResourceView;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> mShaderBuffer;
+		Microsoft::WRL::ComPtr<ID3D11SamplerState> mSamplerState;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> mVertexShader;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> mPixelShader;
 		Microsoft::WRL::ComPtr<ID3D11BlendState> mBlendState;

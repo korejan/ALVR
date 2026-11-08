@@ -66,6 +66,10 @@ namespace d3d_render_utils {
 			shaderBuffer, enableAlphaBlend, overrideAlpha);
 	}
 
+	void RenderPipeline::SetSamplerState(ID3D11SamplerState *samplerState) {
+		mSamplerState = samplerState;
+	}
+
 	void RenderPipeline::Render(ID3D11DeviceContext *otherContext) {
 		ID3D11DeviceContext *context = otherContext != nullptr ? otherContext : mImmediateContext.Get();
 
@@ -83,6 +87,9 @@ namespace d3d_render_utils {
 			inputTextureViewPtrs.push_back(texView.Get());
 		}
 		context->PSSetShaderResources(0, (UINT)mInputTextureViews.size(), &inputTextureViewPtrs[0]);
+		if (mSamplerState != nullptr) {
+			context->PSSetSamplers(0, 1, mSamplerState.GetAddressOf());
+		}
 
 		context->VSSetShader(mVertexShader.Get(), nullptr, 0);
 		context->PSSetShader(mPixelShader.Get(), nullptr, 0);

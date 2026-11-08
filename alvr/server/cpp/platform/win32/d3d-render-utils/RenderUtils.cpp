@@ -133,6 +133,19 @@ namespace d3d_render_utils {
 		return pixelShader;
 	}
 
+	ComPtr<ID3D11SamplerState> CreateLinearClampSampler(ID3D11Device *device) {
+		D3D11_SAMPLER_DESC samplerDesc = {};
+		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+		ComPtr<ID3D11SamplerState> sampler;
+		OK_OR_THROW(device->CreateSamplerState(&samplerDesc, &sampler), "Failed to create sampler state.");
+		return sampler;
+	}
+
 	ID3D11Texture2D *GetTextureFromHandle(ID3D11Device *device, HANDLE handle) {
 		ID3D11Texture2D *texture;
 		OK_OR_THROW(device->OpenSharedResource(handle, __uuidof(ID3D11Texture2D), (void **)&texture),

@@ -44,6 +44,8 @@ namespace d3d_render_utils {
 	ID3D11VertexShader *CreateVertexShader(ID3D11Device *device, std::vector<uint8_t> &vertexShaderCSO);
 	ID3D11PixelShader *CreatePixelShader(ID3D11Device *device, std::vector<uint8_t> &pixelShaderCSO);
 
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> CreateLinearClampSampler(ID3D11Device *device);
+
 	ID3D11Texture2D *GetTextureFromHandle(ID3D11Device *device, HANDLE handle);
 	HANDLE GetHandleFromTexture(ID3D11Texture2D *texture);
 
