@@ -8,6 +8,7 @@ edition = "2024"
 [dependencies]
 lazy_static = "1"
 dirs = "7"
+cargo_metadata = "0.23"
 
 [target.'cfg(unix)'.dependencies]
 regex = "1"

@@ -4,6 +4,7 @@ use std::{
         consts::{DLL_PREFIX, DLL_SUFFIX, EXE_SUFFIX},
     },
     path::{Path, PathBuf},
+    sync::OnceLock,
 };
 
 #[cfg(target_os = "linux")]
@@ -37,8 +38,23 @@ pub fn dynlib_fname(name: &str) -> String {
     format!("{DLL_PREFIX}{name}{DLL_SUFFIX}")
 }
 
+/// Cargo's target (artifact) directory, honouring `CARGO_TARGET_DIR` / `build.target-dir`.
+///
+/// Queried from Cargo rather than derived from `OUT_DIR`: the build-dir layout is internal to
+/// Cargo and changes between versions (e.g. Cargo 1.100).
 pub fn target_dir() -> PathBuf {
-    Path::new(env!("OUT_DIR")).join("../../../..")
+    static TARGET_DIR: OnceLock<PathBuf> = OnceLock::new();
+    TARGET_DIR
+        .get_or_init(|| {
+            cargo_metadata::MetadataCommand::new()
+                .no_deps()
+                .current_dir(workspace_dir())
+                .exec()
+                .expect("failed to query the target directory with `cargo metadata`")
+                .target_directory
+                .into()
+        })
+        .clone()
 }
 
 pub fn workspace_dir() -> PathBuf {

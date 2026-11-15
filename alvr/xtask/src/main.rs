@@ -124,7 +124,7 @@ pub fn build_server(
     }
 
     if let Some(root) = root {
-        unsafe { ("ALVR_ROOT_DIR", root) };
+        unsafe { env::set_var("ALVR_ROOT_DIR", root) };
     }
 
     let target_dir = afs::target_dir();
